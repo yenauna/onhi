@@ -8,6 +8,21 @@
     table { width: 100%; border-collapse: collapse; }
     td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
     .today { background-color: #e0f7fa; }
+
+    .task {
+      background-color: #f8bcbc;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      color: black;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .task.done {
+      background-color: transparent;
+      color: #999;
+    }
   </style>
 </head>
 <body>
@@ -19,9 +34,11 @@
     <div style="background-color: #eee; padding: 10px; margin-bottom: 10px;">
       🗓 일정: 영어 단어 시험, 체육 시간 준비물 챙기기
     </div>
-    <div style="background-color: #f8bcbc; padding: 10px; border-radius: 10px; margin-bottom: 10px;">청소</div>
-    <div style="background-color: #f8bcbc; padding: 10px; border-radius: 10px; margin-bottom: 10px;">수학 100쪽 ~ 110쪽</div>
-    <div style="background-color: #f8bcbc; padding: 10px; border-radius: 10px;">과학 교과서 제출</div>
+    <div id="task-list">
+      <div class="task">청소</div>
+      <div class="task">수학 100쪽 ~ 110쪽</div>
+      <div class="task">과학 교과서 제출</div>
+    </div>
   </div>
 
   <div id="calendar-view" style="display:none;">
@@ -40,6 +57,7 @@
       document.getElementById('calendar-view').style.display = 'block';
     }
 
+    // 달력 그리기
     const calendar = document.getElementById('calendar');
     const today = new Date('2025-07-08');
     const year = today.getFullYear();
@@ -58,6 +76,25 @@
     }
     table += "</tr></table>";
     calendar.innerHTML = table;
+
+    // 과제 상태 전환 및 위치 재정렬
+    document.querySelectorAll(".task").forEach(task => {
+      task.addEventListener("click", () => {
+        task.classList.toggle("done");
+        reorderTasks();
+      });
+    });
+
+    function reorderTasks() {
+      const taskList = document.getElementById("task-list");
+      const tasks = Array.from(taskList.children);
+      const undone = tasks.filter(t => !t.classList.contains("done"));
+      const done = tasks.filter(t => t.classList.contains("done"));
+
+      // 모두 제거 후 다시 추가
+      taskList.innerHTML = "";
+      [...undone, ...done].forEach(t => taskList.appendChild(t));
+    }
   </script>
 </body>
 </html>
