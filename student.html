@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>학생용 화면</title>
+  <style>
+    #calendar { margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .today { background-color: #e0f7fa; }
+  </style>
+</head>
+<body>
+  <button onclick="showList()">할 일 목록 보기</button>
+  <button onclick="showCalendar()">달력 보기</button>
+
+  <div id="list-view">
+    <h2>2025-07-08 할 일</h2>
+    <div style="background-color: #eee; padding: 10px; margin-bottom: 10px;">
+      🗓 일정: 영어 단어 시험, 체육 시간 준비물 챙기기
+    </div>
+    <div style="background-color: #f8bcbc; padding: 10px; border-radius: 10px; margin-bottom: 10px;">청소</div>
+    <div style="background-color: #f8bcbc; padding: 10px; border-radius: 10px; margin-bottom: 10px;">수학 100쪽 ~ 110쪽</div>
+    <div style="background-color: #f8bcbc; padding: 10px; border-radius: 10px;">과학 교과서 제출</div>
+  </div>
+
+  <div id="calendar-view" style="display:none;">
+    <h2>달력</h2>
+    <div id="calendar"></div>
+  </div>
+
+  <script>
+    function showList() {
+      document.getElementById('list-view').style.display = 'block';
+      document.getElementById('calendar-view').style.display = 'none';
+    }
+
+    function showCalendar() {
+      document.getElementById('list-view').style.display = 'none';
+      document.getElementById('calendar-view').style.display = 'block';
+    }
+
+    const calendar = document.getElementById('calendar');
+    const today = new Date('2025-07-08');
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDay = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let table = "<table><tr><th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th></tr><tr>";
+    for (let i = 0; i < startDay; i++) table += "<td></td>";
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const isToday = date.toISOString().slice(0, 10) === today.toISOString().slice(0, 10);
+      table += `<td class="${isToday ? 'today' : ''}">${day}</td>`;
+      if ((startDay + day) % 7 === 0) table += "</tr><tr>";
+    }
+    table += "</tr></table>";
+    calendar.innerHTML = table;
+  </script>
+</body>
+</html>

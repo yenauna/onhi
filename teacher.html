@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>과제 배정 (교사용)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+    }
+    h2 {
+      text-align: center;
+    }
+    section {
+      margin-top: 30px;
+    }
+    .task-input {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    .task-input input {
+      flex: 1;
+      padding: 6px;
+      margin-right: 6px;
+    }
+    .student-checkboxes label {
+      margin-right: 10px;
+      display: inline-block;
+    }
+    .task-list, .saved-tasks, .student-status {
+      margin-top: 20px;
+    }
+    .saved-item, .student-item {
+      border-top: 1px dashed #ccc;
+      padding-top: 8px;
+      margin-top: 10px;
+    }
+    button {
+      margin: 5px 0;
+      padding: 6px 12px;
+    }
+    select, input[type="date"] {
+      padding: 4px;
+      margin: 6px 0;
+    }
+  </style>
+<style>
+    .toggle-buttons {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+    .toggle-buttons button {
+      padding: 8px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .calendar {
+      display: none;
+    }
+    .calendar table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .calendar th, .calendar td {
+      border: 1px solid #ccc;
+      width: 14.28%;
+      height: 80px;
+      text-align: left;
+      vertical-align: top;
+      padding: 4px;
+      font-size: 14px;
+    }
+    </style>
+</head>
+<body>
+  <div class="toggle-buttons">
+    <button onclick="showList()">과제 목록 보기</button>
+    <button onclick="showCalendar()">달력 보기</button>
+  </div>
+  <div id="teacher-list">
+  <h2>📋 과제 배정 (교사용)</h2>
+
+  <section>
+    <label>📅 과제 날짜:</label>
+    <input type="date" id="task-date" />
+
+    <div class="task-list" id="task-list">
+      <div class="task-input">
+        <input type="text" placeholder="할 일 입력" />
+        <button onclick="removeTask(this)">⊖</button>
+      </div>
+    </div>
+    <button onclick="addTask()">+ 할 일 추가</button>
+
+    <label>🔁 반복 설정:</label>
+    <select id="repeat">
+      <option value="none">없음</option>
+      <option value="daily">매일</option>
+      <option value="mon">매주 월요일</option>
+      <option value="tue">매주 화요일</option>
+      <option value="wed">매주 수요일</option>
+      <option value="thu">매주 목요일</option>
+      <option value="fri">매주 금요일</option>
+    </select>
+
+    <label>👥 대상 선택:</label>
+    <select id="target">
+      <option value="all">전체 학생</option>
+      <option value="selected">특정 학생 지정</option>
+    </select>
+
+    <div id="student-checkboxes" class="student-checkboxes" style="display: none;">
+      <label><input type="checkbox" value="학생1" /> 학생1</label>
+      <label><input type="checkbox" value="학생2" /> 학생2</label>
+      <label><input type="checkbox" value="학생3" /> 학생3</label>
+    </div>
+
+    <button onclick="saveAssignment()">💾 저장하기</button>
+  </section>
+
+  <section class="saved-tasks">
+    <h3>📚 저장된 과제 목록</h3>
+    <label>📅 날짜 필터: <input type="date" id="filter-date" onchange="loadSavedTasks()" /></label>
+    <div id="task-storage"></div>
+  </section>
+
+  <section class="student-status">
+  <h3>✅ 학생별 과제 완료 현황</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+    <div style="border: 2px solid #aaa; padding: 10px; border-radius: 16px;">
+      👦 학생1
+      <div style="margin-top: 10px;">
+        <div style="border: 1px solid #888; background: #f6c1c1; padding: 8px; border-radius: 12px; margin: 6px 0;">책 읽기</div>
+        <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">수학 풀기</div>
+        <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">글쓰기</div>
+      </div>
+    </div>
+    <div style="border: 2px solid #aaa; padding: 10px; border-radius: 16px;">
+      👧 학생2
+      <div style="margin-top: 10px;">
+        <div style="border: 1px solid #888; background: #f6c1c1; padding: 8px; border-radius: 12px; margin: 6px 0;">수학 풀기</div>
+        <div style="border: 1px solid #888; background: #f6c1c1; padding: 8px; border-radius: 12px; margin: 6px 0;">책 읽기</div>
+        <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">글쓰기</div>
+      </div>
+    </div>
+    <div style="border: 2px solid #aaa; padding: 10px; border-radius: 16px;">
+      🧑 학생3
+      <div style="margin-top: 10px;">
+        <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">수학 풀기</div>
+        <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">글쓰기</div>
+        <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">책 읽기</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <script>
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("task-date").value = today;
+
+    function addTask() {
+      const div = document.createElement("div");
+      div.className = "task-input";
+      div.innerHTML = '<input type="text" placeholder="할 일 입력" /><button onclick="removeTask(this)">⊖</button>';
+      document.getElementById("task-list").appendChild(div);
+    }
+
+    function removeTask(btn) {
+      btn.parentElement.remove();
+    }
+
+    document.getElementById("target").addEventListener("change", function() {
+      const show = this.value === "selected";
+      document.getElementById("student-checkboxes").style.display = show ? "block" : "none";
+    });
+
+    function saveAssignment() {
+      const date = document.getElementById("task-date").value;
+      const repeat = document.getElementById("repeat").value;
+      const target = document.getElementById("target").value;
+      const tasks = Array.from(document.querySelectorAll("#task-list input")).map(i => i.value).filter(t => t.trim() !== "");
+      const students = target === "selected"
+        ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
+        : ["전체"];
+
+      const data = { tasks, repeat, students };
+      localStorage.setItem("teacherTasks-" + date, JSON.stringify(data));
+      alert("저장되었습니다!");
+      loadSavedTasks();
+    }
+
+    function loadSavedTasks() {
+      const container = document.getElementById("task-storage");
+      const filter = document.getElementById("filter-date").value;
+      container.innerHTML = "";
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith("teacherTasks-")) {
+          const date = key.replace("teacherTasks-", "");
+          if (filter && filter !== date) continue;
+          const data = JSON.parse(localStorage.getItem(key));
+          const div = document.createElement("div");
+          div.className = "saved-item";
+          div.innerHTML = `<strong>${date}</strong> | 대상: ${data.students.join(", ")}<br>
+            📌 ${data.tasks.join(", ")}<br>
+            🔁 반복: ${data.repeat}<br>
+            <button onclick="copyTask('${key}')">📄 복사</button>
+            <button onclick="deleteTask('${key}')">❌ 삭제</button>`;
+          container.appendChild(div);
+        }
+      }
+    }
+
+    function deleteTask(key) {
+      if (confirm("삭제하시겠습니까?")) {
+        localStorage.removeItem(key);
+        loadSavedTasks();
+      }
+    }
+
+    function copyTask(key) {
+      const data = JSON.parse(localStorage.getItem(key));
+      document.getElementById("task-list").innerHTML = "";
+      data.tasks.forEach(task => {
+        const div = document.createElement("div");
+        div.className = "task-input";
+        div.innerHTML = `<input type="text" value="${task}" /><button onclick="removeTask(this)">⊖</button>`;
+        document.getElementById("task-list").appendChild(div);
+      });
+    }
+
+    loadSavedTasks();
+  </script>
+
+  </div>
+  <div class="calendar" id="calendar">
+    <table>
+      <thead>
+        <tr>
+          <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </div>
+  <script>
+    function showList() {
+      document.getElementById("teacher-list").style.display = 'block';
+      document.getElementById("calendar").style.display = 'none';
+    }
+
+    function showCalendar() {
+      document.getElementById("teacher-list").style.display = 'none';
+      document.getElementById("calendar").style.display = 'block';
+    }
+
+    const today = new Date();
+    function renderCalendar() {
+      const tbody = document.getElementById("calendar-body");
+      tbody.innerHTML = '';
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const startDay = firstDay.getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+      let html = '<tr>';
+      for (let i = 0; i < startDay; i++) {
+        html += '<td></td>';
+      }
+      for (let day = 1; day <= lastDate; day++) {
+        html += `<td>${day}</td>`;
+        if ((startDay + day) % 7 === 0) html += '</tr><tr>';
+      }
+      html += '</tr>';
+      tbody.innerHTML = html;
+    }
+
+    
+      const assignments = [{"title": "수학 100쪽 풀기", "date": "2025-07-09"}, {"title": "글쓰기 1회", "date": "2025-07-10"}, {"title": "책 읽기", "date": "2025-07-10"}, {"title": "과학 준비물 챙기기", "date": "2025-07-11"}];
+      function renderCalendar() {
+        const tbody = document.getElementById("calendar-body");
+        tbody.innerHTML = '';
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const startDay = firstDay.getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+
+        let html = '<tr>';
+        for (let i = 0; i < startDay; i++) {
+          html += '<td></td>';
+        }
+        for (let day = 1; day <= lastDate; day++) {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const taskTitles = assignments.filter(a => a.date === dateStr).map(a => a.title);
+          const taskHtml = taskTitles.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join('');
+          html += `<td><strong>${day}</strong>${taskHtml}</td>`;
+          if ((startDay + day) % 7 === 0) html += '</tr><tr>';
+        }
+        html += '</tr>';
+        tbody.innerHTML = html;
+      }
+
+      renderCalendar();
+    
+    showList();
+  </script>
+
+  </div>
+  <div class="calendar" id="calendar" style="display: none;">
+    <table>
+      <thead>
+        <tr>
+          <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const teacherList = document.getElementById("teacher-list");
+      const calendar = document.getElementById("calendar");
+
+      function showList() {
+        teacherList.style.display = 'block';
+        calendar.style.display = 'none';
+      }
+
+      function showCalendar() {
+        teacherList.style.display = 'none';
+        calendar.style.display = 'block';
+      }
+
+      window.showList = showList;
+      window.showCalendar = showCalendar;
+
+      const today = new Date();
+      function renderCalendar() {
+        const tbody = document.getElementById("calendar-body");
+        tbody.innerHTML = '';
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const startDay = firstDay.getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+        let html = '<tr>';
+        for (let i = 0; i < startDay; i++) {
+          html += '<td></td>';
+        }
+        for (let day = 1; day <= lastDate; day++) {
+          html += `<td>${day}</td>`;
+          if ((startDay + day) % 7 === 0) html += '</tr><tr>';
+        }
+        html += '</tr>';
+        tbody.innerHTML = html;
+      }
+
+      
+      const assignments = [{"title": "수학 100쪽 풀기", "date": "2025-07-09"}, {"title": "글쓰기 1회", "date": "2025-07-10"}, {"title": "책 읽기", "date": "2025-07-10"}, {"title": "과학 준비물 챙기기", "date": "2025-07-11"}];
+      function renderCalendar() {
+        const tbody = document.getElementById("calendar-body");
+        tbody.innerHTML = '';
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const startDay = firstDay.getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+
+        let html = '<tr>';
+        for (let i = 0; i < startDay; i++) {
+          html += '<td></td>';
+        }
+        for (let day = 1; day <= lastDate; day++) {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const taskTitles = assignments.filter(a => a.date === dateStr).map(a => a.title);
+          const taskHtml = taskTitles.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join('');
+          html += `<td><strong>${day}</strong>${taskHtml}</td>`;
+          if ((startDay + day) % 7 === 0) html += '</tr><tr>';
+        }
+        html += '</tr>';
+        tbody.innerHTML = html;
+      }
+
+      renderCalendar();
+    
+      showList();
+    });
+  </script>
+</body>
+</html>
+
+</html>
+
+</html>
