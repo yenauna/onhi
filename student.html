@@ -1,100 +1,74 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>학생용 화면</title>
+  <meta charset="UTF-8">
+  <title>오늘 할 일 (학생용)</title>
   <style>
-    #calendar { margin-top: 20px; }
-    table { width: 100%; border-collapse: collapse; }
-    td, th { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    .today { background-color: #e0f7fa; }
-
-    .task {
-      background-color: #f8bcbc;
-      padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      color: black;
-      transition: background-color 0.3s ease, color 0.3s ease;
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #fff;
+      color: #000;
     }
-
-    .task.done {
+    h2 {
+      text-align: center;
+      color: #000;
+    }
+    .schedule {
+      background: #e0e0e0;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-left: 5px solid #00BFFF;
+    }
+    .task-box {
+      border: 2px solid #ccc;
+      padding: 15px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      background-color: #f6c1c1;
+      font-size: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .task-box.done {
       background-color: transparent;
       color: #999;
+      border: 2px solid #ccc;
     }
   </style>
 </head>
 <body>
-  <button onclick="showList()">할 일 목록 보기</button>
-  <button onclick="showCalendar()">달력 보기</button>
-
-  <div id="list-view">
-    <h2>2025-07-08 할 일</h2>
-    <div style="background-color: #eee; padding: 10px; margin-bottom: 10px;">
-      🗓 일정: 영어 단어 시험, 체육 시간 준비물 챙기기
-    </div>
-    <div id="task-list">
-      <div class="task">청소</div>
-      <div class="task">수학 100쪽 ~ 110쪽</div>
-      <div class="task">과학 교과서 제출</div>
-    </div>
+  <h2 id="today-date">2025-07-08 할 일</h2>
+  <div class="schedule" id="schedule">
+    🗓️ 일정: 영어 단어 시험, 체육 시간 준비물 챙기기
   </div>
-
-  <div id="calendar-view" style="display:none;">
-    <h2>달력</h2>
-    <div id="calendar"></div>
-  </div>
-
+  <div id="todo-container"></div>
   <script>
-    function showList() {
-      document.getElementById('list-view').style.display = 'block';
-      document.getElementById('calendar-view').style.display = 'none';
-    }
+    const data = {
+      tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출"]
+    };
+    const container = document.getElementById("todo-container");
 
-    function showCalendar() {
-      document.getElementById('list-view').style.display = 'none';
-      document.getElementById('calendar-view').style.display = 'block';
-    }
-
-    // 달력 그리기
-    const calendar = document.getElementById('calendar');
-    const today = new Date('2025-07-08');
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const startDay = firstDay.getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    let table = "<table><tr><th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th></tr><tr>";
-    for (let i = 0; i < startDay; i++) table += "<td></td>";
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const isToday = date.toISOString().slice(0, 10) === today.toISOString().slice(0, 10);
-      table += `<td class="${isToday ? 'today' : ''}">${day}</td>`;
-      if ((startDay + day) % 7 === 0) table += "</tr><tr>";
-    }
-    table += "</tr></table>";
-    calendar.innerHTML = table;
-
-    // 과제 상태 전환 및 위치 재정렬
-    document.querySelectorAll(".task").forEach(task => {
-      task.addEventListener("click", () => {
-        task.classList.toggle("done");
-        reorderTasks();
+    function renderTasks() {
+      container.innerHTML = '';
+      const undone = tasks.filter(t => !t.done);
+      const done = tasks.filter(t => t.done);
+      [...undone, ...done].forEach(task => {
+        const box = document.createElement("div");
+        box.className = "task-box" + (task.done ? " done" : "");
+        box.textContent = task.name;
+        box.onclick = () => {
+          task.done = !task.done;
+          renderTasks();
+        };
+        container.appendChild(box);
       });
-    });
-
-    function reorderTasks() {
-      const taskList = document.getElementById("task-list");
-      const tasks = Array.from(taskList.children);
-      const undone = tasks.filter(t => !t.classList.contains("done"));
-      const done = tasks.filter(t => t.classList.contains("done"));
-
-      // 모두 제거 후 다시 추가
-      taskList.innerHTML = "";
-      [...undone, ...done].forEach(t => taskList.appendChild(t));
     }
+
+    const tasks = data.tasks.map(name => { return { name: name, done: false } });
+    renderTasks();
   </script>
 </body>
 </html>
