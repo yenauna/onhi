@@ -1,0 +1,110 @@
+<section id="calendar">
+  <h2>달력</h2>
+  <div class="calendar-nav">
+    <button class="btn-prev">이전</button>
+    <span class="current-month">2025년 6월</span>
+    <button class="btn-next">다음</button>
+  </div>
+  <table class="calendar-table">
+    <thead>
+      <tr>
+        <th>월</th>
+        <th>화</th>
+        <th>수</th>
+        <th>목</th>
+        <th>금</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 예시 1주차 -->
+      <tr>
+        <td>
+          <div class="date">1</div>
+          <ul>
+            <li class="event">수학 4단원 시험</li>
+            <li class="common-task">공통 과제 A</li>
+          </ul>
+        </td>
+        <td><div class="date">2</div></td>
+        <td><div class="date">3</div></td>
+        <td><div class="date">4</div></td>
+        <td>
+          <div class="date">5</div>
+          <ul>
+            <li class="deadline-task">실내화 준비 (개인)</li>
+          </ul>
+        </td>
+      </tr>
+      <!-- 나머지 주차는 JS로 반복 생성 -->
+    </tbody>
+  </table>
+</section>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+
+  #calendar {
+    font-family: 'Jua', sans-serif;
+    color: #2E2E2E;
+    background: #EAF4EE;
+    padding: 1em;
+    border-radius: 4px;
+  }
+  #calendar h2 {
+    margin: 0 0 0.5em;
+  }
+  .calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5em;
+  }
+  .calendar-nav button {
+    background: #A8D5BA;
+    border: none;
+    padding: 0.4em 0.8em;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 0 1em;
+  }
+  .current-month {
+    font-weight: bold;
+  }
+  .calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .calendar-table th,
+  .calendar-table td {
+    border: 1px solid #CCCCCC;
+    vertical-align: top;
+    padding: 0.4em;
+    height: 100px;
+  }
+  .calendar-table th {
+    background: #5A4B30;
+    color: #FFFFFF;
+  }
+  .calendar-table td {
+    background: #FFFFFF;
+  }
+  .date {
+    font-weight: bold;
+    margin-bottom: 0.3em;
+  }
+  .calendar-table ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .calendar-table li {
+    font-size: 0.85em;
+    margin-bottom: 0.2em;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  /* 일정 종류별 색상 구분 */
+  .calendar-table .event { background: #29B6F6; color: #fff; }
+  .calendar-table .common-task { background: #FFCA28; color: #333; }
+  .calendar-table .deadline-task { background: #E53935; color: #fff; }
+</style>
