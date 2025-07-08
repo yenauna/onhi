@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>오늘 할 일 (학생용)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #fff;
+      color: #000;
+    }
+    h2 {
+      text-align: center;
+      color: #000;
+    }
+    .schedule {
+      background: #e0e0e0;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-left: 5px solid #00BFFF;
+    }
+    .task-box {
+      border: 2px solid #ccc;
+      padding: 15px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      background-color: #f6c1c1;
+      font-size: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .task-box.done {
+      background-color: transparent;
+      color: #999;
+      border: 2px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="today-date">2025-07-08 할 일</h2>
+  <div class="schedule" id="schedule">
+    🗓️ 일정: 영어 단어 시험, 체육 시간 준비물 챙기기
+  </div>
+  <div id="todo-container"></div>
+  <script>
+    const data = {
+      tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출"]
+    };
+    const container = document.getElementById("todo-container");
+
+    function renderTasks() {
+      container.innerHTML = '';
+      const undone = tasks.filter(t => !t.done);
+      const done = tasks.filter(t => t.done);
+      [...undone, ...done].forEach(task => {
+        const box = document.createElement("div");
+        box.className = "task-box" + (task.done ? " done" : "");
+        box.textContent = task.name;
+        box.onclick = () => {
+          task.done = !task.done;
+          renderTasks();
+        };
+        container.appendChild(box);
+      });
+    }
+
+    const tasks = data.tasks.map(name => { return { name: name, done: false } });
+    renderTasks();
+  </script>
+</body>
+</html>
