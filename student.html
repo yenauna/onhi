@@ -80,6 +80,7 @@ function setDoneTasks(student, doneTasks) {
 
 // 할 일 렌더링 함수
 function renderTasks() {
+  currentStudent = studentSelect.value;
   container.innerHTML = "";
   const doneTasks = getDoneTasks(currentStudent);
 
