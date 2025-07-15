@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>과제 배정 (교사용)</title>
   <style>
     header {
@@ -93,6 +93,25 @@
       padding: 4px;
       font-size: 14px;
     }
+    .student-status > div {
+      border: 2px solid #aaa;
+      padding: 10px;
+      border-radius: 16px;
+      margin-bottom: 10px;
+    }
+    .task-done {
+      background: #f6c1c1;
+      border-radius: 12px;
+      padding: 6px;
+      margin: 4px 0;
+    }
+    .task-undone {
+      background: transparent;
+      color: #aaa;
+      border-radius: 12px;
+      padding: 6px;
+      margin: 4px 0;
+    }
   </style>
 </head>
 <body>
@@ -154,36 +173,11 @@
 
     <section class="student-status">
       <h3>✅ 학생별 과제 완료 현황</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
-        <div style="border: 2px solid #aaa; padding: 10px; border-radius: 16px;">
-          👦 학생1
-          <div style="margin-top: 10px;">
-            <div style="border: 1px solid #888; background: #f6c1c1; padding: 8px; border-radius: 12px; margin: 6px 0;">책 읽기</div>
-            <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">수학 풀기</div>
-            <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">글쓰기</div>
-          </div>
-        </div>
-        <div style="border: 2px solid #aaa; padding: 10px; border-radius: 16px;">
-          👧 학생2
-          <div style="margin-top: 10px;">
-            <div style="border: 1px solid #888; background: #f6c1c1; padding: 8px; border-radius: 12px; margin: 6px 0;">수학 풀기</div>
-            <div style="border: 1px solid #888; background: #f6c1c1; padding: 8px; border-radius: 12px; margin: 6px 0;">책 읽기</div>
-            <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">글쓰기</div>
-          </div>
-        </div>
-        <div style="border: 2px solid #aaa; padding: 10px; border-radius: 16px;">
-          🧑 학생3
-          <div style="margin-top: 10px;">
-            <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">수학 풀기</div>
-            <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">글쓰기</div>
-            <div style="border: 1px solid #888; background: transparent; color: #aaa; padding: 8px; border-radius: 12px; margin: 6px 0;">책 읽기</div>
-          </div>
-        </div>
-      </div>
+      <div id="student-status-container"></div>
     </section>
   </div>
 
-  <div class="calendar" id="calendar" style="display:none;">
+  <div class="calendar" id="calendar">
     <table>
       <thead>
         <tr>
@@ -195,49 +189,158 @@
   </div>
 
   <script>
-function saveAssignment() {
-  const date = document.getElementById("task-date").value;
-  const repeat = document.getElementById("repeat").value;
-  const target = document.getElementById("target").value;
-  const tasks = Array.from(document.querySelectorAll("#task-list input"))
-                     .map(i => i.value)
-                     .filter(t => t.trim() !== "");
-  const students = target === "selected"
-    ? Array.from(document.querySelectorAll("#student-checkboxes input:checked"))
-           .map(cb => cb.value)
-    : ["전체"];
+    // 오늘 날짜 초기 설정
+    document.getElementById("task-date").value = new Date().toISOString().slice(0, 10);
 
-  const data = { tasks, repeat, students };
-  localStorage.setItem("teacherTasks-" + date, JSON.stringify(data));
-  alert("저장되었습니다!");
-  loadSavedTasks();  // 저장 후 목록 갱신
-}
-
-    
-    function showList() {
-      document.getElementById("teacher-list").style.display = 'block';
-      document.getElementById("calendar").style.display = 'none';
+    function addTask() {
+      const div = document.createElement("div");
+      div.className = "task-input";
+      div.innerHTML = '<input type="text" placeholder="할 일 입력" /><button onclick="removeTask(this)">⊖</button>';
+      document.getElementById("task-list").appendChild(div);
     }
 
-    function showCalendar() {
-      document.getElementById("teacher-list").style.display = 'none';
-      document.getElementById("calendar").style.display = 'block';
-      renderCalendar(); // 달력 보일 때마다 다시 그리기
+    function removeTask(btn) {
+      btn.parentElement.remove();
     }
 
-    const today = new Date();
+    document.getElementById("target").addEventListener("change", function() {
+      document.getElementById("student-checkboxes").style.display = this.value === "selected" ? "block" : "none";
+    });
 
-    const assignments = [
-      {"title": "수학 100쪽 풀기", "date": "2025-07-09"},
-      {"title": "글쓰기 1회", "date": "2025-07-10"},
-      {"title": "책 읽기", "date": "2025-07-10"},
-      {"title": "과학 준비물 챙기기", "date": "2025-07-11"}
-    ];
+    // 저장된 과제 데이터 불러오기 (localStorage)
+    function loadAssignmentsFromStorage() {
+      const assignments = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith("teacherTasks-")) {
+          const date = key.replace("teacherTasks-", "");
+          const data = JSON.parse(localStorage.getItem(key));
+          assignments.push({ date, ...data });
+        }
+      }
+      return assignments;
+    }
 
+    // 저장하기
+    function saveAssignment() {
+      const date = document.getElementById("task-date").value;
+      const repeat = document.getElementById("repeat").value;
+      const target = document.getElementById("target").value;
+      const tasks = Array.from(document.querySelectorAll("#task-list input"))
+                         .map(i => i.value)
+                         .filter(t => t.trim() !== "");
+      if(tasks.length === 0){
+        alert("과제를 한 개 이상 입력하세요.");
+        return;
+      }
+      const students = target === "selected"
+        ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
+        : ["전체"];
+
+      const data = { tasks, repeat, students };
+      localStorage.setItem("teacherTasks-" + date, JSON.stringify(data));
+      alert("저장되었습니다!");
+      loadSavedTasks();
+      renderStudentStatus();
+      renderCalendar();
+    }
+
+    // 저장된 과제 목록 로드 및 화면 표시
+    function loadSavedTasks() {
+      const container = document.getElementById("task-storage");
+      const filter = document.getElementById("filter-date").value;
+      container.innerHTML = "";
+
+      const assignments = loadAssignmentsFromStorage();
+
+      assignments.forEach(({ date, tasks, students, repeat }) => {
+        if (filter && filter !== date) return;
+
+        const div = document.createElement("div");
+        div.className = "saved-item";
+        div.innerHTML = `<strong>${date}</strong> | 대상: ${students.join(", ")}<br>
+          📌 ${tasks.join(", ")}<br>
+          🔁 반복: ${repeat}<br>
+          <button onclick="copyTask('teacherTasks-${date}')">📄 복사</button>
+          <button onclick="deleteTask('teacherTasks-${date}')">❌ 삭제</button>`;
+        container.appendChild(div);
+      });
+    }
+
+    function deleteTask(key) {
+      if (confirm("삭제하시겠습니까?")) {
+        localStorage.removeItem(key);
+        loadSavedTasks();
+        renderStudentStatus();
+        renderCalendar();
+      }
+    }
+
+    function copyTask(key) {
+      const data = JSON.parse(localStorage.getItem(key));
+      const taskList = document.getElementById("task-list");
+      taskList.innerHTML = "";
+      data.tasks.forEach(task => {
+        const div = document.createElement("div");
+        div.className = "task-input";
+        div.innerHTML = `<input type="text" value="${task}" /><button onclick="removeTask(this)">⊖</button>`;
+        taskList.appendChild(div);
+      });
+      document.getElementById("task-date").value = key.replace("teacherTasks-", "");
+      document.getElementById("repeat").value = data.repeat;
+      document.getElementById("target").value = data.students.length === 3 ? "all" : "selected";
+      document.getElementById("student-checkboxes").style.display = (document.getElementById("target").value === "selected") ? "block" : "none";
+
+      // 학생 체크박스 상태도 맞춤
+      const checkboxes = document.querySelectorAll("#student-checkboxes input");
+      checkboxes.forEach(cb => {
+        cb.checked = data.students.includes(cb.value);
+      });
+    }
+
+    // 학생별 과제 완료 현황 렌더링 (완료/미완료 정보는 임시로 '미완료'로 표시, 실제 완료 정보는 추후 연동 필요)
+    function renderStudentStatus() {
+      const container = document.getElementById("student-status-container");
+      container.innerHTML = "";
+
+      const assignments = loadAssignmentsFromStorage();
+      if(assignments.length === 0){
+        container.innerHTML = "<p>저장된 과제가 없습니다.</p>";
+        return;
+      }
+
+      // 학생 목록 - 필요 시 수정하세요
+      const students = ["학생1", "학생2", "학생3"];
+
+      students.forEach(student => {
+        const studentDiv = document.createElement("div");
+        studentDiv.innerHTML = `<strong>👤 ${student}</strong>`;
+
+        assignments.forEach(({ tasks, students: assignedStudents }) => {
+          // 전체 학생 대상이거나 해당 학생이 포함된 경우 과제 표시
+          if (assignedStudents.includes("전체") || assignedStudents.includes(student)) {
+            tasks.forEach(task => {
+              const taskDiv = document.createElement("div");
+              // 완료 상태는 localStorage 등과 연동해서 실제 구현해야 합니다.
+              taskDiv.className = "task-undone"; // 기본 미완료 상태
+              taskDiv.textContent = task;
+              studentDiv.appendChild(taskDiv);
+            });
+          }
+        });
+
+        container.appendChild(studentDiv);
+      });
+    }
+
+    // 달력 그리기
     function renderCalendar() {
       const tbody = document.getElementById("calendar-body");
-      tbody.innerHTML = '';
+      tbody.innerHTML = "";
 
+      const assignments = loadAssignmentsFromStorage();
+
+      const today = new Date();
       const year = today.getFullYear();
       const month = today.getMonth();
 
@@ -246,28 +349,35 @@ function saveAssignment() {
 
       const lastDate = new Date(year, month + 1, 0).getDate();
 
-      let html = '<tr>';
+      let html = "<tr>";
 
-      for (let i = 0; i < startDay; i++) {
-        html += '<td></td>';
+      for(let i = 0; i < startDay; i++) {
+        html += "<td></td>";
       }
 
-      for (let day = 1; day <= lastDate; day++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const taskTitles = assignments.filter(a => a.date === dateStr).map(a => a.title);
-        const taskHtml = taskTitles.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join('');
-        html += `<td><strong>${day}</strong>${taskHtml}</td>`;
+      for(let day = 1; day <= lastDate; day++) {
+        const dateStr = `${year}-${String(month+1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const taskTitles = assignments.filter(a => a.date === dateStr).flatMap(a => a.tasks);
+        const tasksHtml = taskTitles.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join("");
+        html += `<td><strong>${day}</strong>${tasksHtml}</td>`;
 
-        if ((startDay + day) % 7 === 0) {
-          html += '</tr><tr>';
+        if((startDay + day) % 7 === 0) {
+          html += "</tr><tr>";
         }
       }
 
-      html += '</tr>';
+      html += "</tr>";
       tbody.innerHTML = html;
     }
 
-    showList(); // 초기 화면은 과제 목록 보이게
+    // 초기 로드 시 과제 목록, 학생 상태, 달력 그리기
+    loadSavedTasks();
+    renderStudentStatus();
+    renderCalendar();
+
+    // 초기 날짜 설정
+    document.getElementById("task-date").value = new Date().toISOString().slice(0,10);
+
   </script>
 </body>
 </html>
