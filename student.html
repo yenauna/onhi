@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>오늘 할 일 (학생용)</title>
+  <meta charset="UTF-8" />
+  <title>오늘 할 일 (학생용) - 로그인 포함</title>
   <style>
     body {
       font-family: sans-serif;
@@ -11,19 +11,13 @@
       padding: 20px;
       background: #fff;
       color: #000;
-    }
-    h2 {
       text-align: center;
-      color: #000;
     }
-    .schedule {
-      background: #e0e0e0;
-      padding: 10px;
-      margin-bottom: 20px;
-      border-left: 5px solid #00BFFF;
-    }
-    #todo-container {
-      text-align: center;
+    #login-box, #task-box {
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 30px;
     }
     .task-box {
       width: 45%;
@@ -35,83 +29,145 @@
       border-radius: 20px;
       background-color: #f6c1c1;
       font-size: 20px;
-      text-align: center;
       cursor: pointer;
+      user-select: none;
     }
     .task-box.done {
       background-color: transparent;
       color: #999;
       border: 2px solid #ccc;
     }
+    input, select, button {
+      font-size: 16px;
+      padding: 8px;
+      margin: 8px 0;
+      width: 200px;
+    }
+    button {
+      cursor: pointer;
+    }
+    #error-msg {
+      color: red;
+      height: 18px;
+      margin-bottom: 10px;
+    }
+    #today-date {
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-  <h2 id="today-date"></h2>
-  <!-- 학생 선택 추가 -->
-<label for="student-select">학생 선택: </label>
-<select id="student-select">
-  <option value="학생1">학생1</option>
-  <option value="학생2">학생2</option>
-  <option value="학생3">학생3</option>
-</select>
-  <div class="schedule" id="schedule">
-    🗓️ 일정: 영어 단어 시험, 체육 시간 준비물 챙기기
+  <h2>학생 로그인</h2>
+  <div id="login-box">
+    <div>
+      <label for="student-select-login">학생 선택: </label><br />
+      <select id="student-select-login">
+        <option value="">-- 선택하세요 --</option>
+        <option value="학생1">학생1</option>
+        <option value="학생2">학생2</option>
+        <option value="학생3">학생3</option>
+      </select>
+    </div>
+    <div>
+      <label for="password">비밀번호 입력: </label><br />
+      <input type="password" id="password" placeholder="비밀번호 4자리" maxlength="4" />
+    </div>
+    <div id="error-msg"></div>
+    <button id="login-btn">로그인</button>
   </div>
-  <div id="todo-container"></div>
+
+  <div id="task-box" style="display:none;">
+    <h2 id="today-date"></h2>
+    <div id="todo-container"></div>
+    <button id="logout-btn" style="margin-top: 20px;">로그아웃</button>
+  </div>
+
   <script>
-  const todayElem = document.getElementById('today-date');
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  todayElem.textContent = `${yyyy}-${mm}-${dd} 할 일`;
     const data = {
-  tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출", "국어 공책 준비", "급식 점검표 작성"]
-};
+      tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출", "국어 공책 준비", "급식 점검표 작성"]
+    };
 
-const container = document.getElementById("todo-container");
-const studentSelect = document.getElementById("student-select");
+    const passwords = {
+      "학생1": "0000",
+      "학생2": "0000",
+      "학생3": "0000"
+    };
 
-let currentStudent = studentSelect.value;
+    const loginBox = document.getElementById("login-box");
+    const taskBox = document.getElementById("task-box");
+    const studentSelectLogin = document.getElementById("student-select-login");
+    const passwordInput = document.getElementById("password");
+    const errorMsg = document.getElementById("error-msg");
+    const todoContainer = document.getElementById("todo-container");
+    const todayDate = document.getElementById("today-date");
+    const logoutBtn = document.getElementById("logout-btn");
 
-// localStorage에서 학생별 완료 상태 가져오기
-function getDoneTasks(student) {
-  return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
-}
+    let currentStudent = null;
 
-// 완료 상태 저장하기
-function setDoneTasks(student, doneTasks) {
-  localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
-}
+    function getDoneTasks(student) {
+      return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
+    }
 
-// 할 일 렌더링 함수
-function renderTasks() {
-  currentStudent = studentSelect.value;
-  container.innerHTML = "";
-  const doneTasks = getDoneTasks(currentStudent);
+    function setDoneTasks(student, doneTasks) {
+      localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
+    }
 
-  data.tasks.forEach(taskName => {
-    const done = doneTasks[taskName] === true;
-    const box = document.createElement("div");
-    box.className = "task-box" + (done ? " done" : "");
-    box.textContent = taskName;
-    box.onclick = () => {
-      doneTasks[taskName] = !done;
-      setDoneTasks(currentStudent, doneTasks);
+    function renderTasks() {
+      todoContainer.innerHTML = "";
+      const doneTasks = getDoneTasks(currentStudent);
+
+      data.tasks.forEach(taskName => {
+        const done = doneTasks[taskName] === true;
+        const box = document.createElement("div");
+        box.className = "task-box" + (done ? " done" : "");
+        box.textContent = taskName;
+        box.onclick = () => {
+          doneTasks[taskName] = !done;
+          setDoneTasks(currentStudent, doneTasks);
+          renderTasks();
+        };
+        todoContainer.appendChild(box);
+      });
+    }
+
+    function updateTodayDate() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      todayDate.textContent = `${yyyy}-${mm}-${dd} 할 일`;
+    }
+
+    document.getElementById("login-btn").onclick = () => {
+      const selected = studentSelectLogin.value;
+      const pw = passwordInput.value;
+      if (!selected) {
+        errorMsg.textContent = "학생을 선택하세요.";
+        return;
+      }
+      if (pw !== passwords[selected]) {
+        errorMsg.textContent = "비밀번호가 틀렸습니다.";
+        return;
+      }
+      currentStudent = selected;
+      errorMsg.textContent = "";
+      loginBox.style.display = "none";
+      taskBox.style.display = "block";
+      passwordInput.value = "";
+      updateTodayDate();
       renderTasks();
     };
-    container.appendChild(box);
-  });
-}
 
-// 학생 선택 변경 이벤트
-studentSelect.addEventListener("change", () => {
-  currentStudent = studentSelect.value;
-  renderTasks();
-});
-
-renderTasks();
-
+    logoutBtn.onclick = () => {
+      currentStudent = null;
+      loginBox.style.display = "block";
+      taskBox.style.display = "none";
+      studentSelectLogin.value = "";
+      passwordInput.value = "";
+      errorMsg.textContent = "";
+      todoContainer.innerHTML = "";
+      todayDate.textContent = "";
+    };
   </script>
 </body>
 </html>
