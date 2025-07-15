@@ -60,28 +60,51 @@
   <div id="todo-container"></div>
   <script>
     const data = {
-      tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출", "국어 공책 준비", "급식 점검표 작성"]
+  tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출", "국어 공책 준비", "급식 점검표 작성"]
+};
+
+const container = document.getElementById("todo-container");
+const studentSelect = document.getElementById("student-select");
+
+let currentStudent = studentSelect.value;
+
+// localStorage에서 학생별 완료 상태 가져오기
+function getDoneTasks(student) {
+  return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
+}
+
+// 완료 상태 저장하기
+function setDoneTasks(student, doneTasks) {
+  localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
+}
+
+// 할 일 렌더링 함수
+function renderTasks() {
+  container.innerHTML = "";
+  const doneTasks = getDoneTasks(currentStudent);
+
+  data.tasks.forEach(taskName => {
+    const done = doneTasks[taskName] === true;
+    const box = document.createElement("div");
+    box.className = "task-box" + (done ? " done" : "");
+    box.textContent = taskName;
+    box.onclick = () => {
+      doneTasks[taskName] = !done;
+      setDoneTasks(currentStudent, doneTasks);
+      renderTasks();
     };
-    const container = document.getElementById("todo-container");
+    container.appendChild(box);
+  });
+}
 
-    function renderTasks() {
-      container.innerHTML = '';
-      const undone = tasks.filter(t => !t.done);
-      const done = tasks.filter(t => t.done);
-      [...undone, ...done].forEach(task => {
-        const box = document.createElement("div");
-        box.className = "task-box" + (task.done ? " done" : "");
-        box.textContent = task.name;
-        box.onclick = () => {
-          task.done = !task.done;
-          renderTasks();
-        };
-        container.appendChild(box);
-      });
-    }
+// 학생 선택 변경 이벤트
+studentSelect.addEventListener("change", () => {
+  currentStudent = studentSelect.value;
+  renderTasks();
+});
 
-    const tasks = data.tasks.map(name => { return { name: name, done: false } });
-    renderTasks();
+renderTasks();
+
   </script>
 </body>
 </html>
