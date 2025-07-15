@@ -105,7 +105,9 @@
         return;
       }
       errorMsg.textContent = "";
-      location.href = `student.html?student=${encodeURIComponent(selected)}`;
+      // 로그인 성공 시 localStorage에 저장
+      localStorage.setItem('currentStudent', selected);
+      location.href = 'student.html';  // 쿼리 없이 이동
     };
   </script>
 </body>
