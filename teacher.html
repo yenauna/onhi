@@ -195,6 +195,25 @@
   </div>
 
   <script>
+function saveAssignment() {
+  const date = document.getElementById("task-date").value;
+  const repeat = document.getElementById("repeat").value;
+  const target = document.getElementById("target").value;
+  const tasks = Array.from(document.querySelectorAll("#task-list input"))
+                     .map(i => i.value)
+                     .filter(t => t.trim() !== "");
+  const students = target === "selected"
+    ? Array.from(document.querySelectorAll("#student-checkboxes input:checked"))
+           .map(cb => cb.value)
+    : ["전체"];
+
+  const data = { tasks, repeat, students };
+  localStorage.setItem("teacherTasks-" + date, JSON.stringify(data));
+  alert("저장되었습니다!");
+  loadSavedTasks();  // 저장 후 목록 갱신
+}
+
+    
     function showList() {
       document.getElementById("teacher-list").style.display = 'block';
       document.getElementById("calendar").style.display = 'none';
