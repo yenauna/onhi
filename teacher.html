@@ -4,6 +4,22 @@
   <meta charset="UTF-8">
   <title>과제 배정 (교사용)</title>
   <style>
+    header {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 5px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    #logo {
+      width: 50px;
+      height: auto;
+      cursor: pointer;
+      display: block;
+    }
     body {
       font-family: sans-serif;
       max-width: 700px;
@@ -11,6 +27,7 @@
       padding: 20px;
       border: 1px solid #ccc;
       border-radius: 12px;
+      padding-top: 80px; /* 로고 공간 확보 */
     }
     h2 {
       text-align: center;
@@ -47,8 +64,6 @@
       padding: 4px;
       margin: 6px 0;
     }
-  </style>
-<style>
     .toggle-buttons {
       display: flex;
       justify-content: center;
@@ -77,9 +92,13 @@
       padding: 4px;
       font-size: 14px;
     }
-    </style>
+  </style>
 </head>
 <body>
+  <header>
+    <img src="logo.png" alt="오늘 할 일 로고" id="logo" />
+  </header>
+
   <div class="toggle-buttons">
     <button onclick="showList()">과제 목록 보기</button>
     <button onclick="showCalendar()">달력 보기</button>
@@ -313,91 +332,5 @@
     
     showList();
   </script>
-
-  </div>
-  <div class="calendar" id="calendar" style="display: none;">
-    <table>
-      <thead>
-        <tr>
-          <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body"></tbody>
-    </table>
-  </div>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const teacherList = document.getElementById("teacher-list");
-      const calendar = document.getElementById("calendar");
-
-      function showList() {
-        teacherList.style.display = 'block';
-        calendar.style.display = 'none';
-      }
-
-      function showCalendar() {
-        teacherList.style.display = 'none';
-        calendar.style.display = 'block';
-      }
-
-      window.showList = showList;
-      window.showCalendar = showCalendar;
-
-      const today = new Date();
-      function renderCalendar() {
-        const tbody = document.getElementById("calendar-body");
-        tbody.innerHTML = '';
-        const year = today.getFullYear();
-        const month = today.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const startDay = firstDay.getDay();
-        const lastDate = new Date(year, month + 1, 0).getDate();
-        let html = '<tr>';
-        for (let i = 0; i < startDay; i++) {
-          html += '<td></td>';
-        }
-        for (let day = 1; day <= lastDate; day++) {
-          html += `<td>${day}</td>`;
-          if ((startDay + day) % 7 === 0) html += '</tr><tr>';
-        }
-        html += '</tr>';
-        tbody.innerHTML = html;
-      }
-
-      
-      const assignments = [{"title": "수학 100쪽 풀기", "date": "2025-07-09"}, {"title": "글쓰기 1회", "date": "2025-07-10"}, {"title": "책 읽기", "date": "2025-07-10"}, {"title": "과학 준비물 챙기기", "date": "2025-07-11"}];
-      function renderCalendar() {
-        const tbody = document.getElementById("calendar-body");
-        tbody.innerHTML = '';
-        const year = today.getFullYear();
-        const month = today.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const startDay = firstDay.getDay();
-        const lastDate = new Date(year, month + 1, 0).getDate();
-
-        let html = '<tr>';
-        for (let i = 0; i < startDay; i++) {
-          html += '<td></td>';
-        }
-        for (let day = 1; day <= lastDate; day++) {
-          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const taskTitles = assignments.filter(a => a.date === dateStr).map(a => a.title);
-          const taskHtml = taskTitles.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join('');
-          html += `<td><strong>${day}</strong>${taskHtml}</td>`;
-          if ((startDay + day) % 7 === 0) html += '</tr><tr>';
-        }
-        html += '</tr>';
-        tbody.innerHTML = html;
-      }
-
-      renderCalendar();
-    
-      showList();
-    });
-  </script>
 </body>
-</html>
-
-</html>
-
 </html>
