@@ -46,7 +46,7 @@
   </style>
 </head>
 <body>
-  <h2 id="today-date">2025-07-08 할 일</h2>
+  <h2 id="today-date"></h2>
   <!-- 학생 선택 추가 -->
 <label for="student-select">학생 선택: </label>
 <select id="student-select">
@@ -59,6 +59,12 @@
   </div>
   <div id="todo-container"></div>
   <script>
+  const todayElem = document.getElementById('today-date');
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  todayElem.textContent = `${yyyy}-${mm}-${dd} 할 일`;
     const data = {
   tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출", "국어 공책 준비", "급식 점검표 작성"]
 };
