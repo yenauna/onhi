@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>오늘 할 일 - 메인</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #fff;
+      color: #000;
+      text-align: center;
+      position: relative;
+    }
+    header {
+      margin-bottom: 30px;
+    }
+    #logo {
+      width: 80px;
+      height: auto;
+      cursor: pointer;
+    }
+    #teacher-link {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      font-size: 12px;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+    }
+    #login-box {
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 350px;
+      margin: 0 auto;
+      text-align: left;
+    }
+    #login-box label, #login-box select, #login-box input, #login-box button {
+      display: block;
+      width: 100%;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    #login-box button {
+      cursor: pointer;
+      padding: 10px 0;
+    }
+    #error-msg {
+      color: red;
+      height: 18px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+  </style>
+
+  <!-- Firebase SDK 스크립트들 -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
+
+  <script>
+    // Firebase 초기화
+    const firebaseConfig = {
+      apiKey: "AIzaSyBWmCRHoFnnn_HyHYp0TWuJRnKgB_7kJgU",
+      authDomain: "onhi-6de81.firebaseapp.com",
+      databaseURL: "https://onhi-6de81-default-rtdb.firebaseio.com",
+      projectId: "onhi-6de81",
+      storageBucket: "onhi-6de81.appspot.com",
+      messagingSenderId: "310201424943",
+      appId: "1:310201424943:web:6deddd14d47cf62df2fada"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="오늘 할 일 로고" id="logo" onclick="location.href='index.html';" />
+  </header>
+
+  <div id="teacher-link" onclick="location.href='teacher.html';" title="교사용 화면 바로가기">교사용</div>
+
+  <h2>학생 로그인</h2>
+  <div id="login-box">
+    <label for="student-select-login">학생 선택:</label>
+    <select id="student-select-login">
+      <option value="">-- 선택하세요 --</option>
+      <option value="학생1">학생1</option>
+      <option value="학생2">학생2</option>
+      <option value="학생3">학생3</option>
+    </select>
+
+    <label for="password">비밀번호 입력:</label>
+    <input type="password" id="password" placeholder="비밀번호 4자리" maxlength="4" />
+
+    <div id="error-msg"></div>
+    <button id="login-btn">로그인</button>
+  </div>
+
+  <script>
+    const passwords = {
+      "학생1": "0000",
+      "학생2": "0000",
+      "학생3": "0000"
+    };
+
+    const loginBtn = document.getElementById("login-btn");
+    const studentSelectLogin = document.getElementById("student-select-login");
+    const passwordInput = document.getElementById("password");
+    const errorMsg = document.getElementById("error-msg");
+
+    loginBtn.onclick = () => {
+      const selected = studentSelectLogin.value;
+      const pw = passwordInput.value;
+      if (!selected) {
+        errorMsg.textContent = "학생을 선택하세요.";
+        return;
+      }
+      if (pw !== passwords[selected]) {
+        errorMsg.textContent = "비밀번호가 틀렸습니다.";
+        return;
+      }
+      errorMsg.textContent = "";
+      // 로그인 성공 시 localStorage에 저장
+      localStorage.setItem('currentStudent', selected);
+      location.href = 'student.html';  // 쿼리 없이 이동
+    };
+  </script>
+</body>
+</html>
