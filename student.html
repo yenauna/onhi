@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>오늘 할 일 (학생용)</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
+
   <style>
     header {
       position: fixed;
@@ -79,31 +84,55 @@
 </div>
 
 <script>
-  // 임시 과제 데이터 - 나중에 Firebase에서 불러오게 변경 예정
-  const data = {
-    tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출", "국어 공책 준비", "급식 점검표 작성"]
+  // Firebase 초기화
+  const firebaseConfig = {
+    apiKey: "AIzaSyBWmCRHoFnnn_HyHYp0TWuJRnKgB_7kJgU",
+    authDomain: "onhi-6de81.firebaseapp.com",
+    databaseURL: "https://onhi-6de81-default-rtdb.firebaseio.com",
+    projectId: "onhi-6de81",
+    storageBucket: "onhi-6de81.appspot.com",
+    messagingSenderId: "310201424943",
+    appId: "1:310201424943:web:6deddd14d47cf62df2fada"
   };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+
+  let currentStudent = null;
 
   const taskBox = document.getElementById("task-box");
   const todoContainer = document.getElementById("todo-container");
   const todayDate = document.getElementById("today-date");
   const logoutBtn = document.getElementById("logout-btn");
 
-  let currentStudent = null;
-
-  function getDoneTasks(student) {
-    return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
+  function updateTodayDate() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    todayDate.textContent = `${yyyy}-${mm}-${dd} 할 일 - ${currentStudent}`;
   }
 
+  // 학생별 완료된 과제 상태를 Firebase에서 불러오기
+  async function getDoneTasks(student) {
+    const snapshot = await firebase.database().ref('doneTasks/' + student).once('value');
+    return snapshot.val() || {};
+  }
+
+  // 완료 상태를 Firebase에 저장
   function setDoneTasks(student, doneTasks) {
-    localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
+    firebase.database().ref('doneTasks/' + student).set(doneTasks);
   }
 
-  function renderTasks() {
+  async function renderTasks() {
     todoContainer.innerHTML = "";
-    const doneTasks = getDoneTasks(currentStudent);
+    const doneTasks = await getDoneTasks(currentStudent);
+    // 과제 목록을 Firebase에서 받아옴
+    const tasksSnapshot = await firebase.database().ref('tasks').once('value');
+    const tasksData = tasksSnapshot.val() || [];
+    // tasksData가 배열 혹은 객체일 수 있으니 배열로 처리
+    const tasks = Array.isArray(tasksData) ? tasksData : Object.values(tasksData);
 
-    data.tasks.forEach(taskName => {
+    tasks.forEach(taskName => {
       const done = doneTasks[taskName] === true;
       const box = document.createElement("div");
       box.className = "task-box" + (done ? " done" : "");
@@ -117,21 +146,13 @@
     });
   }
 
-  function updateTodayDate() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    todayDate.textContent = `${yyyy}-${mm}-${dd} 할 일 - ${currentStudent}`;
-  }
-
-  window.onload = () => {
+  window.onload = async () => {
     const savedStudent = localStorage.getItem('currentStudent');
     if (savedStudent) {
       currentStudent = savedStudent;
       taskBox.style.display = "block";
       updateTodayDate();
-      renderTasks();
+      await renderTasks();
     } else {
       // 로그인 안 되어 있으면 메인 페이지로 이동
       location.href = "index.html";
