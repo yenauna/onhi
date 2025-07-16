@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>과제 배정 (교사용)</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"></script>
+
   <style>
     header {
       position: fixed;
@@ -170,6 +175,19 @@
   </div>
 
 <script>
+  // Firebase 초기화
+  const firebaseConfig = {
+    apiKey: "AIzaSyBWmCRHoFnnn_HyHYp0TWuJRnKgB_7kJgU",
+    authDomain: "onhi-6de81.firebaseapp.com",
+    databaseURL: "https://onhi-6de81-default-rtdb.firebaseio.com",
+    projectId: "onhi-6de81",
+    storageBucket: "onhi-6de81.appspot.com",
+    messagingSenderId: "310201424943",
+    appId: "1:310201424943:web:6deddd14d47cf62df2fada"
+  };
+  const app = firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+
   document.getElementById("target").addEventListener("change", function() {
     const show = this.value === "selected";
     document.getElementById("student-checkboxes").style.display = show ? "block" : "none";
@@ -186,7 +204,7 @@
     btn.parentElement.remove();
   }
 
-  function saveAssignment() {
+  async function saveAssignment() {
     const date = document.getElementById("task-date").value;
     if (!date) {
       alert("과제 날짜를 선택하세요.");
@@ -206,67 +224,84 @@
       : ["전체"];
 
     const data = { tasks, repeat, students };
-    localStorage.setItem("teacherTasks-" + date, JSON.stringify(data));
-    alert("저장되었습니다!");
-    loadSavedTasks();
-    renderCalendar();
-    renderStudentStatus();
+
+    // Firebase에 저장
+    try {
+      await firebase.database().ref('teacherTasks/' + date).set(data);
+      alert("저장되었습니다!");
+      loadSavedTasks();
+      renderCalendar();
+      renderStudentStatus();
+    } catch (error) {
+      alert("저장 중 오류가 발생했습니다: " + error.message);
+    }
   }
 
-  function loadSavedTasks() {
+  async function loadSavedTasks() {
     const container = document.getElementById("task-storage");
     const filter = document.getElementById("filter-date").value;
     container.innerHTML = "";
 
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith("teacherTasks-")) {
-        const date = key.replace("teacherTasks-", "");
-        if (filter && filter !== date) continue;
-        const data = JSON.parse(localStorage.getItem(key));
+    try {
+      const snapshot = await firebase.database().ref('teacherTasks').once('value');
+      const allTasks = snapshot.val() || {};
+
+      Object.entries(allTasks).forEach(([date, data]) => {
+        if (filter && filter !== date) return;
         const div = document.createElement("div");
         div.className = "saved-item";
         div.innerHTML = `<strong>${date}</strong> | 대상: ${data.students.join(", ")}<br>
           📌 ${data.tasks.join(", ")}<br>
           🔁 반복: ${data.repeat}<br>
-          <button onclick="copyTask('${key}')">📄 복사</button>
-          <button onclick="deleteTask('${key}')">❌ 삭제</button>`;
+          <button onclick="copyTask('${date}')">📄 복사</button>
+          <button onclick="deleteTask('${date}')">❌ 삭제</button>`;
         container.appendChild(div);
-      }
+      });
+    } catch (error) {
+      alert("과제 목록 불러오기 중 오류 발생: " + error.message);
     }
   }
 
-  function deleteTask(key) {
-    if (confirm("삭제하시겠습니까?")) {
-      localStorage.removeItem(key);
+  async function deleteTask(date) {
+    if (!confirm("삭제하시겠습니까?")) return;
+
+    try {
+      await firebase.database().ref('teacherTasks/' + date).remove();
       loadSavedTasks();
       renderCalendar();
       renderStudentStatus();
+    } catch (error) {
+      alert("삭제 중 오류가 발생했습니다: " + error.message);
     }
   }
 
-  function copyTask(key) {
-    const data = JSON.parse(localStorage.getItem(key));
-    const taskList = document.getElementById("task-list");
-    taskList.innerHTML = "";
-    data.tasks.forEach(task => {
-      const div = document.createElement("div");
-      div.className = "task-input";
-      div.innerHTML = `<input type="text" value="${task}" /><button onclick="removeTask(this)">⊖</button>`;
-      taskList.appendChild(div);
-    });
-    document.getElementById("task-date").value = key.replace("teacherTasks-", "");
-    document.getElementById("repeat").value = data.repeat;
-    document.getElementById("target").value = data.students.includes("전체") ? "all" : "selected";
-    document.getElementById("student-checkboxes").style.display = data.students.includes("전체") ? "none" : "block";
-    if (!data.students.includes("전체")) {
-      document.querySelectorAll("#student-checkboxes input").forEach(input => {
-        input.checked = data.students.includes(input.value);
+  async function copyTask(date) {
+    try {
+      const snapshot = await firebase.database().ref('teacherTasks/' + date).once('value');
+      const data = snapshot.val();
+      const taskList = document.getElementById("task-list");
+      taskList.innerHTML = "";
+      data.tasks.forEach(task => {
+        const div = document.createElement("div");
+        div.className = "task-input";
+        div.innerHTML = `<input type="text" value="${task}" /><button onclick="removeTask(this)">⊖</button>`;
+        taskList.appendChild(div);
       });
+      document.getElementById("task-date").value = date;
+      document.getElementById("repeat").value = data.repeat;
+      document.getElementById("target").value = data.students.includes("전체") ? "all" : "selected";
+      document.getElementById("student-checkboxes").style.display = data.students.includes("전체") ? "none" : "block";
+      if (!data.students.includes("전체")) {
+        document.querySelectorAll("#student-checkboxes input").forEach(input => {
+          input.checked = data.students.includes(input.value);
+        });
+      }
+    } catch (error) {
+      alert("복사 중 오류가 발생했습니다: " + error.message);
     }
   }
 
-  function renderCalendar() {
+  async function renderCalendar() {
     const tbody = document.getElementById("calendar-body");
     tbody.innerHTML = "";
 
@@ -279,15 +314,14 @@
 
     const lastDate = new Date(year, month + 1, 0).getDate();
 
-    // 모든 저장된 과제 불러오기
     let allAssignments = [];
-    for(let i=0; i<localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if(key.startsWith("teacherTasks-")) {
-        const date = key.replace("teacherTasks-", "");
-        const data = JSON.parse(localStorage.getItem(key));
-        // 날짜 반복 처리
-        if(data.repeat === "daily") {
+
+    try {
+      const snapshot = await firebase.database().ref('teacherTasks').once('value');
+      const allTasks = snapshot.val() || {};
+
+      for (const [date, data] of Object.entries(allTasks)) {
+        if (data.repeat === "daily") {
           for(let d=1; d<=lastDate; d++) {
             allAssignments.push({date: `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, tasks: data.tasks});
           }
@@ -303,10 +337,11 @@
           allAssignments.push({date: date, tasks: data.tasks});
         }
       }
+    } catch(error) {
+      alert("달력 데이터 불러오기 오류: " + error.message);
     }
 
     let html = "<tr>";
-
     for(let i=0; i<startDay; i++) {
       html += "<td></td>";
     }
@@ -327,24 +362,21 @@
     tbody.innerHTML = html;
   }
 
-  function renderStudentStatus() {
+  async function renderStudentStatus() {
     const container = document.getElementById("student-status-list");
     container.innerHTML = "";
 
-    // 학생 이름 리스트
     const students = ["학생1", "학생2", "학생3"];
-
-    // 모든 저장된 과제 불러오기
     let allAssignments = [];
-    for(let i=0; i<localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if(key.startsWith("teacherTasks-")) {
-        const data = JSON.parse(localStorage.getItem(key));
-        allAssignments.push(data);
-      }
+
+    try {
+      const snapshot = await firebase.database().ref('teacherTasks').once('value');
+      const allTasks = snapshot.val() || {};
+      allAssignments = Object.values(allTasks);
+    } catch(error) {
+      alert("학생별 과제 상태 불러오기 오류: " + error.message);
     }
 
-    // 학생별로 과제 완료 상태 확인해서 보여주기
     students.forEach(student => {
       const div = document.createElement("div");
       div.style.border = "2px solid #aaa";
@@ -354,13 +386,8 @@
 
       div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
 
-      // 모든 과제 중 학생이 해당 과제를 받았는지 체크 후 완료 여부에 따라 색상 표시
       allAssignments.forEach(assign => {
         let tasks = assign.tasks;
-        let repeat = assign.repeat;
-        let date = assign.date;
-
-        // 학생이 할당된 대상인지 확인 (전체 or 학생명)
         let assigned = assign.students.includes("전체") || assign.students.includes(student);
 
         tasks.forEach(task => {
