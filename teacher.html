@@ -204,38 +204,38 @@
     btn.parentElement.remove();
   }
 
-  async function saveAssignment() {
-    const date = document.getElementById("task-date").value;
-    if (!date) {
-      alert("과제 날짜를 선택하세요.");
-      return;
-    }
-    const repeat = document.getElementById("repeat").value;
-    const target = document.getElementById("target").value;
-    const tasks = Array.from(document.querySelectorAll("#task-list input"))
-      .map(i => i.value.trim())
-      .filter(t => t !== "");
-    if (tasks.length === 0) {
-      alert("과제를 하나 이상 입력하세요.");
-      return;
-    }
-    const students = target === "selected"
-      ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
-      : ["전체"];
-
-    const data = { tasks, repeat, students };
-
-    // Firebase에 저장
-    try {
-      await firebase.database().ref('teacherTasks/' + date).set(data);
-      alert("저장되었습니다!");
-      loadSavedTasks();
-      renderCalendar();
-      renderStudentStatus();
-    } catch (error) {
-      alert("저장 중 오류가 발생했습니다: " + error.message);
-    }
+async function saveAssignment() {
+  const date = document.getElementById("task-date").value;
+  if (!date) {
+    alert("과제 날짜를 선택하세요.");
+    return;
   }
+  const repeat = document.getElementById("repeat").value;
+  const target = document.getElementById("target").value;
+  const tasks = Array.from(document.querySelectorAll("#task-list input"))
+    .map(i => i.value.trim())
+    .filter(t => t !== "");
+  if (tasks.length === 0) {
+    alert("과제를 하나 이상 입력하세요.");
+    return;
+  }
+  const students = target === "selected"
+    ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
+    : ["전체"];
+
+  const data = { tasks, repeat, students };
+
+  try {
+    await firebase.database().ref('teacherTasks/' + date).set(data);
+    alert("저장되었습니다!");
+    loadSavedTasks();
+    renderCalendar();
+    renderStudentStatus();
+  } catch (error) {
+    alert("저장 중 오류가 발생했습니다: " + error.message);
+  }
+}
+
 
   async function loadSavedTasks() {
     const container = document.getElementById("task-storage");
