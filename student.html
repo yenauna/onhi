@@ -79,6 +79,7 @@
 </div>
 
 <script>
+  // 임시 과제 데이터 - 나중에 Firebase에서 불러오게 변경 예정
   const data = {
     tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출", "국어 공책 준비", "급식 점검표 작성"]
   };
@@ -124,7 +125,6 @@
     todayDate.textContent = `${yyyy}-${mm}-${dd} 할 일 - ${currentStudent}`;
   }
 
-  // 페이지 로드 시 localStorage에서 학생 정보 불러오기
   window.onload = () => {
     const savedStudent = localStorage.getItem('currentStudent');
     if (savedStudent) {
