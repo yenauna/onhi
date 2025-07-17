@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>오늘 할 일 (학생용)</title>
-
   <style>
     header {
       position: fixed;
@@ -54,6 +53,7 @@
       background-color: transparent;
       color: #999;
       border: 2px solid #ccc;
+      text-decoration: line-through;
     }
     #today-date {
       margin-bottom: 20px;
@@ -78,43 +78,14 @@
 </div>
 
 <script>
-  const data = {
-    tasks: ["청소", "수학 100쪽 ~ 110쪽", "과학 교과서 제출", "국어 공책 준비", "급식 점검표 작성"]
-  };
+  let currentStudent = null;
 
   const taskBox = document.getElementById("task-box");
   const todoContainer = document.getElementById("todo-container");
   const todayDate = document.getElementById("today-date");
   const logoutBtn = document.getElementById("logout-btn");
 
-  let currentStudent = null;
-
-  function getDoneTasks(student) {
-    return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
-  }
-
-  function setDoneTasks(student, doneTasks) {
-    localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
-  }
-
-  function renderTasks() {
-    todoContainer.innerHTML = "";
-    const doneTasks = getDoneTasks(currentStudent);
-
-    data.tasks.forEach(taskName => {
-      const done = doneTasks[taskName] === true;
-      const box = document.createElement("div");
-      box.className = "task-box" + (done ? " done" : "");
-      box.textContent = taskName;
-      box.onclick = () => {
-        doneTasks[taskName] = !done;
-        setDoneTasks(currentStudent, doneTasks);
-        renderTasks();
-      };
-      todoContainer.appendChild(box);
-    });
-  }
-
+  // 오늘 날짜 표시
   function updateTodayDate() {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -123,6 +94,61 @@
     todayDate.textContent = `${yyyy}-${mm}-${dd} 할 일 - ${currentStudent}`;
   }
 
+  // 저장된 과제 읽기
+  function getTasksForToday() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    const key = "teacherTasks-" + todayStr;
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    try {
+      const data = JSON.parse(raw);
+      // 학생이 대상인지 확인
+      if (!data.students.includes("전체") && !data.students.includes(currentStudent)) return [];
+      return data.tasks || [];
+    } catch {
+      return [];
+    }
+  }
+
+  // 완료 상태 읽기/저장
+  function getDoneTasks() {
+    return JSON.parse(localStorage.getItem("doneTasks-" + currentStudent) || "{}");
+  }
+
+  function setDoneTasks(doneTasks) {
+    localStorage.setItem("doneTasks-" + currentStudent, JSON.stringify(doneTasks));
+  }
+
+  // 할 일 그리기
+  function renderTasks() {
+    todoContainer.innerHTML = "";
+    const tasks = getTasksForToday();
+    if (tasks.length === 0) {
+      todoContainer.textContent = "오늘 할 일이 없습니다.";
+      return;
+    }
+    const doneTasks = getDoneTasks();
+
+    tasks.forEach(task => {
+      const done = doneTasks[task] === true;
+      const box = document.createElement("div");
+      box.className = "task-box" + (done ? " done" : "");
+      box.textContent = task;
+      box.onclick = () => {
+        doneTasks[task] = !done;
+        setDoneTasks(doneTasks);
+        renderTasks();
+      };
+      todoContainer.appendChild(box);
+    });
+  }
+
+  // 로딩 시 로그인 상태 확인 및 화면 표시
   window.onload = () => {
     const savedStudent = localStorage.getItem('currentStudent');
     if (savedStudent) {
@@ -131,7 +157,7 @@
       updateTodayDate();
       renderTasks();
     } else {
-      location.href = "index.html";
+      location.href = "index.html"; // 로그인 안 되면 메인으로
     }
   };
 
