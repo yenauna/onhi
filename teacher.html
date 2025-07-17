@@ -1,175 +1,3 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <title>과제 배정 (교사용)</title>
-
-  <style>
-    header {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 5px;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-    #logo {
-      width: 50px;
-      height: auto;
-      cursor: pointer;
-      display: block;
-    }
-    body {
-      font-family: sans-serif;
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding-top: 80px; /* 로고 공간 확보 */
-    }
-    h2 {
-      text-align: center;
-    }
-    section {
-      margin-top: 30px;
-    }
-    .task-input {
-      display: flex;
-      margin-bottom: 10px;
-    }
-    .task-input input {
-      flex: 1;
-      padding: 6px;
-      margin-right: 6px;
-    }
-    .student-checkboxes label {
-      margin-right: 10px;
-      display: inline-block;
-    }
-    .task-list, .saved-tasks, .student-status {
-      margin-top: 20px;
-    }
-    .saved-item, .student-item {
-      border-top: 1px dashed #ccc;
-      padding-top: 8px;
-      margin-top: 10px;
-    }
-    button {
-      margin: 5px 0;
-      padding: 6px 12px;
-      cursor: pointer;
-    }
-    select, input[type="date"] {
-      padding: 4px;
-      margin: 6px 0;
-    }
-    .toggle-buttons {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      gap: 10px;
-    }
-    .toggle-buttons button {
-      padding: 8px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .calendar {
-      display: none;
-    }
-    .calendar table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    .calendar th, .calendar td {
-      border: 1px solid #ccc;
-      width: 14.28%;
-      height: 80px;
-      text-align: left;
-      vertical-align: top;
-      padding: 4px;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <img src="logo.png" alt="오늘 할 일 로고" id="logo" style="cursor:pointer" onclick="location.href='index.html'">
-  </header>
-
-  <div class="toggle-buttons">
-    <button onclick="showList()">과제 목록 보기</button>
-    <button onclick="showCalendar()">달력 보기</button>
-  </div>
-
-  <div id="teacher-list">
-    <h2>📋 과제 배정 (교사용)</h2>
-
-    <section>
-      <label>📅 과제 날짜:</label>
-      <input type="date" id="task-date" />
-
-      <div class="task-list" id="task-list">
-        <div class="task-input">
-          <input type="text" placeholder="할 일 입력" />
-          <button onclick="removeTask(this)">⊖</button>
-        </div>
-      </div>
-      <button onclick="addTask()">+ 할 일 추가</button>
-
-      <label>🔁 반복 설정:</label>
-      <select id="repeat">
-        <option value="none">없음</option>
-        <option value="daily">매일</option>
-        <option value="mon">매주 월요일</option>
-        <option value="tue">매주 화요일</option>
-        <option value="wed">매주 수요일</option>
-        <option value="thu">매주 목요일</option>
-        <option value="fri">매주 금요일</option>
-      </select>
-
-      <label>👥 대상 선택:</label>
-      <select id="target">
-        <option value="all">전체 학생</option>
-        <option value="selected">특정 학생 지정</option>
-      </select>
-
-      <div id="student-checkboxes" class="student-checkboxes" style="display: none;">
-        <label><input type="checkbox" value="학생1" /> 학생1</label>
-        <label><input type="checkbox" value="학생2" /> 학생2</label>
-        <label><input type="checkbox" value="학생3" /> 학생3</label>
-      </div>
-
-      <button onclick="saveAssignment()">💾 저장하기</button>
-    </section>
-
-    <section class="saved-tasks">
-      <h3>📚 저장된 과제 목록</h3>
-      <label>📅 날짜 필터: <input type="date" id="filter-date" onchange="loadSavedTasks()" /></label>
-      <div id="task-storage"></div>
-    </section>
-
-    <section class="student-status">
-      <h3>✅ 학생별 과제 완료 현황</h3>
-      <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;"></div>
-    </section>
-  </div>
-
-  <div class="calendar" id="calendar" style="display:none;">
-    <table>
-      <thead>
-        <tr>
-          <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body"></tbody>
-    </table>
-  </div>
-
 <script>
   document.getElementById("target").addEventListener("change", function() {
     const show = this.value === "selected";
@@ -187,67 +15,59 @@
     btn.parentElement.remove();
   }
 
-async function saveAssignment() {
-  const date = document.getElementById("task-date").value;
-  if (!date) {
-    alert("과제 날짜를 선택하세요.");
-    return;
-  }
-  const repeat = document.getElementById("repeat").value;
-  const target = document.getElementById("target").value;
-  const newTasks = Array.from(document.querySelectorAll("#task-list input"))
-    .map(i => i.value.trim())
-    .filter(t => t !== "");
-  if (newTasks.length === 0) {
-    alert("과제를 하나 이상 입력하세요.");
-    return;
-  }
-  const students = target === "selected"
-    ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
-    : ["전체"];
-
-  // 기존 과제 불러오기 (localStorage 기준)
-  const key = "teacherTasks-" + date;
-  const existingDataRaw = localStorage.getItem(key);
-  let existingData = null;
-  if (existingDataRaw) {
-    try {
-      existingData = JSON.parse(existingDataRaw);
-    } catch {
-      existingData = null;
+  async function saveAssignment() {
+    const date = document.getElementById("task-date").value;
+    if (!date) {
+      alert("과제 날짜를 선택하세요.");
+      return;
     }
+    const repeat = document.getElementById("repeat").value;
+    const target = document.getElementById("target").value;
+    const newTasks = Array.from(document.querySelectorAll("#task-list input"))
+      .map(i => i.value.trim())
+      .filter(t => t !== "");
+    if (newTasks.length === 0) {
+      alert("과제를 하나 이상 입력하세요.");
+      return;
+    }
+    const students = target === "selected"
+      ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
+      : ["전체"];
+
+    const key = "teacherTasks-" + date;
+    const existingDataRaw = localStorage.getItem(key);
+    let existingData = null;
+    if (existingDataRaw) {
+      try {
+        existingData = JSON.parse(existingDataRaw);
+      } catch {
+        existingData = null;
+      }
+    }
+
+    let mergedTasks = [];
+    let mergedStudents = [];
+
+    if (existingData) {
+      mergedTasks = Array.from(new Set(existingData.tasks.concat(newTasks)));
+      mergedStudents = Array.from(new Set(existingData.students.concat(students)));
+    } else {
+      mergedTasks = newTasks;
+      mergedStudents = students;
+    }
+
+    const data = {
+      tasks: mergedTasks,
+      repeat: repeat,
+      students: mergedStudents
+    };
+
+    localStorage.setItem(key, JSON.stringify(data));
+    alert("저장되었습니다!");
+    loadSavedTasks();
+    renderCalendar();
+    renderStudentStatus();
   }
-
-  // 기존 과제가 있으면, 중복 제거하며 합치기
-  let mergedTasks = [];
-  let mergedStudents = [];
-
-  if (existingData) {
-    // 기존 과제와 새로운 과제 합치기(중복 제거)
-    mergedTasks = Array.from(new Set(existingData.tasks.concat(newTasks)));
-
-    // 기존 학생 대상과 새 학생 대상 합치기(중복 제거)
-    mergedStudents = Array.from(new Set(existingData.students.concat(students)));
-
-    // 반복 설정은 새로 입력된 값으로 덮어씀
-  } else {
-    mergedTasks = newTasks;
-    mergedStudents = students;
-  }
-
-  const data = {
-    tasks: mergedTasks,
-    repeat: repeat,
-    students: mergedStudents
-  };
-
-  localStorage.setItem(key, JSON.stringify(data));
-  alert("저장되었습니다!");
-  loadSavedTasks();
-  renderCalendar();
-  renderStudentStatus();
-}
-
 
   function loadSavedTasks() {
     const container = document.getElementById("task-storage");
@@ -265,23 +85,24 @@ async function saveAssignment() {
         div.innerHTML = `<strong>${date}</strong> | 대상: ${data.students.join(", ")}<br>
           📌 ${data.tasks.join(", ")}<br>
           🔁 반복: ${data.repeat}<br>
-          <button onclick="copyTask('${key}')">📄 복사</button>
-          <button onclick="deleteTask('${key}')">❌ 삭제</button>`;
+          <button onclick="copyTask('${date}')">📄 복사</button>
+          <button onclick="deleteTask('${date}')">❌ 삭제</button>`;
         container.appendChild(div);
       }
     }
   }
 
-  function deleteTask(key) {
+  function deleteTask(date) {
     if (!confirm("삭제하시겠습니까?")) return;
-    localStorage.removeItem(key);
+
+    localStorage.removeItem("teacherTasks-" + date);
     loadSavedTasks();
     renderCalendar();
     renderStudentStatus();
   }
 
-  function copyTask(key) {
-    const data = JSON.parse(localStorage.getItem(key));
+  function copyTask(date) {
+    const data = JSON.parse(localStorage.getItem("teacherTasks-" + date));
     const taskList = document.getElementById("task-list");
     taskList.innerHTML = "";
     data.tasks.forEach(task => {
@@ -290,7 +111,7 @@ async function saveAssignment() {
       div.innerHTML = `<input type="text" value="${task}" /><button onclick="removeTask(this)">⊖</button>`;
       taskList.appendChild(div);
     });
-    document.getElementById("task-date").value = key.replace("teacherTasks-", "");
+    document.getElementById("task-date").value = date;
     document.getElementById("repeat").value = data.repeat;
     document.getElementById("target").value = data.students.includes("전체") ? "all" : "selected";
     document.getElementById("student-checkboxes").style.display = data.students.includes("전체") ? "none" : "block";
@@ -316,57 +137,42 @@ async function saveAssignment() {
 
     let allAssignments = [];
 
-    for (let i = 0; i < localStorage.length; i++) {
+    for(let i=0; i<localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key.startsWith("teacherTasks-")) {
+      if(key.startsWith("teacherTasks-")) {
         const date = key.replace("teacherTasks-", "");
         const data = JSON.parse(localStorage.getItem(key));
-        if (data.repeat === "daily") {
-          for (let d = 1; d <= lastDate; d++) {
-            allAssignments.push({
-              date: `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
-              tasks: data.tasks
-            });
+        if(data.repeat === "daily") {
+          for(let d=1; d<=lastDate; d++) {
+            allAssignments.push({date: `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, tasks: data.tasks});
           }
-        } else if (["mon", "tue", "wed", "thu", "fri"].includes(data.repeat)) {
-          const dayMap = {
-            mon: 1,
-            tue: 2,
-            wed: 3,
-            thu: 4,
-            fri: 5
-          };
-          for (let d = 1; d <= lastDate; d++) {
+        } else if (["mon","tue","wed","thu","fri"].includes(data.repeat)) {
+          const dayMap = {mon:1,tue:2,wed:3,thu:4,fri:5};
+          for(let d=1; d<=lastDate; d++) {
             const day = new Date(year, month, d).getDay();
-            if (day === dayMap[data.repeat]) {
-              allAssignments.push({
-                date: `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
-                tasks: data.tasks
-              });
+            if(day === dayMap[data.repeat]) {
+              allAssignments.push({date: `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, tasks: data.tasks});
             }
           }
         } else {
-          allAssignments.push({
-            date: date,
-            tasks: data.tasks
-          });
+          allAssignments.push({date: date, tasks: data.tasks});
         }
       }
     }
 
     let html = "<tr>";
-    for (let i = 0; i < startDay; i++) {
+    for(let i=0; i<startDay; i++) {
       html += "<td></td>";
     }
 
-    for (let day = 1; day <= lastDate; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    for(let day=1; day<=lastDate; day++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const tasksForDay = allAssignments.filter(a => a.date === dateStr).flatMap(a => a.tasks);
       const taskHtml = tasksForDay.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join("");
 
       html += `<td><strong>${day}</strong>${taskHtml}</td>`;
 
-      if ((startDay + day) % 7 === 0) {
+      if((startDay + day) % 7 === 0) {
         html += "</tr><tr>";
       }
     }
@@ -379,20 +185,17 @@ async function saveAssignment() {
     const container = document.getElementById("student-status-list");
     container.innerHTML = "";
 
-    // 학생 이름 리스트
     const students = ["학생1", "학생2", "학생3"];
-
-    // 모든 저장된 과제 불러오기
     let allAssignments = [];
-    for (let i = 0; i < localStorage.length; i++) {
+
+    for(let i=0; i<localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key.startsWith("teacherTasks-")) {
+      if(key.startsWith("teacherTasks-")) {
         const data = JSON.parse(localStorage.getItem(key));
         allAssignments.push(data);
       }
     }
 
-    // 학생별로 과제 완료 상태 확인해서 보여주기
     students.forEach(student => {
       const div = document.createElement("div");
       div.style.border = "2px solid #aaa";
@@ -435,6 +238,3 @@ async function saveAssignment() {
 
   showList();
 </script>
-</body>
-</html>
-
