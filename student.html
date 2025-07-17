@@ -114,22 +114,21 @@
 
   // 학생별 완료된 과제 상태를 Firebase에서 불러오기
   async function getDoneTasks(student) {
-    const snapshot = await firebase.database().ref('doneTasks/' + student).once('value');
+    const snapshot = await database.ref('doneTasks/' + student).once('value');
     return snapshot.val() || {};
   }
 
   // 완료 상태를 Firebase에 저장
   function setDoneTasks(student, doneTasks) {
-    firebase.database().ref('doneTasks/' + student).set(doneTasks);
+    database.ref('doneTasks/' + student).set(doneTasks);
   }
 
   async function renderTasks() {
     todoContainer.innerHTML = "";
     const doneTasks = await getDoneTasks(currentStudent);
     // 과제 목록을 Firebase에서 받아옴
-    const tasksSnapshot = await firebase.database().ref('tasks').once('value');
+    const tasksSnapshot = await database.ref('tasks').once('value');
     const tasksData = tasksSnapshot.val() || [];
-    // tasksData가 배열 혹은 객체일 수 있으니 배열로 처리
     const tasks = Array.isArray(tasksData) ? tasksData : Object.values(tasksData);
 
     tasks.forEach(taskName => {
