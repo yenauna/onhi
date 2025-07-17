@@ -21,8 +21,8 @@
       display: block;
     }
     body {
-      padding-top: 80px;
-      padding-left: 20px;
+      padding-top: 80px;  /* 로고 높이 + 여유 */
+      padding-left: 20px; /* 좌측 여백 */
       font-family: sans-serif;
       max-width: 600px;
       margin: 40px auto;
@@ -53,7 +53,6 @@
       background-color: transparent;
       color: #999;
       border: 2px solid #ccc;
-      text-decoration: line-through;
     }
     #today-date {
       margin-bottom: 20px;
@@ -71,6 +70,9 @@
   <img src="logo.png" alt="오늘 할 일 로고" id="logo" style="cursor:pointer;" onclick="location.href='index.html';" />
 </header>
 
+<label for="task-date">날짜 선택:</label>
+<input type="date" id="task-date" />
+
 <div id="task-box" style="display:none;">
   <h2 id="today-date"></h2>
   <div id="todo-container"></div>
@@ -84,38 +86,8 @@
   const todoContainer = document.getElementById("todo-container");
   const todayDate = document.getElementById("today-date");
   const logoutBtn = document.getElementById("logout-btn");
+  const dateInput = document.getElementById("task-date");
 
-  // 오늘 날짜 표시
-  function updateTodayDate() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    todayDate.textContent = `${yyyy}-${mm}-${dd} 할 일 - ${currentStudent}`;
-  }
-
-  // 저장된 과제 읽기
-  function getTasksForToday() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    const todayStr = `${yyyy}-${mm}-${dd}`;
-
-    const key = "teacherTasks-" + todayStr;
-    const raw = localStorage.getItem(key);
-    if (!raw) return [];
-    try {
-      const data = JSON.parse(raw);
-      // 학생이 대상인지 확인
-      if (!data.students.includes("전체") && !data.students.includes(currentStudent)) return [];
-      return data.tasks || [];
-    } catch {
-      return [];
-    }
-  }
-
-  // 완료 상태 읽기/저장
   function getDoneTasks() {
     return JSON.parse(localStorage.getItem("doneTasks-" + currentStudent) || "{}");
   }
@@ -124,12 +96,24 @@
     localStorage.setItem("doneTasks-" + currentStudent, JSON.stringify(doneTasks));
   }
 
-  // 할 일 그리기
-  function renderTasks() {
+  function getTasksForDate(dateStr) {
+    const key = "teacherTasks-" + dateStr;
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    try {
+      const data = JSON.parse(raw);
+      if (!data.students.includes("전체") && !data.students.includes(currentStudent)) return [];
+      return data.tasks || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function renderTasksForDate(dateStr) {
     todoContainer.innerHTML = "";
-    const tasks = getTasksForToday();
+    const tasks = getTasksForDate(dateStr);
     if (tasks.length === 0) {
-      todoContainer.textContent = "오늘 할 일이 없습니다.";
+      todoContainer.textContent = "선택한 날짜에 할 일이 없습니다.";
       return;
     }
     const doneTasks = getDoneTasks();
@@ -142,23 +126,42 @@
       box.onclick = () => {
         doneTasks[task] = !done;
         setDoneTasks(doneTasks);
-        renderTasks();
+        renderTasksForDate(dateStr);
       };
       todoContainer.appendChild(box);
     });
   }
 
-  // 로딩 시 로그인 상태 확인 및 화면 표시
+  function updateTodayDate(dateStr) {
+    todayDate.textContent = `${dateStr} 할 일 - ${currentStudent}`;
+  }
+
   window.onload = () => {
     const savedStudent = localStorage.getItem('currentStudent');
-    if (savedStudent) {
-      currentStudent = savedStudent;
-      taskBox.style.display = "block";
-      updateTodayDate();
-      renderTasks();
-    } else {
-      location.href = "index.html"; // 로그인 안 되면 메인으로
+    if (!savedStudent) {
+      location.href = "index.html";
+      return;
     }
+    currentStudent = savedStudent;
+
+    // 기본 날짜 오늘로 세팅
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    dateInput.value = todayStr;
+
+    taskBox.style.display = "block";
+    updateTodayDate(todayStr);
+    renderTasksForDate(todayStr);
+
+    // 날짜 선택 시 해당 날짜 과제 렌더링
+    dateInput.addEventListener('change', () => {
+      const selectedDate = dateInput.value;
+      updateTodayDate(selectedDate);
+      renderTasksForDate(selectedDate);
+    });
   };
 
   logoutBtn.onclick = () => {
