@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>과제 배정 (교사용)</title>
   <style>
-    /* 기존 스타일 유지 */
     header {
       position: fixed;
       top: 10px;
@@ -187,7 +186,7 @@
     btn.parentElement.remove();
   }
 
-  function saveAssignment() {
+  async function saveAssignment() {
     const date = document.getElementById("task-date").value;
     if (!date) {
       alert("과제 날짜를 선택하세요.");
@@ -195,10 +194,10 @@
     }
     const repeat = document.getElementById("repeat").value;
     const target = document.getElementById("target").value;
-    const tasks = Array.from(document.querySelectorAll("#task-list input"))
+    const newTasks = Array.from(document.querySelectorAll("#task-list input"))
       .map(i => i.value.trim())
       .filter(t => t !== "");
-    if (tasks.length === 0) {
+    if (newTasks.length === 0) {
       alert("과제를 하나 이상 입력하세요.");
       return;
     }
@@ -206,8 +205,35 @@
       ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
       : ["전체"];
 
-    const data = { tasks, repeat, students };
-    localStorage.setItem("teacherTasks-" + date, JSON.stringify(data));
+    const key = "teacherTasks-" + date;
+    const existingDataRaw = localStorage.getItem(key);
+    let existingData = null;
+    if (existingDataRaw) {
+      try {
+        existingData = JSON.parse(existingDataRaw);
+      } catch {
+        existingData = null;
+      }
+    }
+
+    let mergedTasks = [];
+    let mergedStudents = [];
+
+    if (existingData) {
+      mergedTasks = Array.from(new Set(existingData.tasks.concat(newTasks)));
+      mergedStudents = Array.from(new Set(existingData.students.concat(students)));
+    } else {
+      mergedTasks = newTasks;
+      mergedStudents = students;
+    }
+
+    const data = {
+      tasks: mergedTasks,
+      repeat: repeat,
+      students: mergedStudents
+    };
+
+    localStorage.setItem(key, JSON.stringify(data));
     alert("저장되었습니다!");
     loadSavedTasks();
     renderCalendar();
@@ -331,17 +357,8 @@
     container.innerHTML = "";
 
     const students = ["학생1", "학생2", "학생3"];
-    let allAssignments = [];
 
-    for(let i=0; i<localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if(key.startsWith("teacherTasks-")) {
-        const data = JSON.parse(localStorage.getItem(key));
-        allAssignments.push(data);
-      }
-    }
-
-    students.forEach(student => {
+    for (const student of students) {
       const div = document.createElement("div");
       div.style.border = "2px solid #aaa";
       div.style.padding = "10px";
@@ -350,19 +367,27 @@
 
       div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
 
-      allAssignments.forEach(assign => {
-        let tasks = assign.tasks;
-        let assigned = assign.students.includes("전체") || assign.students.includes(student);
+      // 학생 완료 상태 불러오기
+      const doneTasks = JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
 
-        tasks.forEach(task => {
-          const color = assigned ? "#f6c1c1" : "transparent";
-          div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0;">${task}</div>`;
+      for(let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if(!key.startsWith("teacherTasks-")) continue;
+
+        const data = JSON.parse(localStorage.getItem(key));
+        const assigned = data.students.includes("전체") || data.students.includes(student);
+
+        data.tasks.forEach(task => {
+          const isDone = doneTasks[task] === true;
+          const color = assigned ? (isDone ? "#a1d99b" : "#f6c1c1") : "transparent"; // 완료 과제 초록, 미완료 분홍
+          div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0;">
+            ${task} ${isDone ? "✅" : ""}
+          </div>`;
         });
-      });
-
+      }
       div.innerHTML += "</div>";
       container.appendChild(div);
-    });
+    }
   }
 
   // 초기 로딩
@@ -383,3 +408,5 @@
 
   showList();
 </script>
+</body>
+</html>
