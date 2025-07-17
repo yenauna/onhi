@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>과제 배정 (교사용)</title>
-
   <style>
+    /* 기존 스타일 유지 */
     header {
       position: fixed;
       top: 10px;
@@ -195,10 +195,10 @@
     }
     const repeat = document.getElementById("repeat").value;
     const target = document.getElementById("target").value;
-    const newTasks = Array.from(document.querySelectorAll("#task-list input"))
+    const tasks = Array.from(document.querySelectorAll("#task-list input"))
       .map(i => i.value.trim())
       .filter(t => t !== "");
-    if (newTasks.length === 0) {
+    if (tasks.length === 0) {
       alert("과제를 하나 이상 입력하세요.");
       return;
     }
@@ -206,35 +206,8 @@
       ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
       : ["전체"];
 
-    const key = "teacherTasks-" + date;
-    const existingDataRaw = localStorage.getItem(key);
-    let existingData = null;
-    if (existingDataRaw) {
-      try {
-        existingData = JSON.parse(existingDataRaw);
-      } catch {
-        existingData = null;
-      }
-    }
-
-    let mergedTasks = [];
-    let mergedStudents = [];
-
-    if (existingData) {
-      mergedTasks = Array.from(new Set(existingData.tasks.concat(newTasks)));
-      mergedStudents = Array.from(new Set(existingData.students.concat(students)));
-    } else {
-      mergedTasks = newTasks;
-      mergedStudents = students;
-    }
-
-    const data = {
-      tasks: mergedTasks,
-      repeat: repeat,
-      students: mergedStudents
-    };
-
-    localStorage.setItem(key, JSON.stringify(data));
+    const data = { tasks, repeat, students };
+    localStorage.setItem("teacherTasks-" + date, JSON.stringify(data));
     alert("저장되었습니다!");
     loadSavedTasks();
     renderCalendar();
@@ -410,5 +383,3 @@
 
   showList();
 </script>
-</body>
-</html>
