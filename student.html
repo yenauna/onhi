@@ -147,15 +147,68 @@
 
     const currDateStr = formatDate(currentDate);
 
-    // 오늘 날짜 표시
     todayDate.textContent = displayDate(currentDate);
 
-    // 오늘 및 지난 날짜 과제만 표시
+    // 현재 날짜 과제만 표시 (과거도 이동 가능하므로 모든 과제는 filter 후 따로 조건 둠)
     assignments
-      .filter(a => {
-        const ad = new Date(a.date);
-        ad.setHours(0,0,0,0);
-        return ad <= today0; // 오늘 또는 과거만
-      })
-      .filter(a => a.date === currDateStr) //
+      .filter(a => a.date === currDateStr)
+      .forEach(({date, tasks}) => {
+        tasks.forEach(taskName => {
+          const done = doneTasks[taskName] === true;
+          const taskDate = new Date(date);
+          taskDate.setHours(0,0,0,0);
+          const isPast = taskDate < today0;
 
+          const box = document.createElement("div");
+          box.className = "task-box" + (done ? " done" : "");
+          box.textContent = taskName;
+          if (done) {
+            box.style.backgroundColor = "transparent";
+            box.style.color = "#999";
+          } else if (isPast) {
+            // 지난 미완료: 더 붉은 색
+            box.style.backgroundColor = "#f05555";
+            box.style.color = "#fff";
+          } else {
+            // 오늘 미완료: 분홍색
+            box.style.backgroundColor = "#f6c1c1";
+            box.style.color = "#000";
+          }
+          box.onclick = () => {
+            doneTasks[taskName] = !done;
+            setDoneTasks(currentStudent, doneTasks);
+            renderTasks();
+          };
+          todoContainer.appendChild(box);
+        });
+      });
+  }
+
+  prevDayBtn.onclick = () => {
+    currentDate.setDate(currentDate.getDate() - 1);
+    renderTasks();
+  };
+
+  nextDayBtn.onclick = () => {
+    currentDate.setDate(currentDate.getDate() + 1);
+    renderTasks();
+  };
+
+  window.onload = () => {
+    const savedStudent = localStorage.getItem('currentStudent');
+    if (savedStudent) {
+      currentStudent = savedStudent;
+      taskBox.style.display = "block";
+      renderTasks();
+    } else {
+      location.href = "index.html";
+    }
+  };
+
+  logoutBtn.onclick = () => {
+    localStorage.removeItem('currentStudent');
+    location.href = "index.html";
+  };
+</script>
+</body>
+</html>
