@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>과제 배정 (교사용)</title>
+
   <style>
     header {
       position: fixed;
@@ -92,6 +93,26 @@
       vertical-align: top;
       padding: 4px;
       font-size: 14px;
+    }
+    .student-task-box {
+      border: 1px solid #888;
+      padding: 8px;
+      border-radius: 12px;
+      margin: 6px 0;
+      position: relative;
+    }
+    .student-task-box.overdue {
+      background-color: #f8baba;
+    }
+    .student-task-box.done.overdue {
+      display: none;
+    }
+    .date-label {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 12px;
+      color: #666;
     }
   </style>
 </head>
@@ -186,7 +207,7 @@
     btn.parentElement.remove();
   }
 
-  async function saveAssignment() {
+  function saveAssignment() {
     const date = document.getElementById("task-date").value;
     if (!date) {
       alert("과제 날짜를 선택하세요.");
@@ -357,6 +378,11 @@
     container.innerHTML = "";
 
     const students = ["학생1", "학생2", "학생3"];
+    const todayStr = new Date().toISOString().slice(0,10);
+
+    function isPastDate(d) {
+      return new Date(d) < new Date(todayStr);
+    }
 
     for (const student of students) {
       const div = document.createElement("div");
@@ -367,7 +393,7 @@
 
       div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
 
-      // 학생 완료 상태 불러오기
+      // 학생 완료 상태 로컬 저장소에서 불러오기
       const doneTasks = JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
 
       for(let i = 0; i < localStorage.length; i++) {
@@ -376,15 +402,37 @@
 
         const data = JSON.parse(localStorage.getItem(key));
         const assigned = data.students.includes("전체") || data.students.includes(student);
+        if (!assigned) continue;
+
+        const dateStr = key.replace("teacherTasks-", "");
 
         data.tasks.forEach(task => {
           const isDone = doneTasks[task] === true;
-          const color = assigned ? (isDone ? "#a1d99b" : "#f6c1c1") : "transparent"; // 완료 과제 초록, 미완료 분홍
-          div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0;">
-            ${task} ${isDone ? "✅" : ""}
-          </div>`;
+          const overdue = isPastDate(dateStr) && !isDone;
+
+          if (isPastDate(dateStr) && isDone) return; // 지난 완료 과제 숨김
+
+          const taskDiv = document.createElement("div");
+          taskDiv.className = "student-task-box" + (isDone ? " done" : "") + (overdue ? " overdue" : "");
+          taskDiv.style.border = "1px solid #888";
+          taskDiv.style.backgroundColor = overdue ? "#f8baba" : (isDone ? "transparent" : "#f6c1c1");
+          taskDiv.style.padding = "8px";
+          taskDiv.style.borderRadius = "12px";
+          taskDiv.style.margin = "6px 0";
+
+          taskDiv.textContent = task;
+
+          if (dateStr !== todayStr) {
+            const dateLabel = document.createElement("span");
+            dateLabel.className = "date-label";
+            dateLabel.textContent = dateStr;
+            taskDiv.appendChild(dateLabel);
+          }
+
+          div.appendChild(taskDiv);
         });
       }
+
       div.innerHTML += "</div>";
       container.appendChild(div);
     }
@@ -410,3 +458,4 @@
 </script>
 </body>
 </html>
+
