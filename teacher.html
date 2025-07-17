@@ -94,11 +94,6 @@
       padding: 4px;
       font-size: 14px;
     }
-    /* 지난 미완료 과제 진한 빨강 */
-    .task-past-incomplete {
-      background-color: #f05555 !important;
-      color: white !important;
-    }
   </style>
 </head>
 <body>
@@ -192,31 +187,6 @@
     btn.parentElement.remove();
   }
 
-  function formatDateToKorean(dateStr) {
-    const d = new Date(dateStr);
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
-    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-    const dayName = dayNames[d.getDay()];
-    return `${month}월 ${day}일 (${dayName})`;
-  }
-
-  function isTodayOrPast(dateStr) {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const d = new Date(dateStr);
-    d.setHours(0,0,0,0);
-    return d <= today;
-  }
-
-  function isPast(dateStr) {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const d = new Date(dateStr);
-    d.setHours(0,0,0,0);
-    return d < today;
-  }
-
   async function saveAssignment() {
     const date = document.getElementById("task-date").value;
     if (!date) {
@@ -292,7 +262,7 @@
         const data = JSON.parse(localStorage.getItem(key));
         const div = document.createElement("div");
         div.className = "saved-item";
-        div.innerHTML = `<strong>${formatDateToKorean(date)}</strong> | 대상: ${data.students.join(", ")}<br>
+        div.innerHTML = `<strong>${date}</strong> | 대상: ${data.students.join(", ")}<br>
           📌 ${data.tasks.join(", ")}<br>
           🔁 반복: ${data.repeat}<br>
           <button onclick="copyTask('${date}')">📄 복사</button>
@@ -378,27 +348,9 @@
     for(let day=1; day<=lastDate; day++) {
       const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const tasksForDay = allAssignments.filter(a => a.date === dateStr).flatMap(a => a.tasks);
-      const taskHtml = tasksForDay.map(t => {
-        // 오늘 날짜인지 여부
-        const todayStr = `${year}-${String(month+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
-        if(dateStr < todayStr) {
-          // 지난날짜 과제 표시 빨강 배경
-          return `<div style="background:#f05555; color:#fff; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`;
-        }
-        // 오늘 또는 미래 과제는 분홍 배경
-        return `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`;
-      }).join("");
+      const taskHtml = tasksForDay.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join("");
 
-      // 오른쪽 날짜 표시 (오늘은 표시 안함)
-      let dateLabel = "";
-      if (dateStr !== `${year}-${String(month+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`) {
-        const d = new Date(dateStr);
-        const monthLabel = d.getMonth() + 1;
-        const dayLabel = d.getDate();
-        dateLabel = `<div style="font-size:10px; text-align:right; color:#666;">${monthLabel}월 ${dayLabel}일</div>`;
-      }
-
-      html += `<td><strong>${day}</strong>${taskHtml}${dateLabel}</td>`;
+      html += `<td><strong>${day}</strong>${taskHtml}</td>`;
 
       if((startDay + day) % 7 === 0) {
         html += "</tr><tr>";
@@ -424,9 +376,6 @@
       }
     }
 
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
     students.forEach(student => {
       const div = document.createElement("div");
       div.style.border = "2px solid #aaa";
@@ -437,17 +386,11 @@
       div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
 
       allAssignments.forEach(assign => {
-        const tasks = assign.tasks;
-        const assigned = assign.students.includes("전체") || assign.students.includes(student);
-        if(!assigned) return;
-
-        const dateObj = new Date(assign.date);
-        dateObj.setHours(0,0,0,0);
+        let tasks = assign.tasks;
+        let assigned = assign.students.includes("전체") || assign.students.includes(student);
 
         tasks.forEach(task => {
-          const isPastIncomplete = (dateObj < today) && (!localStorage.getItem(`doneTasks-${student}`)?.includes(task));
-          const color = isPastIncomplete ? "#f05555" : "#f6c1c1";
-
+          const color = assigned ? "#f6c1c1" : "transparent";
           div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0;">${task}</div>`;
         });
       });
