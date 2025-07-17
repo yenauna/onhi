@@ -1,3 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>과제 배정 (교사용)</title>
+
+  <style>
+    header {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 5px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    #logo {
+      width: 50px;
+      height: auto;
+      cursor: pointer;
+      display: block;
+    }
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding-top: 80px; /* 로고 공간 확보 */
+    }
+    h2 {
+      text-align: center;
+    }
+    section {
+      margin-top: 30px;
+    }
+    .task-input {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    .task-input input {
+      flex: 1;
+      padding: 6px;
+      margin-right: 6px;
+    }
+    .student-checkboxes label {
+      margin-right: 10px;
+      display: inline-block;
+    }
+    .task-list, .saved-tasks, .student-status {
+      margin-top: 20px;
+    }
+    .saved-item, .student-item {
+      border-top: 1px dashed #ccc;
+      padding-top: 8px;
+      margin-top: 10px;
+    }
+    button {
+      margin: 5px 0;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    select, input[type="date"] {
+      padding: 4px;
+      margin: 6px 0;
+    }
+    .toggle-buttons {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+    .toggle-buttons button {
+      padding: 8px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .calendar {
+      display: none;
+    }
+    .calendar table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .calendar th, .calendar td {
+      border: 1px solid #ccc;
+      width: 14.28%;
+      height: 80px;
+      text-align: left;
+      vertical-align: top;
+      padding: 4px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="오늘 할 일 로고" id="logo" style="cursor:pointer" onclick="location.href='index.html'">
+  </header>
+
+  <div class="toggle-buttons">
+    <button onclick="showList()">과제 목록 보기</button>
+    <button onclick="showCalendar()">달력 보기</button>
+  </div>
+
+  <div id="teacher-list">
+    <h2>📋 과제 배정 (교사용)</h2>
+
+    <section>
+      <label>📅 과제 날짜:</label>
+      <input type="date" id="task-date" />
+
+      <div class="task-list" id="task-list">
+        <div class="task-input">
+          <input type="text" placeholder="할 일 입력" />
+          <button onclick="removeTask(this)">⊖</button>
+        </div>
+      </div>
+      <button onclick="addTask()">+ 할 일 추가</button>
+
+      <label>🔁 반복 설정:</label>
+      <select id="repeat">
+        <option value="none">없음</option>
+        <option value="daily">매일</option>
+        <option value="mon">매주 월요일</option>
+        <option value="tue">매주 화요일</option>
+        <option value="wed">매주 수요일</option>
+        <option value="thu">매주 목요일</option>
+        <option value="fri">매주 금요일</option>
+      </select>
+
+      <label>👥 대상 선택:</label>
+      <select id="target">
+        <option value="all">전체 학생</option>
+        <option value="selected">특정 학생 지정</option>
+      </select>
+
+      <div id="student-checkboxes" class="student-checkboxes" style="display: none;">
+        <label><input type="checkbox" value="학생1" /> 학생1</label>
+        <label><input type="checkbox" value="학생2" /> 학생2</label>
+        <label><input type="checkbox" value="학생3" /> 학생3</label>
+      </div>
+
+      <button onclick="saveAssignment()">💾 저장하기</button>
+    </section>
+
+    <section class="saved-tasks">
+      <h3>📚 저장된 과제 목록</h3>
+      <label>📅 날짜 필터: <input type="date" id="filter-date" onchange="loadSavedTasks()" /></label>
+      <div id="task-storage"></div>
+    </section>
+
+    <section class="student-status">
+      <h3>✅ 학생별 과제 완료 현황</h3>
+      <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;"></div>
+    </section>
+  </div>
+
+  <div class="calendar" id="calendar" style="display:none;">
+    <table>
+      <thead>
+        <tr>
+          <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </div>
+
 <script>
   document.getElementById("target").addEventListener("change", function() {
     const show = this.value === "selected";
@@ -15,7 +187,7 @@
     btn.parentElement.remove();
   }
 
-  async function saveAssignment() {
+  function saveAssignment() {
     const date = document.getElementById("task-date").value;
     if (!date) {
       alert("과제 날짜를 선택하세요.");
@@ -238,3 +410,5 @@
 
   showList();
 </script>
+</body>
+</html>
