@@ -24,8 +24,8 @@
     }
 
     body {
-      padding-top: 80px;  /* 로고 높이 + 여유 */
-      padding-left: 20px; /* 좌측 여백 */
+      padding-top: 80px;
+      padding-left: 20px;
       font-family: sans-serif;
       max-width: 600px;
       margin: 40px auto;
@@ -47,7 +47,6 @@
       border: 2px solid #ccc;
       padding: 15px;
       border-radius: 20px;
-      background-color: #f6c1c1;
       font-size: 20px;
       cursor: pointer;
       user-select: none;
@@ -59,21 +58,34 @@
     }
     #today-date {
       margin-bottom: 20px;
+      font-weight: bold;
+      font-size: 18px;
     }
-    button {
+    #date-nav {
+      margin-bottom: 20px;
+    }
+    #date-nav button {
+      margin: 0 10px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    button#logout-btn {
       font-size: 16px;
       padding: 8px 20px;
-      margin-top: 20px;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
 <header>
-  <img src="logo.png" alt="오늘 할 일 로고" id="logo" style="cursor:pointer;" onclick="location.href='index.html';" />
+  <img src="logo.png" alt="오늘 할 일 로고" id="logo" onclick="location.href='index.html';" />
 </header>
 
 <div id="task-box" style="display:none;">
+  <div id="date-nav">
+    <button id="prev-day">◀ 이전날</button>
+    <button id="next-day">다음날 ▶</button>
+  </div>
   <h2 id="today-date"></h2>
   <div id="todo-container"></div>
   <button id="logout-btn">로그아웃</button>
@@ -81,18 +93,28 @@
 
 <script>
   let currentStudent = null;
+  let currentDate = new Date();
 
   const taskBox = document.getElementById("task-box");
   const todoContainer = document.getElementById("todo-container");
   const todayDate = document.getElementById("today-date");
   const logoutBtn = document.getElementById("logout-btn");
+  const prevDayBtn = document.getElementById("prev-day");
+  const nextDayBtn = document.getElementById("next-day");
 
-  function updateTodayDate() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    todayDate.textContent = `${yyyy}-${mm}-${dd} 할 일 - ${currentStudent}`;
+  function formatDate(d) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  function displayDate(d) {
+    const month = d.getMonth() + 1;
+    const date = d.getDate();
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    const day = dayNames[d.getDay()];
+    return `${month}월 ${date}일 (${day})`;
   }
 
   function getDoneTasks(student) {
@@ -115,76 +137,25 @@
     return assignments;
   }
 
-  function isTodayOrPast(dateStr) {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const date = new Date(dateStr);
-    return date <= today;
-  }
-
   function renderTasks() {
     todoContainer.innerHTML = "";
     const doneTasks = getDoneTasks(currentStudent);
     const assignments = getAllAssignments();
 
+    const today0 = new Date();
+    today0.setHours(0,0,0,0);
+
+    const currDateStr = formatDate(currentDate);
+
+    // 오늘 날짜 표시
+    todayDate.textContent = displayDate(currentDate);
+
+    // 오늘 및 지난 날짜 과제만 표시
     assignments
-      .filter(a => isTodayOrPast(a.date))
-      .forEach(({date, tasks}) => {
-        tasks.forEach(taskName => {
-          const done = doneTasks[taskName] === true;
-          const taskDate = new Date(date);
-          const today = new Date();
-          today.setHours(0,0,0,0);
-          const isPast = taskDate < today;
-
-          const box = document.createElement("div");
-          box.className = "task-box" + (done ? " done" : "");
-          box.textContent = taskName;
-          box.style.cursor = "pointer";
-          if (done) {
-            box.style.backgroundColor = "transparent";
-            box.style.color = "#999";
-          } else if (isPast) {
-            box.style.backgroundColor = "#f05555";
-            box.style.color = "#fff";
-          } else {
-            box.style.backgroundColor = "#f6c1c1";
-            box.style.color = "#000";
-          }
-          if(date !== today.toISOString().slice(0,10)) {
-            const dateLabel = document.createElement("span");
-            dateLabel.textContent = ` (${date.replace(/^\d{4}-(\d{2})-(\d{2})$/, "$1월 $2일")})`;
-            dateLabel.style.fontSize = "12px";
-            dateLabel.style.color = "#555";
-            box.appendChild(dateLabel);
-          }
-          box.onclick = () => {
-            doneTasks[taskName] = !done;
-            setDoneTasks(currentStudent, doneTasks);
-            renderTasks();
-          };
-          todoContainer.appendChild(box);
-        });
-      });
-  }
-
-  window.onload = () => {
-    const savedStudent = localStorage.getItem('currentStudent');
-    if (savedStudent) {
-      currentStudent = savedStudent;
-      taskBox.style.display = "block";
-      updateTodayDate();
-      renderTasks();
-    } else {
-      location.href = "index.html";
-    }
-  };
-
-  logoutBtn.onclick = () => {
-    localStorage.removeItem('currentStudent');
-    location.href = "index.html";
-  };
-</script>
-</body>
-</html>
+      .filter(a => {
+        const ad = new Date(a.date);
+        ad.setHours(0,0,0,0);
+        return ad <= today0; // 오늘 또는 과거만
+      })
+      .filter(a => a.date === currDateStr) //
 
