@@ -51,25 +51,11 @@
       font-size: 20px;
       cursor: pointer;
       user-select: none;
-      position: relative;
     }
     .task-box.done {
       background-color: transparent;
       color: #999;
       border: 2px solid #ccc;
-    }
-    .task-box.overdue {
-      background-color: #f8baba;
-    }
-    .task-box.done.overdue {
-      display: none;
-    }
-    .task-box .date-label {
-      position: absolute;
-      top: 8px;
-      right: 10px;
-      font-size: 12px;
-      color: #666;
     }
     #today-date {
       margin-bottom: 20px;
@@ -96,81 +82,90 @@
 <script>
   let currentStudent = null;
 
-  // 로컬 저장된 완료된 과제 가져오기
-  function getDoneTasks() {
-    return JSON.parse(localStorage.getItem("doneTasks-" + currentStudent) || "{}");
-  }
+  const taskBox = document.getElementById("task-box");
+  const todoContainer = document.getElementById("todo-container");
+  const todayDate = document.getElementById("today-date");
+  const logoutBtn = document.getElementById("logout-btn");
 
-  // 완료 상태 로컬 저장
-  function setDoneTasks(doneTasks) {
-    localStorage.setItem("doneTasks-" + currentStudent, JSON.stringify(doneTasks));
-  }
-
-  // 로컬 저장된 모든 과제 (teacher 페이지에서 같은 날짜 key로 저장된 값)
-  function getTasksForDate(dateStr) {
-    const key = "teacherTasks-" + dateStr;
-    const dataRaw = localStorage.getItem(key);
-    if (!dataRaw) return [];
-    try {
-      const data = JSON.parse(dataRaw);
-      return data.tasks || [];
-    } catch {
-      return [];
-    }
-  }
-
-  // 오늘 날짜 문자열 (yyyy-mm-dd)
-  function getTodayStr() {
+  function updateTodayDate() {
     const today = new Date();
-    return today.toISOString().slice(0,10);
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    todayDate.textContent = `${yyyy}-${mm}-${dd} 할 일 - ${currentStudent}`;
   }
 
-  // 날짜가 과거인지 판단
-  function isPastDate(d) {
-    return new Date(d) < new Date(getTodayStr());
+  function getDoneTasks(student) {
+    return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
   }
 
-  function renderTasksForDate(dateStr) {
-    todoContainer.innerHTML = "";
-    const tasks = getTasksForDate(dateStr);
-    const doneTasks = getDoneTasks();
+  function setDoneTasks(student, doneTasks) {
+    localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
+  }
 
-    if (tasks.length === 0) {
-      todoContainer.textContent = "선택한 날짜에 할 일이 없습니다.";
-      return;
+  function getAllAssignments() {
+    let assignments = [];
+    for(let i=0; i<localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if(!key.startsWith("teacherTasks-")) continue;
+      const dateStr = key.replace("teacherTasks-", "");
+      const data = JSON.parse(localStorage.getItem(key));
+      assignments.push({date: dateStr, tasks: data.tasks});
     }
-
-    tasks.forEach(task => {
-      const done = doneTasks[task] === true;
-      const overdue = isPastDate(dateStr) && !done;
-
-      // 지난 완료 과제는 렌더링하지 않음
-      if (isPastDate(dateStr) && done) return;
-
-      const box = document.createElement("div");
-      box.className = "task-box" + (done ? " done" : "") + (overdue ? " overdue" : "");
-      box.textContent = task;
-
-      // 오늘 날짜가 아니면 오른쪽 상단에 날짜 표시
-      if (dateStr !== getTodayStr()) {
-        const dateLabel = document.createElement("span");
-        dateLabel.className = "date-label";
-        dateLabel.textContent = dateStr;
-        box.appendChild(dateLabel);
-      }
-
-      box.onclick = () => {
-        doneTasks[task] = !done;
-        setDoneTasks(doneTasks);
-        renderTasksForDate(dateStr);
-      };
-      todoContainer.appendChild(box);
-    });
+    return assignments;
   }
 
-  function updateTodayDate(dateStr) {
-    const displayDate = dateStr || getTodayStr();
-    todayDate.textContent = `${displayDate} 할 일 - ${currentStudent}`;
+  function isTodayOrPast(dateStr) {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const date = new Date(dateStr);
+    return date <= today;
+  }
+
+  function renderTasks() {
+    todoContainer.innerHTML = "";
+    const doneTasks = getDoneTasks(currentStudent);
+    const assignments = getAllAssignments();
+
+    assignments
+      .filter(a => isTodayOrPast(a.date))
+      .forEach(({date, tasks}) => {
+        tasks.forEach(taskName => {
+          const done = doneTasks[taskName] === true;
+          const taskDate = new Date(date);
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          const isPast = taskDate < today;
+
+          const box = document.createElement("div");
+          box.className = "task-box" + (done ? " done" : "");
+          box.textContent = taskName;
+          box.style.cursor = "pointer";
+          if (done) {
+            box.style.backgroundColor = "transparent";
+            box.style.color = "#999";
+          } else if (isPast) {
+            box.style.backgroundColor = "#f05555";
+            box.style.color = "#fff";
+          } else {
+            box.style.backgroundColor = "#f6c1c1";
+            box.style.color = "#000";
+          }
+          if(date !== today.toISOString().slice(0,10)) {
+            const dateLabel = document.createElement("span");
+            dateLabel.textContent = ` (${date.replace(/^\d{4}-(\d{2})-(\d{2})$/, "$1월 $2일")})`;
+            dateLabel.style.fontSize = "12px";
+            dateLabel.style.color = "#555";
+            box.appendChild(dateLabel);
+          }
+          box.onclick = () => {
+            doneTasks[taskName] = !done;
+            setDoneTasks(currentStudent, doneTasks);
+            renderTasks();
+          };
+          todoContainer.appendChild(box);
+        });
+      });
   }
 
   window.onload = () => {
@@ -178,22 +173,8 @@
     if (savedStudent) {
       currentStudent = savedStudent;
       taskBox.style.display = "block";
-
-      // 기본적으로 오늘 날짜 과제 보여주기
       updateTodayDate();
-      renderTasksForDate(getTodayStr());
-
-      // 날짜 선택 UI 추가 (예: 날짜별 과제 확인을 위해)
-      // 간단한 날짜 선택 UI를 넣어보겠습니다.
-      const dateSelector = document.createElement("input");
-      dateSelector.type = "date";
-      dateSelector.style.marginBottom = "20px";
-      dateSelector.value = getTodayStr();
-      dateSelector.onchange = e => {
-        updateTodayDate(e.target.value);
-        renderTasksForDate(e.target.value);
-      };
-      todoContainer.parentNode.insertBefore(dateSelector, todoContainer);
+      renderTasks();
     } else {
       location.href = "index.html";
     }
@@ -206,3 +187,4 @@
 </script>
 </body>
 </html>
+
