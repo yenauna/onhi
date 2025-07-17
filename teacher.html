@@ -187,32 +187,67 @@
     btn.parentElement.remove();
   }
 
-  function saveAssignment() {
-    const date = document.getElementById("task-date").value;
-    if (!date) {
-      alert("과제 날짜를 선택하세요.");
-      return;
-    }
-    const repeat = document.getElementById("repeat").value;
-    const target = document.getElementById("target").value;
-    const tasks = Array.from(document.querySelectorAll("#task-list input"))
-      .map(i => i.value.trim())
-      .filter(t => t !== "");
-    if (tasks.length === 0) {
-      alert("과제를 하나 이상 입력하세요.");
-      return;
-    }
-    const students = target === "selected"
-      ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
-      : ["전체"];
-
-    const data = { tasks, repeat, students };
-    localStorage.setItem("teacherTasks-" + date, JSON.stringify(data));
-    alert("저장되었습니다!");
-    loadSavedTasks();
-    renderCalendar();
-    renderStudentStatus();
+async function saveAssignment() {
+  const date = document.getElementById("task-date").value;
+  if (!date) {
+    alert("과제 날짜를 선택하세요.");
+    return;
   }
+  const repeat = document.getElementById("repeat").value;
+  const target = document.getElementById("target").value;
+  const newTasks = Array.from(document.querySelectorAll("#task-list input"))
+    .map(i => i.value.trim())
+    .filter(t => t !== "");
+  if (newTasks.length === 0) {
+    alert("과제를 하나 이상 입력하세요.");
+    return;
+  }
+  const students = target === "selected"
+    ? Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value)
+    : ["전체"];
+
+  // 기존 과제 불러오기 (localStorage 기준)
+  const key = "teacherTasks-" + date;
+  const existingDataRaw = localStorage.getItem(key);
+  let existingData = null;
+  if (existingDataRaw) {
+    try {
+      existingData = JSON.parse(existingDataRaw);
+    } catch {
+      existingData = null;
+    }
+  }
+
+  // 기존 과제가 있으면, 중복 제거하며 합치기
+  let mergedTasks = [];
+  let mergedStudents = [];
+
+  if (existingData) {
+    // 기존 과제와 새로운 과제 합치기(중복 제거)
+    mergedTasks = Array.from(new Set(existingData.tasks.concat(newTasks)));
+
+    // 기존 학생 대상과 새 학생 대상 합치기(중복 제거)
+    mergedStudents = Array.from(new Set(existingData.students.concat(students)));
+
+    // 반복 설정은 새로 입력된 값으로 덮어씀
+  } else {
+    mergedTasks = newTasks;
+    mergedStudents = students;
+  }
+
+  const data = {
+    tasks: mergedTasks,
+    repeat: repeat,
+    students: mergedStudents
+  };
+
+  localStorage.setItem(key, JSON.stringify(data));
+  alert("저장되었습니다!");
+  loadSavedTasks();
+  renderCalendar();
+  renderStudentStatus();
+}
+
 
   function loadSavedTasks() {
     const container = document.getElementById("task-storage");
