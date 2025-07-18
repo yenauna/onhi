@@ -447,22 +447,27 @@ function renderStudentStatus() {
       const assigned = assign.students.includes("전체") || assign.students.includes(student);
       if(!assigned) return;
 
-     assign.tasks.forEach(task => {
+assign.tasks.forEach(task => {
   const done = isDone(student, task);
   const isPast = assign.dateObj < today;
 
-  // 지난 완료 과제는 표시하지 않음
-  if (done && isPast) return;
+  if (done && isPast) {
+    // 과거 완료 과제는 아예 표시하지 않음
+    return;
+  }
 
-  let color = "#f6c1c1";  // 기본 분홍 (오늘 과제 또는 미래 과제)
+  let color = "#f6c1c1";  // 기본 분홍 (오늘 과제)
   if (isPast && !done) {
     color = "#c0392b";  // 진한 붉은색 (지난 미완료 과제)
-  }  
+  } else if (!isPast && done) {
+    color = "white";    // 오늘 완료 과제는 흰색 배경
+  }
 
   div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
     <span>${task}</span><span style="font-size:10px; color:#666;">${assign.formattedDate}</span>
   </div>`;
 });
+
 
     });
 
