@@ -407,14 +407,14 @@ function renderStudentStatus() {
     const key = localStorage.key(i);
     if(key.startsWith("teacherTasks-")) {
       const data = JSON.parse(localStorage.getItem(key));
-      const dateStr = key.replace("teacherTasks-", "");
-      allAssignments.push({...data, date: dateStr});
+      allAssignments.push(data);
     }
   }
 
   const today = new Date();
   today.setHours(0,0,0,0);
 
+  // 날짜별 유효한 과제만 필터링 & 날짜 포맷 변환
   const validAssignments = allAssignments.filter(assign => {
     if (!assign.date) return false;
     const dateObj = new Date(assign.date);
@@ -429,6 +429,10 @@ function renderStudentStatus() {
     return {...assign, dateObj, formattedDate};
   });
 
+  // 날짜 역순 정렬
+  validAssignments.sort((a, b) => b.dateObj - a.dateObj);
+
+  // 학생별 완료 상태 함수
   function isDone(student, task) {
     const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${student}`) || "{}");
     return doneTasks[task] === true;
@@ -447,32 +451,31 @@ function renderStudentStatus() {
       const assigned = assign.students.includes("전체") || assign.students.includes(student);
       if(!assigned) return;
 
-assign.tasks.forEach(task => {
-  const done = isDone(student, task);
-  const isPast = assign.dateObj < today;
-  const isToday = assign.dateObj.getTime() === today.getTime();
+      assign.tasks.forEach(task => {
+        const done = isDone(student, task);
+        const isPastIncomplete = (assign.dateObj < today) && !done;
 
-  // 지난 완료 과제는 표시하지 않음
-  if (done && isPast) return;
+        let color = "#f6c1c1";  // 기본 분홍 (오늘 미완료)
+        let dateColor = "#666"; // 날짜 기본 글씨색
 
-  let color = "#f6c1c1";  // 기본 분홍 (오늘 또는 미래 미완료 과제)
-  if (isPast && !done) {
-    color = "#c0392b";  // 진한 붉은색 (지난 미완료 과제)
-  } else if (done && isToday) {
-    color = "transparent"; // 오늘 완료 과제는 투명
-  }
+        if (isPastIncomplete) {
+          color = "#c0392b";  // 더 진한 붉은색 (지난 미완료)
+          dateColor = "#fff"; // 날짜 흰색으로
+        } else if (done) {
+          color = "transparent"; // 완료 과제는 투명 처리
+        }
 
-  div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
-    <span>${task}</span><span style="font-size:10px; color:#666;">${assign.formattedDate}</span>
-  </div>`;
-});
-
+        div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
+          <span>${task}</span><span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
+        </div>`;
+      });
     });
 
     div.innerHTML += "</div>";
     container.appendChild(div);
   });
 }
+
 
 
 
