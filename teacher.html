@@ -406,15 +406,19 @@ function renderStudentStatus() {
   for(let i=0; i<localStorage.length; i++) {
     const key = localStorage.key(i);
     if(key.startsWith("teacherTasks-")) {
-      const data = JSON.parse(localStorage.getItem(key));
-      allAssignments.push(data);
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        allAssignments.push(data);
+      } catch {
+        // JSON 파싱 실패시 무시
+      }
     }
   }
 
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  // 날짜별 유효한 과제만 필터링 & 날짜 포맷 변환
+  // 날짜 유효한 과제만 필터 & 날짜 객체, 포맷 추가
   const validAssignments = allAssignments.filter(assign => {
     if (!assign.date) return false;
     const dateObj = new Date(assign.date);
@@ -432,7 +436,7 @@ function renderStudentStatus() {
   // 날짜 역순 정렬
   validAssignments.sort((a, b) => b.dateObj - a.dateObj);
 
-  // 학생별 완료 상태 함수
+  // 완료 여부 확인 함수
   function isDone(student, task) {
     const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${student}`) || "{}");
     return doneTasks[task] === true;
@@ -449,7 +453,7 @@ function renderStudentStatus() {
 
     validAssignments.forEach(assign => {
       const assigned = assign.students.includes("전체") || assign.students.includes(student);
-      if(!assigned) return;
+      if (!assigned) return;
 
       assign.tasks.forEach(task => {
         const done = isDone(student, task);
@@ -460,7 +464,7 @@ function renderStudentStatus() {
 
         if (isPastIncomplete) {
           color = "#c0392b";  // 더 진한 붉은색 (지난 미완료)
-          dateColor = "#fff"; // 날짜 흰색으로
+          dateColor = "#fff";  // 날짜 흰색
         } else if (done) {
           color = "transparent"; // 완료 과제는 투명 처리
         }
@@ -470,6 +474,12 @@ function renderStudentStatus() {
         </div>`;
       });
     });
+
+    div.innerHTML += "</div>";
+    container.appendChild(div);
+  });
+}
+
 
     div.innerHTML += "</div>";
     container.appendChild(div);
