@@ -161,6 +161,19 @@
       <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"></div>
     </section>
   </div>
+  <div id="student-management" style="display:none; margin-top:20px;">
+  <h3>👩‍🎓 학생 관리</h3>
+  <input type="text" id="new-student-id" placeholder="학번" />
+  <input type="text" id="new-student-name" placeholder="이름" />
+  <input type="password" id="new-student-password" placeholder="비밀번호" />
+  <button onclick="addStudent()">추가</button>
+
+  <table id="student-list" border="1" style="margin-top:10px; width: 100%;">
+    <thead><tr><th>학번</th><th>이름</th><th>삭제</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
 
   <div class="calendar" id="calendar" style="display:none;">
     <table>
@@ -482,8 +495,93 @@ assign.tasks.forEach(task => {
     document.getElementById("calendar").style.display = "block";
     renderCalendar();
   }
+  function showStudentManagement() {
+  document.getElementById("teacher-list").style.display = "none";
+  document.getElementById("calendar").style.display = "none";
+  document.getElementById("student-management").style.display = "block";
+}
+
 
   showList();
+
+  // 학생 정보 저장 로드 함수
+function loadStudents() {
+  const raw = localStorage.getItem("students");
+  return raw ? JSON.parse(raw) : [];
+}
+
+// 학생 정보 저장 함수
+function saveStudents(students) {
+  localStorage.setItem("students", JSON.stringify(students));
+}
+
+// 학생 리스트 화면 출력
+function renderStudentList() {
+  const students = loadStudents();
+  const tbody = document.querySelector("#student-list tbody");
+  tbody.innerHTML = "";
+  students.forEach((stu, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${stu.id}</td>
+      <td>${stu.name}</td>
+      <td><button onclick="deleteStudent(${index})">삭제</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // 학생 체크박스 목록도 갱신 (과제 대상 지정용)
+  const container = document.getElementById("student-checkboxes");
+  container.innerHTML = "";
+  students.forEach(stu => {
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${stu.name}`;
+    container.appendChild(label);
+  });
+}
+
+// 학생 추가 함수
+function addStudent() {
+  const id = document.getElementById("new-student-id").value.trim();
+  const name = document.getElementById("new-student-name").value.trim();
+  const password = document.getElementById("new-student-password").value.trim();
+
+  if (!id || !name || !password) {
+    alert("학번, 이름, 비밀번호를 모두 입력하세요.");
+    return;
+  }
+
+  const students = loadStudents();
+
+  // 중복 학번 체크
+  if (students.some(s => s.id === id)) {
+    alert("이미 존재하는 학번입니다.");
+    return;
+  }
+
+  students.push({ id, name, password });
+  saveStudents(students);
+
+  // 입력창 초기화
+  document.getElementById("new-student-id").value = "";
+  document.getElementById("new-student-name").value = "";
+  document.getElementById("new-student-password").value = "";
+
+  renderStudentList();
+}
+
+// 학생 삭제 함수
+function deleteStudent(index) {
+  if (!confirm("정말 삭제하시겠습니까?")) return;
+  const students = loadStudents();
+  students.splice(index, 1);
+  saveStudents(students);
+  renderStudentList();
+}
+
+// 초기 렌더링 시 학생 리스트 출력
+renderStudentList();
+
 </script>
 
 </body>
