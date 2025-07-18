@@ -467,7 +467,7 @@ assign.tasks.forEach(task => {
   }
 
   div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
-    <span>${task}</span><span style="font-size:10px; color:#666;">${assign.formattedDate}</span>
+    <span>${task}</span><span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
   </div>`;
 });
 
