@@ -97,27 +97,7 @@
   </style>
 </head>
 <body>
-  <!-- 상단 반영 시간 표시 영역 -->
-<div id="deploy-time" style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 5px 12px; border-radius: 8px; font-size: 14px; font-family: monospace; z-index: 10000;">
-  반영 시각: <span id="deploy-time-text"></span>
-</div>
-
-<script>
-  function updateDeployTime() {
-    const now = new Date();
-    const formatted = now.getFullYear() + '-' +
-      String(now.getMonth() + 1).padStart(2, '0') + '-' +
-      String(now.getDate()).padStart(2, '0') + ' ' +
-      String(now.getHours()).padStart(2, '0') + ':' +
-      String(now.getMinutes()).padStart(2, '0') + ':' +
-      String(now.getSeconds()).padStart(2, '0');
-    document.getElementById('deploy-time-text').textContent = formatted;
-  }
-  updateDeployTime();
-  // 초 단위로 갱신하려면 아래 주석 해제
-  // setInterval(updateDeployTime, 1000);
-</script>
-
+  
   <header>
     <img src="logo.png" alt="오늘 할 일 로고" id="logo" style="cursor:pointer" onclick="location.href='index.html'">
   </header>
