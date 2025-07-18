@@ -152,7 +152,13 @@
 
     // 현재 날짜 과제만 표시 (과거도 이동 가능하므로 모든 과제는 filter 후 따로 조건 둠)
     assignments
-      .filter(a => a.date === currDateStr)
+       .filter(a => {
+         const taskDate = new Date(a.date);
+         taskDate.setHours(0,0,0,0);
+         const currDate0 = new Date(currentDate);
+         currDate0.setHours(0,0,0,0);
+        return taskDate <= currDate0;
+  })
       .forEach(({date, tasks}) => {
          const taskDate = new Date(date);
          taskDate.setHours(0,0,0,0);
