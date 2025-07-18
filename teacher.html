@@ -403,6 +403,7 @@ function renderStudentStatus() {
   const students = ["학생1", "학생2", "학생3"];
   let allAssignments = [];
 
+  // 로컬스토리지에서 모든 과제 데이터 수집
   for(let i=0; i<localStorage.length; i++) {
     const key = localStorage.key(i);
     if(key.startsWith("teacherTasks-")) {
@@ -414,7 +415,7 @@ function renderStudentStatus() {
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  // 날짜별 유효한 과제만 필터링 & 날짜 포맷 변환
+  // 날짜가 유효하고 오늘 이전인 과제만 필터링 후, 날짜 포맷 추가
   const validAssignments = allAssignments.filter(assign => {
     if (!assign.date) return false;
     const dateObj = new Date(assign.date);
@@ -429,12 +430,13 @@ function renderStudentStatus() {
     return {...assign, dateObj, formattedDate};
   });
 
-  // 학생별 완료 상태 함수
+  // 학생별 완료 상태 확인 함수
   function isDone(student, task) {
     const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${student}`) || "{}");
     return doneTasks[task] === true;
   }
 
+  // 학생별 과제 상태 렌더링
   students.forEach(student => {
     const div = document.createElement("div");
     div.style.border = "2px solid #aaa";
@@ -445,6 +447,7 @@ function renderStudentStatus() {
     div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
 
     validAssignments.forEach(assign => {
+      // 전체 대상 또는 해당 학생 포함여부 확인
       const assigned = assign.students.includes("전체") || assign.students.includes(student);
       if(!assigned) return;
 
@@ -452,9 +455,9 @@ function renderStudentStatus() {
         const done = isDone(student, task);
         const isPastIncomplete = (assign.dateObj < today) && !done;
 
-        let color = "#f6c1c1";  // 기본 분홍 (오늘 미완료)
+        let color = "#f6c1c1";  // 오늘 미완료 기본 분홍색
         if (isPastIncomplete) {
-          color = "#c0392b";  // 더 진한 붉은색 (지난 미완료)
+          color = "#c0392b";  // 지난 미완료 진한 붉은색
         } else if (done) {
           color = "transparent"; // 완료 과제는 투명 처리
         }
@@ -469,6 +472,7 @@ function renderStudentStatus() {
     container.appendChild(div);
   });
 }
+
 
 
   loadSavedTasks();
