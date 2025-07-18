@@ -395,7 +395,8 @@ function renderStudentStatus() {
   const container = document.getElementById("student-status-list");
   container.innerHTML = "";
 
-  const students = ["학생1", "학생2", "학생3"];
+const students = loadStudents().map(s => s.name);
+
   let allAssignments = [];
 
   for(let i=0; i<localStorage.length; i++) {
@@ -488,17 +489,19 @@ assign.tasks.forEach(task => {
   function showList() {
     document.getElementById("teacher-list").style.display = "block";
     document.getElementById("calendar").style.display = "none";
-  }
+      document.getElementById("student-management").style.display = "none";  // 숨김
+}
 
   function showCalendar() {
     document.getElementById("teacher-list").style.display = "none";
     document.getElementById("calendar").style.display = "block";
-    renderCalendar();
+    document.getElementById("student-management").style.display = "none";  // 숨김
   }
   function showStudentManagement() {
   document.getElementById("teacher-list").style.display = "none";
   document.getElementById("calendar").style.display = "none";
   document.getElementById("student-management").style.display = "block";
+  renderStudentList();
 }
 
 
