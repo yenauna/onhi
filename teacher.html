@@ -429,24 +429,28 @@
 
       div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
 
-      allAssignments.forEach(assign => {
-          if (!assign.date) {
-    console.warn("Date is missing in assignment", assign);
-    return;
-  }
-        const dateObj = new Date(assign.date);
-        if (isNaN(dateObj)) {
-    console.warn("Invalid date:", assign.date);
-    return;  // 날짜 이상하면 해당 과제 건너뜀
-  }
-        dateObj.setHours(0,0,0,0);
+allAssignments.forEach(assign => {
+  const rawDate = assign.date || "";
+  const dateObj = new Date(rawDate);
+  let formattedDate = "";
 
-        // 미래 과제 제외
-        if(dateObj > today) return;
+  if (!rawDate || isNaN(dateObj)) {
+    // 날짜 값이 없거나 잘못된 경우 빈 문자열 처리
+    formattedDate = "";
+  } else {
+    dateObj.setHours(0,0,0,0);
+    const dayNames = ['일','월','화','수','목','금','토'];
+    formattedDate = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayNames[dateObj.getDay()]})`;
+  }
 
-        const tasks = assign.tasks;
-        const assigned = assign.students.includes("전체") || assign.students.includes(student);
-        if(!assigned) return;
+  // 미래 과제 제외
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (!rawDate || isNaN(dateObj) || dateObj > today) return;
+
+  // 이하 기존 코드 계속 진행...
+});
+   
 
         tasks.forEach(task => {
           const done = isDone(student, task);
