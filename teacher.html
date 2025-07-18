@@ -276,7 +276,7 @@
     loadSavedTasks();
     renderCalendar();
     renderStudentStatus();
-  } // saveAssignment 함수 닫는 부분 추가됨
+  } 
 
   function loadSavedTasks() {
     const container = document.getElementById("task-storage");
@@ -430,6 +430,10 @@
       div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
 
       allAssignments.forEach(assign => {
+          if (!assign.date) {
+    console.warn("Date is missing in assignment", assign);
+    return;
+  }
         const dateObj = new Date(assign.date);
         if (isNaN(dateObj)) {
     console.warn("Invalid date:", assign.date);
