@@ -406,19 +406,15 @@ function renderStudentStatus() {
   for(let i=0; i<localStorage.length; i++) {
     const key = localStorage.key(i);
     if(key.startsWith("teacherTasks-")) {
-      try {
-        const data = JSON.parse(localStorage.getItem(key));
-        allAssignments.push(data);
-      } catch {
-        // JSON 파싱 실패시 무시
-      }
+      const data = JSON.parse(localStorage.getItem(key));
+      const dateStr = key.replace("teacherTasks-", "");
+      allAssignments.push({...data, date: dateStr});
     }
   }
 
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  // 날짜 유효한 과제만 필터 & 날짜 객체, 포맷 추가
   const validAssignments = allAssignments.filter(assign => {
     if (!assign.date) return false;
     const dateObj = new Date(assign.date);
@@ -433,10 +429,6 @@ function renderStudentStatus() {
     return {...assign, dateObj, formattedDate};
   });
 
-  // 날짜 역순 정렬
-  validAssignments.sort((a, b) => b.dateObj - a.dateObj);
-
-  // 완료 여부 확인 함수
   function isDone(student, task) {
     const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${student}`) || "{}");
     return doneTasks[task] === true;
@@ -453,24 +445,21 @@ function renderStudentStatus() {
 
     validAssignments.forEach(assign => {
       const assigned = assign.students.includes("전체") || assign.students.includes(student);
-      if (!assigned) return;
+      if(!assigned) return;
 
       assign.tasks.forEach(task => {
         const done = isDone(student, task);
         const isPastIncomplete = (assign.dateObj < today) && !done;
 
-        let color = "#f6c1c1";  // 기본 분홍 (오늘 미완료)
-        let dateColor = "#666"; // 날짜 기본 글씨색
-
+        let color = "#f6c1c1";
         if (isPastIncomplete) {
-          color = "#c0392b";  // 더 진한 붉은색 (지난 미완료)
-          dateColor = "#fff";  // 날짜 흰색
+          color = "#c0392b";
         } else if (done) {
-          color = "transparent"; // 완료 과제는 투명 처리
+          color = "transparent";
         }
 
         div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
-          <span>${task}</span><span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
+          <span>${task}</span><span style="font-size:10px; color:#666;">${assign.formattedDate}</span>
         </div>`;
       });
     });
