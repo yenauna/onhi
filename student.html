@@ -154,15 +154,23 @@
     assignments
       .filter(a => a.date === currDateStr)
       .forEach(({date, tasks}) => {
-        tasks.forEach(taskName => {
+         const taskDate = new Date(date);
+         taskDate.setHours(0,0,0,0);
+         const isPast = taskDate < today0;
+        
+         tasks.forEach(taskName => {
           const done = doneTasks[taskName] === true;
-          const taskDate = new Date(date);
-          taskDate.setHours(0,0,0,0);
-          const isPast = taskDate < today0;
+
+            if (done && isPast) {
+          // 지난 완료 과제는 표시하지 않음
+          return;
+        }
+
 
           const box = document.createElement("div");
           box.className = "task-box" + (done ? " done" : "");
           box.textContent = taskName;
+           
           if (done) {
             box.style.backgroundColor = "transparent";
             box.style.color = "#999";
