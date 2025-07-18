@@ -457,9 +457,7 @@ function renderStudentStatus() {
   let color = "#f6c1c1";  // 기본 분홍 (오늘 과제 또는 미래 과제)
   if (isPast && !done) {
     color = "#c0392b";  // 진한 붉은색 (지난 미완료 과제)
-  }  else if (done && isToday) {
-    color = "transparent"; // 오늘 완료 과제는 투명
-  }
+  }  
 
   div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
     <span>${task}</span><span style="font-size:10px; color:#666;">${assign.formattedDate}</span>
