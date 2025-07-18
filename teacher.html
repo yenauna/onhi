@@ -431,6 +431,10 @@
 
       allAssignments.forEach(assign => {
         const dateObj = new Date(assign.date);
+        if (isNaN(dateObj)) {
+    console.warn("Invalid date:", assign.date);
+    return;  // 날짜 이상하면 해당 과제 건너뜀
+  }
         dateObj.setHours(0,0,0,0);
 
         // 미래 과제 제외
