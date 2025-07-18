@@ -429,6 +429,9 @@ function renderStudentStatus() {
     return {...assign, dateObj, formattedDate};
   });
 
+    // 날짜 역순 정렬
+  validAssignments.sort((a, b) => b.dateObj - a.dateObj);
+
   function isDone(student, task) {
     const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${student}`) || "{}");
     return doneTasks[task] === true;
