@@ -403,19 +403,18 @@ function renderStudentStatus() {
   const students = ["학생1", "학생2", "학생3"];
   let allAssignments = [];
 
-  // 로컬스토리지에서 모든 과제 데이터 수집
   for(let i=0; i<localStorage.length; i++) {
     const key = localStorage.key(i);
     if(key.startsWith("teacherTasks-")) {
       const data = JSON.parse(localStorage.getItem(key));
-      allAssignments.push(data);
+      const dateStr = key.replace("teacherTasks-", "");
+      allAssignments.push({...data, date: dateStr});
     }
   }
 
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  // 날짜가 유효하고 오늘 이전인 과제만 필터링 후, 날짜 포맷 추가
   const validAssignments = allAssignments.filter(assign => {
     if (!assign.date) return false;
     const dateObj = new Date(assign.date);
@@ -430,13 +429,11 @@ function renderStudentStatus() {
     return {...assign, dateObj, formattedDate};
   });
 
-  // 학생별 완료 상태 확인 함수
   function isDone(student, task) {
     const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${student}`) || "{}");
     return doneTasks[task] === true;
   }
 
-  // 학생별 과제 상태 렌더링
   students.forEach(student => {
     const div = document.createElement("div");
     div.style.border = "2px solid #aaa";
@@ -447,7 +444,6 @@ function renderStudentStatus() {
     div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
 
     validAssignments.forEach(assign => {
-      // 전체 대상 또는 해당 학생 포함여부 확인
       const assigned = assign.students.includes("전체") || assign.students.includes(student);
       if(!assigned) return;
 
@@ -455,11 +451,11 @@ function renderStudentStatus() {
         const done = isDone(student, task);
         const isPastIncomplete = (assign.dateObj < today) && !done;
 
-        let color = "#f6c1c1";  // 오늘 미완료 기본 분홍색
+        let color = "#f6c1c1";
         if (isPastIncomplete) {
-          color = "#c0392b";  // 지난 미완료 진한 붉은색
+          color = "#c0392b";
         } else if (done) {
-          color = "transparent"; // 완료 과제는 투명 처리
+          color = "transparent";
         }
 
         div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
@@ -472,6 +468,7 @@ function renderStudentStatus() {
     container.appendChild(div);
   });
 }
+
 
 
 
