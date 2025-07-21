@@ -103,6 +103,12 @@
   const prevDayBtn = document.getElementById("prev-day");
   const nextDayBtn = document.getElementById("next-day");
 
+  function loadStudents() {
+  const raw = localStorage.getItem("students");
+  return raw ? JSON.parse(raw) : [];
+}
+
+
   function formatDate(d) {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
