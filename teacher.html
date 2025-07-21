@@ -520,7 +520,7 @@ function saveStudents(students) {
 
 // 학생 리스트 화면 출력
 function renderStudentList() {
-  const students = loadStudents();
+  const students = loadStudents().map(s => s.name);
   const tbody = document.querySelector("#student-list tbody");
   tbody.innerHTML = "";
   students.forEach((stu, index) => {
