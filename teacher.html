@@ -197,6 +197,11 @@
 
  
 <script>
+    // 페이지 로드 시 <오늘 할 일> 보여주기
+  window.onload = function() {
+    showStudentStatus();
+  };
+  
 function showStudentStatus() {
   document.getElementById("student-status-page").style.display = "block";
   document.getElementById("task-management").style.display = "none";
@@ -218,6 +223,16 @@ function showStudentManagement() {
   document.getElementById("student-management").style.display = "block";
   renderStudentList();
 }
+
+   function renderStudentListToCheckbox() {
+    const container = document.getElementById("student-checkboxes");
+    container.innerHTML = "";
+    const students = loadStudents();
+    students.forEach(stu => {
+      const label = document.createElement("label");
+      label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${stu.name}`;
+      container.appendChild(label);
+    }
 
 
 
