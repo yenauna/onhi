@@ -103,22 +103,19 @@
   </header>
 
   <div class="toggle-buttons">
-    <button onclick="showList()">오늘 할 일</button>
-    <button onclick="showList()">과제 목록</button>
-    <button onclick="showCalendar()">달력</button>
+    <button onclick="showStudentStatus()">오늘 할 일</button>
+    <button onclick="showTaskManagement()">과제 관리</button>
     <button onclick="showStudentManagement()">학생 관리</button>
-
   </div>
 
   <div id="student-status-page" style="display:none; margin-top: 20px;">
-  <h3>✅ 학생별 과제 완료 현황</h3>
-  <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"></div>
-  <button onclick="showList()">과제 목록으로 돌아가기</button>
+    <h3>✅ 학생별 과제 완료 현황</h3>
+    <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"></div>
 </div>
 
   
-  <div id="teacher-list">
-    <h2>📋 과제 목록</h2>
+  <div id="task-management" style="display:none; margin-top: 20px;">
+    <h2>📋 과제 추가 및 달력</h2>
 
     <section>
       <label>📅 과제 날짜:</label>
@@ -150,25 +147,40 @@
       </select>
 
       <div id="student-checkboxes" class="student-checkboxes" style="display: none;">
-        <label><input type="checkbox" value="학생1" /> 학생1</label>
-        <label><input type="checkbox" value="학생2" /> 학생2</label>
-        <label><input type="checkbox" value="학생3" /> 학생3</label>
+      
       </div>
 
       <button onclick="saveAssignment()">💾 저장하기</button>
     </section>
 
-    <section class="saved-tasks">
-      <h3>📚 저장된 과제 목록</h3>
-      <label>📅 날짜 필터: <input type="date" id="filter-date" onchange="loadSavedTasks()" /></label>
-      <div id="task-storage"></div>
-    </section>
+ <section class="calendar" style="margin-top:20px;">
+    <h3>🗓️ 달력 (과제 클릭 시 수정/삭제/확인 버튼 표시)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </section>
 
-    <section class="student-status">
-      <h3>✅ 학생별 과제 완료 현황</h3>
-      <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"></div>
-    </section>
+    <!-- 과제 클릭 시 보이는 버튼 영역 -->
+  <div id="task-action-buttons" style="margin-top:10px; display:none;">
+    <button onclick="editTask()">수정</button>
+    <button onclick="deleteTaskClicked()">삭제</button>
+    <button onclick="showTaskCompletion()">확인</button>
   </div>
+
+  <!-- 확인 시 학생별 완료 여부 표시 -->
+  <div id="task-completion" style="margin-top:20px; display:none;">
+    <h3>과제별 학생 완료 여부</h3>
+    <div id="completion-list"></div>
+    <button onclick="closeTaskCompletion()">닫기</button>
+  </div>
+</div>
+
+   
   <div id="student-management" style="display:none; margin-top:20px;">
   <h3>👩‍🎓 학생 관리</h3>
   <input type="text" id="new-student-id" placeholder="번호" />
@@ -183,25 +195,30 @@
 </div>
 
 
-  <div class="calendar" id="calendar" style="display:none;">
-    <table>
-      <thead>
-        <tr>
-          <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body"></tbody>
-    </table>
-  </div>
-
+ 
 <script>
-  function showStudentStatus() {
-  document.getElementById("teacher-list").style.display = "none";
-  document.getElementById("calendar").style.display = "none";
-  document.getElementById("student-management").style.display = "none";
+function showStudentStatus() {
   document.getElementById("student-status-page").style.display = "block";
+  document.getElementById("task-management").style.display = "none";
+  document.getElementById("student-management").style.display = "none";
   renderStudentStatus();
 }
+
+function showTaskManagement() {
+  document.getElementById("student-status-page").style.display = "none";
+  document.getElementById("task-management").style.display = "block";
+  document.getElementById("student-management").style.display = "none";
+  renderCalendar();
+  renderStudentListToCheckbox();  // 학생 체크박스 업데이트 함수 추가 필요
+}
+
+function showStudentManagement() {
+  document.getElementById("student-status-page").style.display = "none";
+  document.getElementById("task-management").style.display = "none";
+  document.getElementById("student-management").style.display = "block";
+  renderStudentList();
+}
+
 
 
   
@@ -504,29 +521,6 @@ assign.tasks.forEach(task => {
   renderCalendar();
   renderStudentStatus();
 
-  function showList() {
-    document.getElementById("student-status-page").style.display = "block";
-    document.getElementById("teacher-list").style.display = "none";
-    document.getElementById("calendar").style.display = "none";
-      document.getElementById("student-management").style.display = "none";  // 숨김
-}
-
-  function showCalendar() {
-    document.getElementById("student-status-page").style.display = "none";
-    document.getElementById("teacher-list").style.display = "none";
-    document.getElementById("calendar").style.display = "block";
-    document.getElementById("student-management").style.display = "none";  // 숨김
-  }
-  function showStudentManagement() {
-  document.getElementById("student-status-page").style.display = "none";
-  document.getElementById("teacher-list").style.display = "none";
-  document.getElementById("calendar").style.display = "none";
-  document.getElementById("student-management").style.display = "block";
-  renderStudentList();
-}
-
-
-  showList();
 
   // 학생 정보 저장 로드 함수
 function loadStudents() {
