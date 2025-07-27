@@ -103,7 +103,7 @@
   </header>
 
   <div class="toggle-buttons">
-    <button onclick="showStudentStatus()">오늘 할 일</button>
+    <button onclick="showList()">오늘 할 일</button>
     <button onclick="showList()">과제 목록</button>
     <button onclick="showCalendar()">달력</button>
     <button onclick="showStudentManagement()">학생 관리</button>
@@ -505,8 +505,8 @@ assign.tasks.forEach(task => {
   renderStudentStatus();
 
   function showList() {
-    document.getElementById("student-status-page").style.display = "none";
-    document.getElementById("teacher-list").style.display = "block";
+    document.getElementById("student-status-page").style.display = "block";
+    document.getElementById("teacher-list").style.display = "none";
     document.getElementById("calendar").style.display = "none";
       document.getElementById("student-management").style.display = "none";  // 숨김
 }
