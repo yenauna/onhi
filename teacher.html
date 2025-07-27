@@ -215,6 +215,11 @@ function showTaskManagement() {
   document.getElementById("student-management").style.display = "none";
   renderCalendar();
   renderStudentListToCheckbox(); 
+  // 달력 보이도록 처리 추가
+  const calendarSection = document.querySelector("#task-management section.calendar");
+  if (calendarSection) {
+    calendarSection.style.display = "block";
+  }
 }
 
 function showStudentManagement() {
