@@ -398,6 +398,7 @@ function showStudentManagement() {
 
     const firstDay = new Date(year, month, 1);
     const startDay = firstDay.getDay();
+    const adjustedStartDay = (startDay + 6) % 7;
 
     const lastDate = new Date(year, month + 1, 0).getDate();
 
@@ -427,7 +428,7 @@ function showStudentManagement() {
     }
 
     let html = "<tr>";
-    for(let i=0; i<startDay; i++) {
+    for(let i=0; i<adjustedStartDay; i++) {
       html += "<td></td>";
     }
 
@@ -438,7 +439,7 @@ function showStudentManagement() {
 
       html += `<td><strong>${day}</strong>${taskHtml}</td>`;
 
-      if((startDay + day) % 7 === 0) {
+      if((adjustedStartDay + day) % 7 === 0) {
         html += "</tr><tr>";
       }
     }
