@@ -437,7 +437,7 @@ function showStudentManagement() {
       const tasksForDay = allAssignments.filter(a => a.date === dateStr).flatMap(a => a.tasks);
       const taskHtml = tasksForDay.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join("");
 
-      html += `<td><strong>${day}</strong>${taskHtml}</td>`;
+      html += `<td onclick="selectDate('${dateStr}')"><strong>${day}</strong>${taskHtml}</td>`;
 
       if((adjustedStartDay + day) % 7 === 0) {
         html += "</tr><tr>";
@@ -447,6 +447,91 @@ function showStudentManagement() {
     html += "</tr>";
     tbody.innerHTML = html;
   }
+
+  let selectedDate = null;  // 클릭된 날짜 저장용
+
+function selectDate(dateStr) {
+  selectedDate = dateStr;
+  document.getElementById("task-action-buttons").style.display = "block";
+  document.getElementById("task-completion").style.display = "none";
+
+  // 선택한 날짜 과제를 편집창에 불러오기
+  copyTask(dateStr);
+}
+
+function editTask() {
+  if (!selectedDate) {
+    alert("날짜를 선택하세요.");
+    return;
+  }
+  copyTask(selectedDate);
+}
+
+function deleteTaskClicked() {
+  if (!selectedDate) {
+    alert("날짜를 선택하세요.");
+    return;
+  }
+  if (confirm(`${selectedDate} 과제를 삭제하시겠습니까?`)) {
+    localStorage.removeItem("teacherTasks-" + selectedDate);
+    selectedDate = null;
+    document.getElementById("task-action-buttons").style.display = "none";
+    renderCalendar();
+  }
+}
+
+function showTaskCompletion() {
+  if (!selectedDate) {
+    alert("날짜를 선택하세요.");
+    return;
+  }
+  document.getElementById("task-action-buttons").style.display = "none";
+  document.getElementById("task-completion").style.display = "block";
+
+  renderTaskCompletion(selectedDate);
+}
+
+function closeTaskCompletion() {
+  document.getElementById("task-completion").style.display = "none";
+}
+
+function renderTaskCompletion(dateStr) {
+  const container = document.getElementById("completion-list");
+  container.innerHTML = "";
+
+  const dataRaw = localStorage.getItem("teacherTasks-" + dateStr);
+  if (!dataRaw) {
+    container.textContent = "과제가 없습니다.";
+    return;
+  }
+
+  const data = JSON.parse(dataRaw);
+  let students = [];
+
+  if (data.students.includes("전체")) {
+    students = loadStudents().map(s => s.name);
+  } else {
+    students = data.students;
+  }
+
+  students.forEach(student => {
+    const doneTasks = getDoneTasks(student);
+    const listDiv = document.createElement("div");
+    listDiv.style.border = "1px solid #ccc";
+    listDiv.style.marginBottom = "6px";
+    listDiv.style.padding = "6px";
+    listDiv.style.borderRadius = "8px";
+
+    const tasksStatus = data.tasks.map(task => {
+      const done = doneTasks[task] === true;
+      return `${task} : ${done ? "완료" : "미완료"}`;
+    }).join(", ");
+
+    listDiv.textContent = `👦 ${student} — ${tasksStatus}`;
+    container.appendChild(listDiv);
+  });
+}
+
 
 function renderStudentStatus() {
   const container = document.getElementById("student-status-list");
@@ -547,55 +632,15 @@ assign.tasks.forEach(task => {
   // 학생 정보 저장 로드 함수
 function loadStudents() {
   const raw = localStorage.getItem("students");
-  return raw ? JSON.parse(raw) : [];
-}
-
-// 학생 정보 저장 함수
-function saveStudents(students) {
-  localStorage.setItem("students", JSON.stringify(students));
-}
-
-// 학생 리스트 화면 출력
-function renderStudentList() {
-  const students = loadStudents();
-  const tbody = document.querySelector("#student-list tbody");
-  tbody.innerHTML = "";
-  students.forEach((stu, index) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${stu.id}</td>
-      <td>${stu.name}</td>
-      <td><button onclick="deleteStudent(${index})">삭제</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  // 학생 체크박스 목록도 갱신 (과제 대상 지정용)
-  const container = document.getElementById("student-checkboxes");
-  container.innerHTML = "";
-  students.forEach(stu => {
-    const label = document.createElement("label");
-    label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${stu.name}`;
-    container.appendChild(label);
-  });
-}
-
-// 학생 추가 함수
-function addStudent() {
-  const id = document.getElementById("new-student-id").value.trim();
-  const name = document.getElementById("new-student-name").value.trim();
-  const password = document.getElementById("new-student-password").value.trim();
-
-  if (!id || !name || !password) {
-    alert("학번, 이름, 비밀번호를 모두 입력하세요.");
+  return raw ? 번호, 이름, 비밀번호를 모두 입력하세요.");
     return;
   }
 
   const students = loadStudents();
 
-  // 중복 학번 체크
+  // 중복 번호 체크
   if (students.some(s => s.id === id)) {
-    alert("이미 존재하는 학번입니다.");
+    alert("이미 존재하는 번호입니다.");
     return;
   }
 
