@@ -103,13 +103,20 @@
   </header>
 
   <div class="toggle-buttons">
-    <button onclick="location.href='student_status.html'">오늘 할 일</button>
+    <button onclick="showStudentStatus()">오늘 할 일</button>
     <button onclick="showList()">과제 목록 보기</button>
     <button onclick="showCalendar()">달력 보기</button>
     <button onclick="showStudentManagement()">학생 관리</button>
 
   </div>
 
+  <div id="student-status-page" style="display:none; margin-top: 20px;">
+  <h3>✅ 학생별 과제 완료 현황</h3>
+  <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"></div>
+  <button onclick="showList()">과제 목록으로 돌아가기</button>
+</div>
+
+  
   <div id="teacher-list">
     <h2>📋 과제 목록</h2>
 
@@ -188,6 +195,16 @@
   </div>
 
 <script>
+  function showStudentStatus() {
+  document.getElementById("teacher-list").style.display = "none";
+  document.getElementById("calendar").style.display = "none";
+  document.getElementById("student-management").style.display = "none";
+  document.getElementById("student-status-page").style.display = "block";
+  renderStudentStatus();
+}
+
+
+  
   // 학생별 완료 저장 함수
   function getDoneTasks(student) {
     return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
@@ -488,17 +505,20 @@ assign.tasks.forEach(task => {
   renderStudentStatus();
 
   function showList() {
+    document.getElementById("student-status-page").style.display = "none";
     document.getElementById("teacher-list").style.display = "block";
     document.getElementById("calendar").style.display = "none";
       document.getElementById("student-management").style.display = "none";  // 숨김
 }
 
   function showCalendar() {
+    document.getElementById("student-status-page").style.display = "none";
     document.getElementById("teacher-list").style.display = "none";
     document.getElementById("calendar").style.display = "block";
     document.getElementById("student-management").style.display = "none";  // 숨김
   }
   function showStudentManagement() {
+  document.getElementById("student-status-page").style.display = "none";
   document.getElementById("teacher-list").style.display = "none";
   document.getElementById("calendar").style.display = "none";
   document.getElementById("student-management").style.display = "block";
