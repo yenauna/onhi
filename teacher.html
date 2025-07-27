@@ -629,10 +629,50 @@ assign.tasks.forEach(task => {
   renderStudentStatus();
 
 
-  // 학생 정보 저장 로드 함수
+// 학생 정보 저장 로드 함수
 function loadStudents() {
   const raw = localStorage.getItem("students");
-  return raw ? 번호, 이름, 비밀번호를 모두 입력하세요.");
+  return raw ? JSON.parse(raw) : [];
+}
+
+// 학생 정보 저장 함수
+function saveStudents(students) {
+  localStorage.setItem("students", JSON.stringify(students));
+}
+
+// 학생 리스트 화면 출력
+function renderStudentList() {
+  const students = loadStudents();
+  const tbody = document.querySelector("#student-list tbody");
+  tbody.innerHTML = "";
+  students.forEach((stu, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${stu.id}</td>
+      <td>${stu.name}</td>
+      <td><button onclick="deleteStudent(${index})">삭제</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // 학생 체크박스 목록도 갱신 (과제 대상 지정용)
+  const container = document.getElementById("student-checkboxes");
+  container.innerHTML = "";
+  students.forEach(stu => {
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${stu.name}`;
+    container.appendChild(label);
+  });
+}
+
+// 학생 추가 함수
+function addStudent() {
+  const id = document.getElementById("new-student-id").value.trim();
+  const name = document.getElementById("new-student-name").value.trim();
+  const password = document.getElementById("new-student-password").value.trim();
+
+  if (!id || !name || !password) {
+    alert("번호, 이름, 비밀번호를 모두 입력하세요.");
     return;
   }
 
@@ -666,6 +706,7 @@ function deleteStudent(index) {
 
 // 초기 렌더링 시 학생 리스트 출력
 renderStudentList();
+
 
 </script>
 
