@@ -220,12 +220,49 @@
  
 <script>
 
+  <script>
+// === 학생 정렬/표시 공통 헬퍼 ===
+function _toNum(v){ const n=parseInt(String(v),10); return isNaN(n)?0:n; }
+
+// 1~50 먼저, 51~ 그 다음 + 각 그룹 내 오름차순
+function sortStudents(arr){
+  return (arr||[]).slice().sort((a,b)=>{
+    const an=_toNum(a.id), bn=_toNum(b.id);
+    const ag = an>50 ? 1 : 0, bg = bn>50 ? 1 : 0;
+    if (ag!==bg) return ag-bg;
+    return an-bn;
+  });
+}
+
+// 저장된 학생 불러와 정렬해서 반환
+function getStudentsSorted(){ return sortStudents(loadStudents()); }
+
+// 화면에 보일 라벨 "번호 이름"
+function labelOf(stu){ return `${stu.id} ${stu.name}`; }
+</script>
+
+
   let selectedDate = null;         // 달력에서 선택한 날짜
   let selectedTaskIndex = null;    // 선택한 과제 인덱스
   let selectedTaskText = "";       // 선택한 과제 텍스트
   let isEditing = false;           // 편집 모드인지
   let editingOriginalDate = null;  // 편집 시작 시 원래 날짜
 
+  // === 학생 정렬/표시 공통 헬퍼 ===
+  function _toNum(v){ const n=parseInt(String(v),10); return isNaN(n)?0:n; }
+  // 1~50 먼저, 51~ 이후 + 각 그룹 내 오름차순
+  function sortStudents(arr){
+   return (arr||[]).slice().sort((a,b)=>{
+    const an=_toNum(a.id), bn=_toNum(b.id);
+    const ag = an>50 ? 1 : 0, bg = bn>50 ? 1 : 0;
+    if (ag!==bg) return ag-bg;
+    return an-bn;
+  });
+}
+  // 저장된 학생을 정렬해서 가져오기
+  function getStudentsSorted(){ return sortStudents(loadStudents()); }
+  // 화면에 보일 라벨: "번호 이름"
+  function labelOf(stu){ return `${stu.id} ${stu.name}`; }
   
     // 페이지 로드 시 <오늘 할 일> 보여주기
   window.onload = function() {
@@ -259,16 +296,17 @@ function showStudentManagement() {
   renderStudentList();
 }
 
-   function renderStudentListToCheckbox() {
-    const container = document.getElementById("student-checkboxes");
-    container.innerHTML = "";
-    const students = loadStudents();
-    students.forEach(stu => {
-      const label = document.createElement("label");
-      label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${stu.name}`;
-      container.appendChild(label);
-    });
-   }
+function renderStudentListToCheckbox() {
+  const container = document.getElementById("student-checkboxes");
+  container.innerHTML = "";
+  const students = getStudentsSorted();
+  students.forEach(stu => {
+    const label = document.createElement("label");
+    // value는 name 그대로 유지(내부 로직 호환), 보여지는 텍스트만 "번호 이름"
+    label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${labelOf(stu)}`;
+    container.appendChild(label);
+  });
+}
 
 
 
@@ -591,9 +629,13 @@ function renderTaskCompletion(dateStr, idx){
   if (!data){ container.textContent = "과제가 없습니다."; return; }
 
   const task = data.tasks[idx];
-  const students = (data.students || []).includes("전체")
-      ? loadStudents().map(s=>s.name)
-      : (data.students || []);
+
+  // 학생 목록 구성 (전체 또는 선택된 학생만), 그리고 정렬
+  let students = getStudentsSorted();
+  if (!data.students.includes("전체")) {
+    const set = new Set(data.students);            // 이름 세트
+    students = students.filter(s => set.has(s.name));
+  }
 
   // 제목
   const h = document.createElement('h4');
@@ -604,16 +646,17 @@ function renderTaskCompletion(dateStr, idx){
   const grid = document.createElement('div');
   grid.className = "student-chip-grid";
 
-  students.forEach(name=>{
-    const done = (getDoneTasks(name)[task] === true);
+  students.forEach(stu=>{
+    const done = (getDoneTasks(stu.name)[task] === true);
     const chip = document.createElement('div');
     chip.className = "student-chip " + (done ? "" : "missed");
-    chip.textContent = name;
+    chip.textContent = labelOf(stu);             // "번호 이름"
     grid.appendChild(chip);
   });
 
   container.appendChild(grid);
 }
+
 
 
 function closeTaskCompletion() {
@@ -640,10 +683,11 @@ function renderStudentStatus() {
   const container = document.getElementById("student-status-list");
   container.innerHTML = "";
 
-const students = loadStudents().map(s => s.name);
+  // ✅ 여기! 이름 배열이 아니라 '학생 객체' 정렬 배열로 변경
+  const students = getStudentsSorted(); // [{id,name,password}, ...]
 
+  // 모든 과제 불러오기
   let allAssignments = [];
-
   for(let i=0; i<localStorage.length; i++) {
     const key = localStorage.key(i);
     if(key.startsWith("teacherTasks-")) {
@@ -656,66 +700,58 @@ const students = loadStudents().map(s => s.name);
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  const validAssignments = allAssignments.filter(assign => {
-    if (!assign.date) return false;
-    const dateObj = new Date(assign.date);
-    if (isNaN(dateObj)) return false;
-    dateObj.setHours(0,0,0,0);
-    return dateObj <= today;
-  }).map(assign => {
-    const dateObj = new Date(assign.date);
-    dateObj.setHours(0,0,0,0);
-    const dayNames = ['일','월','화','수','목','금','토'];
-    const formattedDate = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayNames[dateObj.getDay()]})`;
-    return {...assign, dateObj, formattedDate};
-  });
+  const validAssignments = allAssignments
+    .filter(assign => {
+      if (!assign.date) return false;
+      const dateObj = new Date(assign.date);
+      if (isNaN(dateObj)) return false;
+      dateObj.setHours(0,0,0,0);
+      return dateObj <= today;          // 오늘 이전/오늘 것만
+    })
+    .map(assign => {
+      const dateObj = new Date(assign.date);
+      dateObj.setHours(0,0,0,0);
+      const dayNames = ['일','월','화','수','목','금','토'];
+      const formattedDate = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayNames[dateObj.getDay()]})`;
+      return {...assign, dateObj, formattedDate};
+    })
+    .sort((a,b)=> b.dateObj - a.dateObj); // 날짜 역순
 
-    // 날짜 역순 정렬
-  validAssignments.sort((a, b) => b.dateObj - a.dateObj);
-
-  function isDone(student, task) {
-    const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${student}`) || "{}");
+  function isDone(studentName, task) {
+    const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${studentName}`) || "{}");
     return doneTasks[task] === true;
   }
 
-  students.forEach(student => {
+  // ✅ 여기! 루프에서 'stu' 객체 사용(표시는 labelOf(stu), 체크는 stu.name)
+  students.forEach(stu => {
     const div = document.createElement("div");
     div.style.border = "2px solid #aaa";
     div.style.padding = "10px";
     div.style.borderRadius = "16px";
     div.style.marginBottom = "10px";
 
-    div.innerHTML = `👦 ${student}<div style="margin-top: 10px;">`;
+    // 제목: 번호 이름
+    div.innerHTML = `👦 ${labelOf(stu)}<div style="margin-top: 10px;">`;
 
     validAssignments.forEach(assign => {
-      const assigned = assign.students.includes("전체") || assign.students.includes(student);
+      const assigned = assign.students.includes("전체") || assign.students.includes(stu.name);
       if(!assigned) return;
 
-assign.tasks.forEach(task => {
-  const done = isDone(student, task);
-  const isPast = assign.dateObj < today;
+      assign.tasks.forEach(task => {
+        const done = isDone(stu.name, task);   // ← 저장키는 '이름' 그대로 사용
+        const isPast = assign.dateObj < today;
 
-  if (done && isPast) {
-    // 과거 완료 과제는 아예 표시하지 않음
-    return;
-  }
+        if (done && isPast) return;           // 과거 완료 과제는 숨김
 
-  let color = "#f6c1c1";  // 기본 분홍 (오늘 과제)
-    let dateColor = "#666";  // 날짜 기본 글씨색
-  if (isPast && !done) {
-    color = "#c0392b";  // 진한 붉은색 (지난 미완료 과제)
-        dateColor = "#fff";  // 날짜 흰색으로 변경
-  } else if (!isPast && done) {
-    color = "white";    // 오늘 완료 과제는 흰색 배경
-    dateColor = "#666";  // 날짜 기본 글씨색
-  }
+        let color = "#f6c1c1";                // 기본: 오늘 미완료
+        let dateColor = "#666";
+        if (isPast && !done) { color = "#c0392b"; dateColor = "#fff"; }    // 지난 미완료(붉은색)
+        else if (!isPast && done) { color = "white"; dateColor = "#666"; } // 오늘 완료(흰색)
 
-  div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
-    <span>${task}</span><span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
-  </div>`;
-});
-
-
+        div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
+          <span>${task}</span><span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
+        </div>`;
+      });
     });
 
     div.innerHTML += "</div>";
@@ -745,28 +781,31 @@ function saveStudents(students) {
 
 // 학생 리스트 화면 출력
 function renderStudentList() {
-  const students = loadStudents();
+  const students = getStudentsSorted();           // 정렬된 목록
   const tbody = document.querySelector("#student-list tbody");
   tbody.innerHTML = "";
-  students.forEach((stu, index) => {
+  students.forEach(stu => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${stu.id}</td>
       <td>${stu.name}</td>
-      <td><button onclick="deleteStudent(${index})">삭제</button></td>
+      <td><button onclick="deleteStudentByKey('${stu.id}','${stu.name}')">삭제</button></td>
     `;
     tbody.appendChild(tr);
   });
 
-  // 학생 체크박스 목록도 갱신 (과제 대상 지정용)
+  // 과제 대상 체크박스도 함께 최신화
   const container = document.getElementById("student-checkboxes");
-  container.innerHTML = "";
-  students.forEach(stu => {
-    const label = document.createElement("label");
-    label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${stu.name}`;
-    container.appendChild(label);
-  });
+  if (container) {
+    container.innerHTML = "";
+    students.forEach(stu => {
+      const label = document.createElement("label");
+      label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${labelOf(stu)}`;
+      container.appendChild(label);
+    });
+  }
 }
+
 
 // 학생 추가 함수
 function addStudent() {
@@ -806,6 +845,21 @@ function deleteStudent(index) {
   saveStudents(students);
   renderStudentList();
 }
+
+ function deleteStudentByKey(id, name) {
+  if (!confirm("정말 삭제하시겠습니까?")) return;
+  const students = loadStudents();
+  const idx = students.findIndex(s => String(s.id)===String(id) && s.name===name);
+  if (idx >= 0) {
+    students.splice(idx, 1);
+    saveStudents(students);
+    renderStudentList();
+    // 체크박스/다른 화면 갱신도 함께
+    renderStudentListToCheckbox();
+    renderStudentStatus();
+  }
+}
+
 
 // 초기 렌더링 시 학생 리스트 출력
 renderStudentList();
