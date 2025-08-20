@@ -94,6 +94,22 @@
       padding: 4px;
       font-size: 14px;
     }
+    /* 달력 안에서 개별 과제 pill */
+.task-pill{
+  background:#f6c1c1; border-radius:8px; padding:2px 6px; margin-top:4px;
+  font-size:12px; cursor:pointer; display:inline-block;
+}
+.task-pill:hover{ opacity:.85; }
+
+/* 선택 표시 */
+#task-action-selected{ margin:6px 0; font-size:14px; color:#555; }
+
+/* 확인(과제별 완료여부) 카드형 */
+.student-chip-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+.student-chip{ border:1px solid #bbb; border-radius:10px; padding:10px 12px;
+  min-width:88px; text-align:center; background:#fff; }
+.student-chip.missed{ background:#f6c1c1; border-color:#e5aaaa; }
+
   </style>
 </head>
 <body>
@@ -197,6 +213,14 @@
 
  
 <script>
+
+  let selectedDate = null;         // 달력에서 선택한 날짜
+  let selectedTaskIndex = null;    // 선택한 과제 인덱스
+  let selectedTaskText = "";       // 선택한 과제 텍스트
+  let isEditing = false;           // 편집 모드인지
+  let editingOriginalDate = null;  // 편집 시작 시 원래 날짜
+
+  
     // 페이지 로드 시 <오늘 할 일> 보여주기
   window.onload = function() {
     showStudentStatus();
@@ -331,6 +355,7 @@ function showStudentManagement() {
 
   function loadSavedTasks() {
     const container = document.getElementById("task-storage");
+    if (!container) return; // 섹션 없을 때 그냥 종료
     const filter = document.getElementById("filter-date").value;
     container.innerHTML = "";
 
@@ -459,37 +484,108 @@ function selectDate(dateStr) {
   copyTask(dateStr);
 }
 
-function editTask() {
-  if (!selectedDate) {
-    alert("날짜를 선택하세요.");
-    return;
+function editTask(){
+  if (!selectedDate){
+    alert("과제를 먼저 선택하세요."); return;
   }
-  copyTask(selectedDate);
+  const key = 'teacherTasks-'+selectedDate;
+  const data = JSON.parse(localStorage.getItem(key) || '{}');
+
+  // 위 입력창에 불러오기
+  const taskList = document.getElementById('task-list');
+  taskList.innerHTML = '';
+  (data.tasks || []).forEach(task=>{
+    const div = document.createElement('div');
+    div.className = 'task-input';
+    div.innerHTML = `<input type="text" value="${task}"/><button onclick="removeTask(this)">⊖</button>`;
+    taskList.appendChild(div);
+  });
+  document.getElementById('task-date').value = selectedDate;
+  document.getElementById('repeat').value = data.repeat || 'none';
+
+  const target = (data.students || []).includes('전체') ? 'all' : 'selected';
+  document.getElementById('target').value = target;
+  document.getElementById('student-checkboxes').style.display = (target==='selected') ? 'block' : 'none';
+  if (target === 'selected'){
+    const set = new Set(data.students || []);
+    document.querySelectorAll('#student-checkboxes input').forEach(cb=>{
+      cb.checked = set.has(cb.value);
+    });
+  }
+
+  isEditing = true;
+  editingOriginalDate = selectedDate;
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
-function deleteTaskClicked() {
-  if (!selectedDate) {
-    alert("날짜를 선택하세요.");
-    return;
+
+function deleteTaskClicked(){
+  if (!selectedDate || selectedTaskIndex === null){
+    alert("과제를 먼저 선택하세요."); return;
   }
-  if (confirm(`${selectedDate} 과제를 삭제하시겠습니까?`)) {
-    localStorage.removeItem("teacherTasks-" + selectedDate);
-    selectedDate = null;
-    document.getElementById("task-action-buttons").style.display = "none";
-    renderCalendar();
+  const key = 'teacherTasks-'+selectedDate;
+  const raw = localStorage.getItem(key);
+  if (!raw) return;
+
+  const data = JSON.parse(raw);
+  const target = data.tasks[selectedTaskIndex];
+
+  if (!confirm(`"${target}" 과제를 삭제할까요?`)) return;
+
+  data.tasks.splice(selectedTaskIndex, 1);
+  if (data.tasks.length === 0){
+    localStorage.removeItem(key);
+  }else{
+    localStorage.setItem(key, JSON.stringify(data));
   }
+
+  selectedTaskIndex = null;
+  document.getElementById('task-action-buttons').style.display = 'none';
+  renderCalendar();
+  renderStudentStatus();
 }
 
-function showTaskCompletion() {
-  if (!selectedDate) {
-    alert("날짜를 선택하세요.");
-    return;
+function showTaskCompletion(){
+  if (!selectedDate || selectedTaskIndex === null){
+    alert("과제를 먼저 선택하세요."); return;
   }
   document.getElementById("task-action-buttons").style.display = "none";
   document.getElementById("task-completion").style.display = "block";
-
-  renderTaskCompletion(selectedDate);
+  renderTaskCompletion(selectedDate, selectedTaskIndex);
 }
+
+function renderTaskCompletion(dateStr, idx){
+  const container = document.getElementById("completion-list");
+  container.innerHTML = "";
+
+  const data = JSON.parse(localStorage.getItem("teacherTasks-"+dateStr) || "null");
+  if (!data){ container.textContent = "과제가 없습니다."; return; }
+
+  const task = data.tasks[idx];
+  const students = (data.students || []).includes("전체")
+      ? loadStudents().map(s=>s.name)
+      : (data.students || []);
+
+  // 제목
+  const h = document.createElement('h4');
+  h.textContent = `📌 ${task}`;
+  container.appendChild(h);
+
+  // 카드 그리드
+  const grid = document.createElement('div');
+  grid.className = "student-chip-grid";
+
+  students.forEach(name=>{
+    const done = (getDoneTasks(name)[task] === true);
+    const chip = document.createElement('div');
+    chip.className = "student-chip " + (done ? "" : "missed");
+    chip.textContent = name;
+    grid.appendChild(chip);
+  });
+
+  container.appendChild(grid);
+}
+
 
 function closeTaskCompletion() {
   document.getElementById("task-completion").style.display = "none";
@@ -540,7 +636,20 @@ function renderTaskCompletion(dateStr) {
   });
 }
 
+function selectTask(dateStr, idx){
+  selectedDate = dateStr;
+  selectedTaskIndex = idx;
 
+  const data = JSON.parse(localStorage.getItem('teacherTasks-'+dateStr) || '{}');
+  selectedTaskText = (data.tasks && data.tasks[idx]) ? data.tasks[idx] : "";
+
+  document.getElementById('task-action-buttons').style.display = 'block';
+  document.getElementById('task-completion').style.display = 'none';
+  document.getElementById('task-action-selected').textContent =
+    `선택: ${dateStr} — ${selectedTaskText}`;
+}
+
+  
 function renderStudentStatus() {
   const container = document.getElementById("student-status-list");
   container.innerHTML = "";
