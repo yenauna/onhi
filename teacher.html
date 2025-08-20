@@ -514,21 +514,29 @@ function renderTaskCompletion(dateStr) {
     students = data.students;
   }
 
-  students.forEach(student => {
-    const doneTasks = getDoneTasks(student);
-    const listDiv = document.createElement("div");
-    listDiv.style.border = "1px solid #ccc";
-    listDiv.style.marginBottom = "6px";
-    listDiv.style.padding = "6px";
-    listDiv.style.borderRadius = "8px";
+  data.tasks.forEach(task => {
+    const card = document.createElement("div");
+    card.style.border = "1px solid #ccc";
+    card.style.borderRadius = "10px";
+    card.style.padding = "10px";
+    card.style.marginBottom = "10px";
 
-    const tasksStatus = data.tasks.map(task => {
-      const done = doneTasks[task] === true;
-      return `${task} : ${done ? "완료" : "미완료"}`;
-    }).join(", ");
+    const title = document.createElement("div");
+    title.style.fontWeight = "bold";
+    title.style.marginBottom = "6px";
+    title.textContent = `📌 ${task}`;
+    card.appendChild(title);
 
-    listDiv.textContent = `👦 ${student} — ${tasksStatus}`;
-    container.appendChild(listDiv);
+    students.forEach(student => {
+      const doneTasks = getDoneTasks(student);
+      const status = doneTasks[task] ? "완료" : "미완료";
+
+      const line = document.createElement("div");
+      line.textContent = `👦 ${student} — ${status}`;
+      card.appendChild(line);
+    });
+
+    container.appendChild(card);
   });
 }
 
