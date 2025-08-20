@@ -182,6 +182,8 @@
   </section>
 
     <!-- 과제 클릭 시 보이는 버튼 영역 -->
+    <div id="task-action-selected"></div>
+
   <div id="task-action-buttons" style="margin-top:10px; display:none;">
     <button onclick="editTask()">수정</button>
     <button onclick="deleteTaskClicked()">삭제</button>
@@ -318,6 +320,33 @@ function showStudentManagement() {
       students = ["전체"];
     }
 
+      // === 편집 모드 저장: 기존 항목 덮어쓰기 ===
+  if (isEditing) {
+    const originalKey = "teacherTasks-" + editingOriginalDate; // 처음 편집을 시작한 날짜
+    const newKey      = "teacherTasks-" + date;                 // 현재 입력창의 날짜(바꿨을 수 있음)
+
+    const data = {
+      tasks: newTasks,
+      repeat: repeat,
+      students: students
+    };
+
+    // 날짜가 바뀌었으면 원래 키 삭제 후 새 키로 저장
+    if (newKey !== originalKey) {
+      localStorage.removeItem(originalKey);
+    }
+    localStorage.setItem(newKey, JSON.stringify(data));
+
+    // 편집 상태 초기화 후 화면 갱신
+    isEditing = false;
+    editingOriginalDate = null;
+    alert("수정되었습니다!");
+    renderCalendar();
+    renderStudentStatus();
+    return; // 아래 '병합 저장' 로직은 타지 않도록 종료
+  }
+
+
     const key = "teacherTasks-" + date;
     const existingDataRaw = localStorage.getItem(key);
     let existingData = null;
@@ -356,7 +385,7 @@ function showStudentManagement() {
   function loadSavedTasks() {
     const container = document.getElementById("task-storage");
     if (!container) return; // 섹션 없을 때 그냥 종료
-    const filter = document.getElementById("filter-date").value;
+    const filter = document.getElementById("filter-date")?.value || "";
     container.innerHTML = "";
 
     for (let i = 0; i < localStorage.length; i++) {
@@ -460,9 +489,15 @@ function showStudentManagement() {
     for(let day=1; day<=lastDate; day++) {
       const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const tasksForDay = allAssignments.filter(a => a.date === dateStr).flatMap(a => a.tasks);
-      const taskHtml = tasksForDay.map(t => `<div style="background:#f6c1c1; border-radius:6px; padding:2px; margin-top:2px; font-size:12px;">${t}</div>`).join("");
+      const taskHtml = tasksForDay.map((t, idx) => {
+         const esc = t
+          .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+          .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+         return `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${esc}</div>`;
+}).join("");
 
-      html += `<td onclick="selectDate('${dateStr}')"><strong>${day}</strong>${taskHtml}</td>`;
+      html += `<td><strong>${day}</strong>${taskHtml}</td>`;
+
 
       if((adjustedStartDay + day) % 7 === 0) {
         html += "</tr><tr>";
@@ -473,16 +508,6 @@ function showStudentManagement() {
     tbody.innerHTML = html;
   }
 
-  let selectedDate = null;  // 클릭된 날짜 저장용
-
-function selectDate(dateStr) {
-  selectedDate = dateStr;
-  document.getElementById("task-action-buttons").style.display = "block";
-  document.getElementById("task-completion").style.display = "none";
-
-  // 선택한 날짜 과제를 편집창에 불러오기
-  copyTask(dateStr);
-}
 
 function editTask(){
   if (!selectedDate){
@@ -591,50 +616,7 @@ function closeTaskCompletion() {
   document.getElementById("task-completion").style.display = "none";
 }
 
-function renderTaskCompletion(dateStr) {
-  const container = document.getElementById("completion-list");
-  container.innerHTML = "";
 
-  const dataRaw = localStorage.getItem("teacherTasks-" + dateStr);
-  if (!dataRaw) {
-    container.textContent = "과제가 없습니다.";
-    return;
-  }
-
-  const data = JSON.parse(dataRaw);
-  let students = [];
-
-  if (data.students.includes("전체")) {
-    students = loadStudents().map(s => s.name);
-  } else {
-    students = data.students;
-  }
-
-  data.tasks.forEach(task => {
-    const card = document.createElement("div");
-    card.style.border = "1px solid #ccc";
-    card.style.borderRadius = "10px";
-    card.style.padding = "10px";
-    card.style.marginBottom = "10px";
-
-    const title = document.createElement("div");
-    title.style.fontWeight = "bold";
-    title.style.marginBottom = "6px";
-    title.textContent = `📌 ${task}`;
-    card.appendChild(title);
-
-    students.forEach(student => {
-      const doneTasks = getDoneTasks(student);
-      const status = doneTasks[task] ? "완료" : "미완료";
-
-      const line = document.createElement("div");
-      line.textContent = `👦 ${student} — ${status}`;
-      card.appendChild(line);
-    });
-
-    container.appendChild(card);
-  });
-}
 
 function selectTask(dateStr, idx){
   selectedDate = dateStr;
