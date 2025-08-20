@@ -220,28 +220,6 @@
  
 <script>
 
-  <script>
-// === 학생 정렬/표시 공통 헬퍼 ===
-function _toNum(v){ const n=parseInt(String(v),10); return isNaN(n)?0:n; }
-
-// 1~50 먼저, 51~ 그 다음 + 각 그룹 내 오름차순
-function sortStudents(arr){
-  return (arr||[]).slice().sort((a,b)=>{
-    const an=_toNum(a.id), bn=_toNum(b.id);
-    const ag = an>50 ? 1 : 0, bg = bn>50 ? 1 : 0;
-    if (ag!==bg) return ag-bg;
-    return an-bn;
-  });
-}
-
-// 저장된 학생 불러와 정렬해서 반환
-function getStudentsSorted(){ return sortStudents(loadStudents()); }
-
-// 화면에 보일 라벨 "번호 이름"
-function labelOf(stu){ return `${stu.id} ${stu.name}`; }
-</script>
-
-
   let selectedDate = null;         // 달력에서 선택한 날짜
   let selectedTaskIndex = null;    // 선택한 과제 인덱스
   let selectedTaskText = "";       // 선택한 과제 텍스트
