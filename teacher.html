@@ -197,6 +197,9 @@
 
  
 <script>
+  let selectedDate = null;   // 달력에서 선택된 날짜
+  let isEditing = false;     // 해당 날짜 "수정" 모드인지
+
     // 페이지 로드 시 <오늘 할 일> 보여주기
   window.onload = function() {
     showStudentStatus();
@@ -267,67 +270,61 @@ function showStudentManagement() {
     btn.parentElement.remove();
   }
 
-  function saveAssignment() {
-    const date = document.getElementById("task-date").value;
-    if (!date) {
-      alert("과제 날짜를 선택하세요.");
+function saveAssignment() {
+  const date = document.getElementById("task-date").value;
+  if (!date) {
+    alert("과제 날짜를 선택하세요.");
+    return;
+  }
+  const repeat = document.getElementById("repeat").value;
+  const target = document.getElementById("target").value;
+  let newTasks = Array.from(document.querySelectorAll("#task-list input[type='text']"))
+    .map(i => i.value.trim())
+    .filter(t => t !== "");
+  if (newTasks.length === 0) {
+    alert("과제를 하나 이상 입력하세요.");
+    return;
+  }
+
+  let students = [];
+  if (target === "selected") {
+    students = Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value);
+    if (students.length === 0) {
+      alert("학생을 하나 이상 선택하세요.");
       return;
     }
-    const repeat = document.getElementById("repeat").value;
-    const target = document.getElementById("target").value;
-    const newTasks = Array.from(document.querySelectorAll("#task-list input"))
-      .map(i => i.value.trim())
-      .filter(t => t !== "");
-    if (newTasks.length === 0) {
-      alert("과제를 하나 이상 입력하세요.");
-      return;
-    }
+  } else {
+    students = ["전체"];
+  }
 
-    let students = [];
-    if (target === "selected") {
-      students = Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value);
-      if (students.length === 0) {
-        alert("학생을 하나 이상 선택하세요.");
-        return;
-      }
-    } else {
-      students = ["전체"];
-    }
+  const key = "teacherTasks-" + date;
 
-    const key = "teacherTasks-" + date;
+  // 수정 모드 + 같은 날짜면 '덮어쓰기'
+  if (!(isEditing && selectedDate === date)) {
+    // 새로 추가하는 경우는 기존 과제와 '합침'
     const existingDataRaw = localStorage.getItem(key);
-    let existingData = null;
     if (existingDataRaw) {
       try {
-        existingData = JSON.parse(existingDataRaw);
-      } catch {
-        existingData = null;
-      }
+        const existingData = JSON.parse(existingDataRaw);
+        newTasks = Array.from(new Set(existingData.tasks.concat(newTasks)));
+        students = Array.from(new Set(existingData.students.concat(students)));
+      } catch {}
     }
+  }
 
-    let mergedTasks = [];
-    let mergedStudents = [];
+  const data = { tasks: newTasks, repeat, students };
+  localStorage.setItem(key, JSON.stringify(data));
+  alert("저장되었습니다!");
 
-    if (existingData) {
-      mergedTasks = Array.from(new Set(existingData.tasks.concat(newTasks)));
-      mergedStudents = Array.from(new Set(existingData.students.concat(students)));
-    } else {
-      mergedTasks = newTasks;
-      mergedStudents = students;
-    }
+  // 저장 후 상태 초기화
+  isEditing = false;
+  selectedDate = null;
+  document.getElementById("task-action-buttons").style.display = "none";
 
-    const data = {
-      tasks: mergedTasks,
-      repeat: repeat,
-      students: mergedStudents
-    };
+  renderCalendar();
+  renderStudentStatus();
+}
 
-    localStorage.setItem(key, JSON.stringify(data));
-    alert("저장되었습니다!");
-    loadSavedTasks();
-    renderCalendar();
-    renderStudentStatus();
-  } 
 
   function loadSavedTasks() {
     const container = document.getElementById("task-storage");
@@ -452,10 +449,10 @@ function showStudentManagement() {
 
 function selectDate(dateStr) {
   selectedDate = dateStr;
+  isEditing = true; // 이 날짜를 수정하는 모드
   document.getElementById("task-action-buttons").style.display = "block";
   document.getElementById("task-completion").style.display = "none";
-
-  // 선택한 날짜 과제를 편집창에 불러오기
+  // 선택한 날짜의 과제를 편집 창에 로드
   copyTask(dateStr);
 }
 
@@ -464,8 +461,10 @@ function editTask() {
     alert("날짜를 선택하세요.");
     return;
   }
+  // 이미 selectDate에서 copyTask를 불러오므로 여기서는 폼만 보장
   copyTask(selectedDate);
 }
+
 
 function deleteTaskClicked() {
   if (!selectedDate) {
