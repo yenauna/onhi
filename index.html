@@ -105,13 +105,18 @@ function loadStudents() {
   const raw = localStorage.getItem("students");
   const students = raw ? JSON.parse(raw) : [];
 
+  // ✅ 번호(id)를 숫자로 변환해서 정렬 (1,2,3,…,50,51,52,…)
+  students.sort((a, b) => Number(a.id) - Number(b.id));
+  
   const select = document.getElementById("student-select-login");
-  select.innerHTML = '<option value="">-- 선택하세요 --</option>'; // 초기화
+  select.innerHTML = '<option value="">-- 선택하세요 --</option>';
 
+  // ✅ 화면에는 "번호 공백 이름" 형식으로 표시
   students.forEach(stu => {
+    const num = Number(stu.id);               // 혹시 문자열이면 숫자로
     const option = document.createElement("option");
     option.value = stu.name;  // 로그인 시 학생 이름을 key로 사용
-    option.textContent = stu.name;
+    option.textContent = `${num} ${stu.name}`;
     select.appendChild(option);
   });
 }
