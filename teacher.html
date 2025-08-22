@@ -835,29 +835,34 @@ function saveStudents(students) {
 
 // 학생 리스트 화면 출력
 function renderStudentList() {
-  const students = getStudentsSorted();           // 정렬된 목록
+  const students = getStudentsSorted();                 // 정렬 함수 기존 그대로 사용
+  const showAll = document.getElementById("show-all-passwords")?.checked;
   const tbody = document.querySelector("#student-list tbody");
   tbody.innerHTML = "";
+
   students.forEach(stu => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${stu.id}</td>
-      <td>${stu.name}</td>
-      <td><button onclick="deleteStudentByKey('${stu.id}','${stu.name}')">삭제</button></td>
+      <td>
+        <input data-field="id" value="${stu.id}" style="width:80px;" />
+      </td>
+      <td>
+        <input data-field="name" value="${stu.name}" style="width:100%;" />
+      </td>
+      <td>
+        <input data-field="password" ${showAll ? 'type="text"' : 'type="password"'}
+               value="${stu.password}" style="width:100%;" />
+      </td>
+      <td style="text-align:center;">
+        <input type="checkbox" onchange="toggleRowPw(this)" ${showAll ? "checked" : ""}/>
+      </td>
+      <td>
+        <button onclick="saveStudentRow('${stu.id}','${stu.name}', this)">저장</button>
+        <button onclick="deleteStudentByKey('${stu.id}','${stu.name}')">삭제</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
-
-  // 과제 대상 체크박스도 함께 최신화
-  const container = document.getElementById("student-checkboxes");
-  if (container) {
-    container.innerHTML = "";
-    students.forEach(stu => {
-      const label = document.createElement("label");
-      label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${labelOf(stu)}`;
-      container.appendChild(label);
-    });
-  }
 }
 
   // ===== 행 단위 비밀번호 보기 토글 =====
@@ -910,6 +915,40 @@ function addStudent() {
   renderStudentList();
 }
 
+function saveStudentRow(oldId, oldName, btnEl) {
+  const tr = btnEl.closest("tr");
+  const newId = tr.querySelector('input[data-field="id"]').value.trim();
+  const newName = tr.querySelector('input[data-field="name"]').value.trim();
+  const newPw = tr.querySelector('input[data-field="password"]').value.trim();
+
+  if (!newId || !newName || !newPw) {
+    alert("번호, 이름, 비밀번호를 모두 입력하세요.");
+    return;
+  }
+    const students = loadStudents();
+  const idx = students.findIndex(s => String(s.id) === String(oldId) && s.name === oldName);
+  if (idx < 0) {
+    alert("대상 학생을 찾을 수 없습니다.");
+    return;
+  }
+
+  // 번호가 바뀌었을 때 중복 번호 방지
+  if (String(newId) !== String(oldId) && students.some(s => String(s.id) === String(newId))) {
+    alert("이미 존재하는 번호입니다.");
+    return;
+  }
+
+  // 업데이트
+  students[idx] = { id: newId, name: newName, password: newPw };
+  saveStudents(students);
+
+  // 화면 갱신 (체크박스/현황/달력 등 함께 갱신)
+  renderStudentList();
+  renderStudentListToCheckbox?.();
+  renderStudentStatus?.();
+}
+  
+  
 // 학생 삭제 함수
 function deleteStudent(index) {
   if (!confirm("정말 삭제하시겠습니까?")) return;
