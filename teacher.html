@@ -205,16 +205,32 @@
    
   <div id="student-management" style="display:none; margin-top:20px;">
   <h3>👩‍🎓 학생 관리</h3>
-  <input type="text" id="new-student-id" placeholder="번호" />
-  <input type="text" id="new-student-name" placeholder="이름" />
-  <input type="password" id="new-student-password" placeholder="비밀번호" />
-  <button onclick="addStudent()">추가</button>
 
-  <table id="student-list" border="1" style="margin-top:10px; width: 100%;">
-    <thead><tr><th>번호</th><th>이름</th><th>삭제</th></tr></thead>
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+    <input type="text" id="new-student-id" placeholder="번호" style="flex:0 0 110px;" />
+    <input type="text" id="new-student-name" placeholder="이름" style="flex:1 1 160px;" />
+    <input type="password" id="new-student-password" placeholder="비밀번호" style="flex:0 0 140px;" />
+    <button onclick="addStudent()">추가</button>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:12px; margin:8px 0;">
+    <label><input type="checkbox" id="show-all-passwords" onchange="toggleAllPw(this)"> 비밀번호 모두 보기</label>
+  </div>
+
+  <table id="student-list" border="1" style="margin-top:10px; width: 100%; border-collapse:collapse;">
+    <thead>
+      <tr style="background:#f7f7f7;">
+        <th style="width:90px;">번호</th>
+        <th>이름</th>
+        <th style="width:160px;">비밀번호</th>
+        <th style="width:90px;">보기</th>
+        <th style="width:160px;">작업</th>
+      </tr>
+    </thead>
     <tbody></tbody>
   </table>
 </div>
+
 
 
  
@@ -784,6 +800,25 @@ function renderStudentList() {
   }
 }
 
+  // ===== 행 단위 비밀번호 보기 토글 =====
+function toggleRowPw(checkboxEl) {
+  const tr = checkboxEl.closest("tr");
+  const pwInput = tr.querySelector('input[data-field="password"]');
+  pwInput.type = checkboxEl.checked ? "text" : "password";
+}
+
+// ===== 전체 비밀번호 보기 토글 =====
+function toggleAllPw(masterCheckbox) {
+  const show = masterCheckbox.checked;
+  document
+    .querySelectorAll('#student-list tbody input[data-field="password"]')
+    .forEach(inp => (inp.type = show ? "text" : "password"));
+
+  // 각 행의 개별 체크도 상태 맞추기(선택)
+  document
+    .querySelectorAll('#student-list tbody input[type="checkbox"]')
+    .forEach(cb => (cb.checked = show));
+}
 
 // 학생 추가 함수
 function addStudent() {
