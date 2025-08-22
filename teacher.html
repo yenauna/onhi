@@ -242,6 +242,10 @@
   let isEditing = false;           // 편집 모드인지
   let editingOriginalDate = null;  // 편집 시작 시 원래 날짜
 
+  // ★ 달력에 표시된 각 날짜별 과제 참조(원본키/인덱스) 매핑
+//   calendarRefs["2025-03-12"] = [{key:"teacherTasks-2025-03-01", taskIndex:0}, ...]
+const calendarRefs = {};
+
   // === 학생 정렬/표시 공통 헬퍼 ===
   function _toNum(v){ const n=parseInt(String(v),10); return isNaN(n)?0:n; }
   // 1~50 먼저, 51~ 이후 + 각 그룹 내 오름차순
@@ -478,90 +482,117 @@ function renderStudentListToCheckbox() {
     }
   }
 
-  function renderCalendar() {
-    const tbody = document.getElementById("calendar-body");
-    tbody.innerHTML = "";
+function renderCalendar() {
+  const tbody = document.getElementById("calendar-body");
+  tbody.innerHTML = "";
+  Object.keys(calendarRefs).forEach(k => delete calendarRefs[k]); // 매핑 초기화
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
 
-    const firstDay = new Date(year, month, 1);
-    const startDay = firstDay.getDay();
-    const adjustedStartDay = (startDay + 6) % 7;
+  const firstDay = new Date(year, month, 1);
+  const startDay = firstDay.getDay();
+  const adjustedStartDay = (startDay + 6) % 7;
+  const lastDate = new Date(year, month + 1, 0).getDate();
 
-    const lastDate = new Date(year, month + 1, 0).getDate();
+  // 1) 로컬스토리지에서 모든 원본 과제 로드
+  const originals = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key.startsWith("teacherTasks-")) continue;
+    const dateKey = key.replace("teacherTasks-", "");  // 원본 저장 날짜
+    const data = JSON.parse(localStorage.getItem(key) || "null");
+    if (!data) continue;
+    originals.push({ key, dateKey, data });            // key=teacherTasks-YYYY-MM-DD
+  }
 
-    let allAssignments = [];
+  // 2) 이번 달에 표시될 인스턴스 목록을 생성(반복 고려)
+  //    instancesMap["YYYY-MM-DD"] = [{ key, taskIndex, text }]
+  const instancesMap = {};
+  const pushInstance = (dateStr, key, taskIndex, text) => {
+    instancesMap[dateStr] ??= [];
+    instancesMap[dateStr].push({ key, taskIndex, text });
+  };
 
-    for(let i=0; i<localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if(key.startsWith("teacherTasks-")) {
-        const date = key.replace("teacherTasks-", "");
-        const data = JSON.parse(localStorage.getItem(key));
-        if(data.repeat === "daily") {
-          for(let d=1; d<=lastDate; d++) {
-            allAssignments.push({date: `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, tasks: data.tasks});
-          }
-        } else if (["mon","tue","wed","thu","fri"].includes(data.repeat)) {
-          const dayMap = {mon:1,tue:2,wed:3,thu:4,fri:5};
-          for(let d=1; d<=lastDate; d++) {
-            const day = new Date(year, month, d).getDay();
-            if(day === dayMap[data.repeat]) {
-              allAssignments.push({date: `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, tasks: data.tasks});
-            }
-          }
-        } else {
-          allAssignments.push({date: date, tasks: data.tasks});
+  const pad2 = (n) => String(n).padStart(2, "0");
+  for (const { key, dateKey, data } of originals) {
+    const tasks = data.tasks || [];
+    const rpt = data.repeat || "none";
+
+    if (rpt === "daily") {
+      for (let d = 1; d <= lastDate; d++) {
+        const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
+        tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
+      }
+    } else if (["mon","tue","wed","thu","fri"].includes(rpt)) {
+      const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+      for (let d = 1; d <= lastDate; d++) {
+        const dateObj = new Date(year, month, d);
+        if (dateObj.getDay() === dayMap[rpt]) {
+          const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
+          tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
         }
       }
+    } else {
+      // 반복 없음: 원본 날짜만 표시
+      const dateStr = dateKey;
+      tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
     }
-
-    let html = "<tr>";
-    for(let i=0; i<adjustedStartDay; i++) {
-      html += "<td></td>";
-    }
-
-    for(let day=1; day<=lastDate; day++) {
-      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      const tasksForDay = allAssignments.filter(a => a.date === dateStr).flatMap(a => a.tasks);
-      const taskHtml = tasksForDay.map((t, idx) => {
-         const esc = t
-          .replace(/&/g,"&amp;").replace(/</g,"&lt;")
-          .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-         return `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${esc}</div>`;
-}).join("");
-
-      html += `<td><strong>${day}</strong>${taskHtml}</td>`;
-
-
-      if((adjustedStartDay + day) % 7 === 0) {
-        html += "</tr><tr>";
-      }
-    }
-
-    html += "</tr>";
-    tbody.innerHTML = html;
   }
 
-
-function editTask(){
-  if (!selectedDate){
-    alert("과제를 먼저 선택하세요."); return;
+  // 3) calendarRefs 구성 (날짜별 → [{key, taskIndex}...])
+  for (const [dateStr, arr] of Object.entries(instancesMap)) {
+    calendarRefs[dateStr] = arr.map(({ key, taskIndex }) => ({ key, taskIndex }));
   }
-  const key = 'teacherTasks-'+selectedDate;
-  const data = JSON.parse(localStorage.getItem(key) || '{}');
+
+  // 4) 표 그리기
+  let html = "<tr>";
+  for (let i = 0; i < adjustedStartDay; i++) html += "<td></td>";
+
+  for (let day = 1; day <= lastDate; day++) {
+    const dateStr = `${year}-${pad2(month + 1)}-${pad2(day)}`;
+    const pills = (instancesMap[dateStr] || []).map((inst, idx) => {
+      const esc = inst.text
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+      // idx는 '이 날짜 안에서'의 인덱스 (calendarRefs[dateStr][idx]로 원본 참조 가능)
+      return `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${esc}</div>`;
+    }).join("");
+
+    html += `<td><strong>${day}</strong>${pills}</td>`;
+    if ((adjustedStartDay + day) % 7 === 0) html += "</tr><tr>";
+  }
+  html += "</tr>";
+  tbody.innerHTML = html;
+}
+
+function editTask() {
+  if (!selectedDate) return alert("과제를 먼저 선택하세요.");
+
+  const refs = calendarRefs[selectedDate] || [];
+  const found = refs.find(r => {
+    // 이미 selectTask에서 selectedTaskIndex는 '원본 인덱스'로 세팅됨
+    const data = JSON.parse(localStorage.getItem(r.key) || "null");
+    return data?.tasks?.[selectedTaskIndex] !== undefined;
+  });
+  if (!found) return alert("원본 과제를 찾을 수 없습니다.");
+
+  const data = JSON.parse(localStorage.getItem(found.key) || "{}");
 
   // 위 입력창에 불러오기
   const taskList = document.getElementById('task-list');
   taskList.innerHTML = '';
-  (data.tasks || []).forEach(task=>{
+  (data.tasks || []).forEach(task => {
     const div = document.createElement('div');
     div.className = 'task-input';
     div.innerHTML = `<input type="text" value="${task}"/><button onclick="removeTask(this)">⊖</button>`;
     taskList.appendChild(div);
   });
-  document.getElementById('task-date').value = selectedDate;
+
+  // 원본 키에서 날짜만 추출
+  const originalDate = found.key.replace("teacherTasks-", "");
+  document.getElementById('task-date').value = originalDate;
   document.getElementById('repeat').value = data.repeat || 'none';
 
   const target = (data.students || []).includes('전체') ? 'all' : 'selected';
@@ -575,29 +606,33 @@ function editTask(){
   }
 
   isEditing = true;
-  editingOriginalDate = selectedDate;
-  window.scrollTo({top:0, behavior:'smooth'});
+  editingOriginalDate = originalDate;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-
-function deleteTaskClicked(){
-  if (!selectedDate || selectedTaskIndex === null){
-    alert("과제를 먼저 선택하세요."); return;
+function deleteTaskClicked() {
+  if (!selectedDate || selectedTaskIndex == null) {
+    alert("과제를 먼저 선택하세요.");
+    return;
   }
-  const key = 'teacherTasks-'+selectedDate;
-  const raw = localStorage.getItem(key);
-  if (!raw) return;
+  const refs = calendarRefs[selectedDate] || [];
+  // 이번 날짜에서 선택한 과제의 원본 참조를 꺼냄
+  const ref = refs.find(r => {
+    const d = JSON.parse(localStorage.getItem(r.key) || "null");
+    return d?.tasks?.[selectedTaskIndex] !== undefined;
+  });
+  if (!ref) return alert("원본 과제를 찾을 수 없습니다.");
 
-  const data = JSON.parse(raw);
+  const data = JSON.parse(localStorage.getItem(ref.key) || "null");
   const target = data.tasks[selectedTaskIndex];
 
   if (!confirm(`"${target}" 과제를 삭제할까요?`)) return;
 
   data.tasks.splice(selectedTaskIndex, 1);
-  if (data.tasks.length === 0){
-    localStorage.removeItem(key);
-  }else{
-    localStorage.setItem(key, JSON.stringify(data));
+  if (data.tasks.length === 0) {
+    localStorage.removeItem(ref.key);
+  } else {
+    localStorage.setItem(ref.key, JSON.stringify(data));
   }
 
   selectedTaskIndex = null;
@@ -606,45 +641,56 @@ function deleteTaskClicked(){
   renderStudentStatus();
 }
 
-function showTaskCompletion(){
-  if (!selectedDate || selectedTaskIndex === null){
-    alert("과제를 먼저 선택하세요."); return;
+function showTaskCompletion() {
+  if (!selectedDate || selectedTaskIndex == null) {
+    alert("과제를 먼저 선택하세요.");
+    return;
   }
   document.getElementById("task-action-buttons").style.display = "none";
   document.getElementById("task-completion").style.display = "block";
-  renderTaskCompletion(selectedDate, selectedTaskIndex);
+
+  // 원본 키 찾아서 전달
+  const refs = calendarRefs[selectedDate] || [];
+  const ref = refs.find(r => {
+    const d = JSON.parse(localStorage.getItem(r.key) || "null");
+    return d?.tasks?.[selectedTaskIndex] !== undefined;
+  });
+  if (!ref) {
+    document.getElementById("completion-list").textContent = "원본 과제를 찾을 수 없습니다.";
+    return;
+  }
+  renderTaskCompletion(ref.key, selectedTaskIndex);
 }
 
-function renderTaskCompletion(dateStr, idx){
+
+function renderTaskCompletion(originKey, taskIdx) {
   const container = document.getElementById("completion-list");
   container.innerHTML = "";
 
-  const data = JSON.parse(localStorage.getItem("teacherTasks-"+dateStr) || "null");
-  if (!data){ container.textContent = "과제가 없습니다."; return; }
+  const data = JSON.parse(localStorage.getItem(originKey) || "null");
+  if (!data) { container.textContent = "과제가 없습니다."; return; }
 
-  const task = data.tasks[idx];
+  const task = data.tasks[taskIdx];
 
-  // 학생 목록 구성 (전체 또는 선택된 학생만), 그리고 정렬
+  // 학생 목록 구성(전체 또는 지정) + 정렬
   let students = getStudentsSorted();
   if (!data.students.includes("전체")) {
-    const set = new Set(data.students);            // 이름 세트
+    const set = new Set(data.students);
     students = students.filter(s => set.has(s.name));
   }
 
-  // 제목
   const h = document.createElement('h4');
   h.textContent = `📌 ${task}`;
   container.appendChild(h);
 
-  // 카드 그리드
   const grid = document.createElement('div');
   grid.className = "student-chip-grid";
 
-  students.forEach(stu=>{
+  students.forEach(stu => {
     const done = (getDoneTasks(stu.name)[task] === true);
     const chip = document.createElement('div');
     chip.className = "student-chip " + (done ? "" : "missed");
-    chip.textContent = labelOf(stu);             // "번호 이름"
+    chip.textContent = `${stu.id} ${stu.name}`;
     grid.appendChild(chip);
   });
 
@@ -659,18 +705,32 @@ function closeTaskCompletion() {
 
 
 
-function selectTask(dateStr, idx){
-  selectedDate = dateStr;
-  selectedTaskIndex = idx;
+function selectTask(dateStr, idx) {
+  selectedDate = dateStr;  // 표시용
+  selectedTaskIndex = null;
+  selectedTaskText = "";
 
-  const data = JSON.parse(localStorage.getItem('teacherTasks-'+dateStr) || '{}');
-  selectedTaskText = (data.tasks && data.tasks[idx]) ? data.tasks[idx] : "";
+  const refs = calendarRefs[dateStr] || [];
+  const ref = refs[idx];
+  if (!ref) {
+    document.getElementById('task-action-buttons').style.display = 'none';
+    document.getElementById('task-action-selected').textContent = "";
+    return;
+  }
+
+  // 원본 데이터에서 과제 텍스트 구하기
+  const data = JSON.parse(localStorage.getItem(ref.key) || "null");
+  const text = data?.tasks?.[ref.taskIndex] ?? "";
+
+  selectedTaskIndex = ref.taskIndex;
+  selectedTaskText  = text;
 
   document.getElementById('task-action-buttons').style.display = 'block';
   document.getElementById('task-completion').style.display = 'none';
   document.getElementById('task-action-selected').textContent =
     `선택: ${dateStr} — ${selectedTaskText}`;
 }
+
 
   
 function renderStudentStatus() {
