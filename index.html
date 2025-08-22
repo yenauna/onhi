@@ -5,23 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>오늘 할 일 - 메인</title>
 
-  <!-- 폰트: 제목은 Jua, 본문은 Noto Sans KR -->
+  <!-- Jua 폰트 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg: #eef7f2;        /* 아주 연한 민트-그레이 */
-      --mint: #d6f5e7;      /* 좌상단 민트 번짐 */
-      --yellow: #fff1c9;    /* 우상단 노랑 번짐 */
-      --card: #fff6de;      /* 크림색 카드 */
-      --card-edge:#f0e4c4;  /* 카드 옆면/내부 음영색 */
+      --bg: #eef7f2;
+      --mint: #d6f5e7;
+      --yellow: #fff1c9;
+      --card: #fff6de;
+      --card-edge:#f0e4c4;
       --line: #e8e6df;
-      --text: #2a323c;
-      --muted: #7c8796;
-      --chip-bg:#c6f3d9;
-      --chip-line:#9eeac5;
+      --text: #22313f;
+      --muted: #718497;
       --btn: #2d7a54;
       --btn-shadow: rgba(45,122,84,.28);
       --err:#e11d48;
@@ -31,87 +29,43 @@
     html, body{ height:100%; }
     body{
       margin:0;
+      font-family: "Jua", sans-serif;
       color:var(--text);
-      font-family:"Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", sans-serif;
-
-      /* 배경(예시와 비슷한 파스텔 번짐) */
       background:
         radial-gradient(900px 360px at 12% -8%, var(--yellow), transparent 60%),
         radial-gradient(820px 340px at 108% 0%, var(--mint), transparent 62%),
         linear-gradient(180deg, var(--bg), var(--bg));
-      display:grid;
-      place-items:center;
+      display:grid; place-items:center;
       padding: 32px 16px;
-    }
-
-    /* 큰 구름 두 개(타원) */
-    .cloud{
-      position: fixed; inset:0; pointer-events:none; z-index:-1;
-      background:
-        radial-gradient(180px 70px at 15% 30%, #ffffff 60%, transparent 61%),
-        radial-gradient(140px 60px at 22% 28%, #ffffff 60%, transparent 61%),
-        radial-gradient(200px 80px at 78% 28%, #ffffff 60%, transparent 61%),
-        radial-gradient(160px 70px at 88% 34%, #ffffff 60%, transparent 61%);
-      opacity:.85;
-      filter: blur(.2px);
     }
 
     .wrap{ width:100%; max-width: 840px; }
 
-    /* 우상단 교사용 칩 */
     #teacher-link{
       position: fixed; top: 14px; right: 14px;
-      display:inline-flex; align-items:center; justify-content:center;
-      padding: 10px 14px;
-      font-size: 12px; color: var(--text);
+      padding: 10px 14px; font-size: 12px; color: var(--text);
       background: #ffffffd9; border: 1px solid var(--line);
-      border-radius: 999px; cursor: pointer;
+      border-radius:999px; cursor:pointer; user-select:none;
       box-shadow: 0 6px 14px rgba(0,0,0,.06);
-      user-select:none;
-      transition: transform .06s ease, box-shadow .2s ease, border-color .2s ease;
     }
-    #teacher-link:hover{ transform: translateY(-1px); border-color:#d7d5cd; }
 
-    header{ text-align:center; margin-bottom: 12px; }
-
-    /* 로고(이미지 유지!) */
+    header{ text-align:center; margin-bottom: 0; position: relative; z-index: 2; }
     .logo-wrap{
       display:inline-flex; align-items:center; justify-content:center;
-      width: 68px; height: 68px; border-radius: 20px;
+      width: 70px; height: 70px; border-radius: 20px;
       background:#ffffff; border:1px solid #ffffff;
       box-shadow: 0 10px 24px rgba(0,0,0,.06);
+      margin: 0 auto 10px;
     }
-    #logo{
-      width: 44px; height: 44px; object-fit: contain; display:block;
-    }
+    #logo{ width: 46px; height: 46px; object-fit: contain; display:block; }
 
     .title{
-      margin: 12px 0 0;
-      font-family: "Jua", "Noto Sans KR", sans-serif;
-      font-weight: 700;
+      margin: 0;
       font-size: 32px;
-      letter-spacing: -.2px;
       display:inline-flex; align-items:center; gap:8px;
-      text-shadow: 0 1px 0 #fff;
-    }
-    .subtitle{
-      margin-top: 8px; font-size: 14px; color: var(--muted);
-    }
-    .chip{
-      margin-top: 12px;
-      display:inline-flex; align-items:center; gap:6px;
-      font-size: 12px; color:#0d5a40;
-      background: var(--chip-bg);
-      border:1px solid var(--chip-line);
-      border-radius: 999px; padding: 6px 12px;
-      user-select:none;
     }
 
-    /* 카드: 크림톤 + 내부 리지(예시 느낌) */
-    .frame{
-      display:flex; justify-content:center;
-      margin-top: 20px;
-    }
+    .frame{ display:flex; justify-content:center; }
     .card{
       width:min(90vw, 640px);
       background: var(--card);
@@ -120,83 +74,79 @@
       padding: 22px;
       box-shadow:
         0 18px 42px rgba(0,0,0,.08),
-        inset 0 10px 0 var(--card-edge); /* 윗부분 종이 단차 느낌 */
+        inset 0 10px 0 var(--card-edge);
+      margin-top: -12px;
     }
 
     label{
-      display:block; font-size: 13px; color: var(--muted);
+      display:block; font-size: 14px; color: var(--muted);
       margin: 8px 2px 8px;
     }
     .field{ margin-bottom: 14px; position: relative; }
 
     select, input[type="password"], input[type="text"]{
-      width: 100%; font-size: 16px; color: var(--text);
+      width: 100%;
+      font: inherit;
+      color: var(--text);
       background:#ffffff;
       border: 2px solid #e5e7eb;
       border-radius: 16px;
       padding: 14px 16px;
       outline: none;
-      box-shadow: 0 2px 0 rgba(0,0,0,.02) inset;
       transition: border-color .12s ease, box-shadow .12s ease, background .12s ease;
     }
-    select:hover, input:hover{ border-color:#d9dce0; }
     select:focus, input:focus{
       border-color:#34caa0;
       box-shadow:0 0 0 4px rgba(52,202,160,.18);
       background:#fcfffd;
     }
 
-    /* 비밀번호 보기 */
+    /* 보기 버튼 → 입력칸 높이에 딱 맞게 */
     .pw-toggle{
-      position:absolute; right: 10px; top: 50%; transform: translateY(-50%);
-      background:#ffffff; border:1px solid #e5e7eb; color:#495869;
-      padding: 6px 10px; border-radius: 10px; cursor: pointer;
+      position:absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background:none;
+      border:none;
+      color:#495869;
+      font: inherit;
+      cursor: pointer;
+      padding: 0;
+      height: 100%;
+      display:flex; align-items:center;
     }
-    .pw-toggle:hover{ background:#f4f7fb; }
 
-    /* 에러/힌트 */
     #error-msg{ min-height:18px; text-align:center; font-size:13px; color:var(--err); margin: 6px 0 2px; }
     .hint{ text-align:center; font-size:12px; color:var(--muted); margin-top:6px; }
 
-    /* 로그인 버튼: 굵은 라운드 */
     .btn{
       width:100%;
       border:0; border-radius: 20px;
-      padding: 16px 18px;
-      font-size:18px; font-weight:800; color:#fff;
-      background: var(--btn);
-      box-shadow: 0 12px 28px var(--btn-shadow);
-      cursor:pointer;
-      transition: transform .06s ease, box-shadow .2s ease, filter .12s ease;
+      padding: 16px 18px; font-size:18px; color:#fff;
+      background: var(--btn); box-shadow: 0 12px 28px var(--btn-shadow);
+      cursor:pointer; font: inherit;
     }
-    .btn:hover{ filter:brightness(1.02); box-shadow: 0 16px 36px var(--btn-shadow); }
-    .btn:active{ transform: translateY(1px); }
 
     .footer{ margin-top: 18px; text-align:center; font-size: 12px; color: var(--muted); }
   </style>
 </head>
 <body>
-  <div class="cloud" aria-hidden="true"></div>
-
-  <!-- 교사용 -->
-  <div id="teacher-link" onclick="location.href='teacher.html';" title="교사용 화면 바로가기">교사용</div>
+  <div id="teacher-link" onclick="location.href='teacher.html';">교사용</div>
 
   <div class="wrap">
     <header>
-      <!-- 로고: 반드시 이미지 사용 -->
       <div class="logo-wrap">
         <img id="logo" src="logo.png" alt="오늘 할 일 로고" />
       </div>
       <h1 class="title">학생 로그인 <span aria-hidden="true">🙂</span></h1>
-      <p class="subtitle">번호와 이름을 확인하고 비밀번호 4자리를 입력하세요.</p>
-      <span class="chip">쉬워진 로그인 · 또렷한 가독성</span>
     </header>
 
     <section class="frame">
       <main class="card" id="login-card">
         <form id="login-form" novalidate>
           <div class="field">
-            <label for="student-select-login">학생 선택</label>
+            <label for="student-select-login">이름 선택</label>
             <select id="student-select-login" required>
               <option value="">-- 선택하세요 --</option>
             </select>
@@ -211,15 +161,13 @@
               pattern="\\d{4}"
               placeholder="비밀번호 4자리"
               maxlength="4"
-              autocomplete="current-password"
-              aria-describedby="pw-hint"
             />
-            <button type="button" class="pw-toggle" id="togglePw" aria-label="비밀번호 표시 전환">보기</button>
+            <button type="button" class="pw-toggle" id="togglePw">보기</button>
           </div>
 
-          <div id="error-msg" role="status" aria-live="polite"></div>
+          <div id="error-msg"></div>
           <button id="login-btn" type="submit" class="btn">로그인</button>
-          <div class="hint" id="pw-hint">Enter키로도 로그인할 수 있어요.</div>
+          <div class="hint">Enter키로도 로그인할 수 있어요.</div>
         </form>
       </main>
     </section>
@@ -228,7 +176,6 @@
   </div>
 
   <script>
-    // ---------- 학생 목록 로드 ----------
     function loadStudents() {
       const raw = localStorage.getItem("students");
       const students = raw ? JSON.parse(raw) : [];
@@ -246,37 +193,29 @@
       });
     }
 
-    // ---------- UX ----------
     const pw = document.getElementById("password");
     const toggle = document.getElementById("togglePw");
-
     toggle.addEventListener("click", () => {
       const isHidden = pw.type === "password";
       pw.type = isHidden ? "text" : "password";
       toggle.textContent = isHidden ? "숨기기" : "보기";
       pw.focus();
     });
-
-    // 숫자만 4자리
     pw.addEventListener("input", (e) => {
       e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
     });
 
-    function showError(text){
-      document.getElementById("error-msg").textContent = text || "";
-    }
+    function showError(text){ document.getElementById("error-msg").textContent = text || ""; }
     function setBusy(b){
       const btn = document.getElementById("login-btn");
-      btn.disabled = b;
-      btn.textContent = b ? "확인 중…" : "로그인";
+      btn.disabled = b; btn.textContent = b ? "확인 중…" : "로그인";
     }
 
-    // ---------- 로그인 ----------
     function login(){
       const selectedName = document.getElementById("student-select-login").value;
       const inputPassword = pw.value.trim();
 
-      if (!selectedName) { showError("학생을 선택하세요."); return; }
+      if (!selectedName) { showError("이름을 선택하세요."); return; }
       if (inputPassword.length !== 4) { showError("비밀번호 4자리를 입력하세요."); return; }
 
       const raw = localStorage.getItem("students");
@@ -284,31 +223,20 @@
       const found = students.find(s => s.name === selectedName && s.password === inputPassword);
 
       if (found) {
-        showError("");
-        setBusy(true);
+        showError(""); setBusy(true);
         localStorage.setItem("currentStudent", found.name);
         setTimeout(() => { location.href = "student.html"; }, 150);
       } else {
-        showError("학번 또는 비밀번호가 틀렸습니다.");
+        showError("이름 또는 비밀번호가 틀렸습니다.");
       }
     }
 
     document.getElementById("login-form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      login();
+      e.preventDefault(); login();
     });
 
     window.addEventListener("load", () => {
       loadStudents();
-      const last = localStorage.getItem("lastStudentSelection");
-      if (last) {
-        const sel = document.getElementById("student-select-login");
-        if ([...sel.options].some(o => o.value === last)) sel.value = last;
-      }
-    });
-
-    document.getElementById("student-select-login").addEventListener("change", (e)=>{
-      localStorage.setItem("lastStudentSelection", e.target.value || "");
     });
   </script>
 </body>
