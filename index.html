@@ -5,54 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>오늘 할 일 - 메인</title>
 
-<!-- 폰트: 제목 Jua, 본문 Gowun Dodum -->
+<!-- 귀여운 한글 폰트: 제목=Jua, 본문=Poor Story -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Poor+Story&display=swap" rel="stylesheet">
 
 <style>
   :root{
-    /* 배경 그라디언트 (좌측 연노랑 → 우상단 연민트) */
+    /* 배경 그라디언트 */
     --bg-base:#eaf4ef;
     --bg-yellow:#f6e4b5;
     --bg-mint:#cfeee0;
 
-    /* 카드(크림) & 라인/내부그림자 */
+    /* 카드(크림) */
     --card:#fbf3da;
-    --card-edge:#e9dbb8;   /* 카드 상단 안쪽 음영 */
-    --card-line:#efe6cd;   /* 바깥 라인 */
+    --card-line:#efe6cd;
 
-    /* 텍스트 */
+    /* 텍스트/보조 */
     --text:#1f2a33;
     --muted:#6f7d8c;
     --error:#e11d48;
 
-    /* 입력 */
+    /* 입력 & 버튼 */
     --input-bg:#ffffff;
     --input-line:#dcdfe4;
-
-    /* 버튼 */
     --btn:#2e7d57;
-    --btn-shadow:rgba(46,125,87,.28);
+    --btn-shadow:rgba(46,125,87,.26);
   }
 
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
     margin:0;
-    font-family:"Gowun Dodum", system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", sans-serif;
+    font-family:"Poor Story", system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", sans-serif;
     color:var(--text);
     background:
       radial-gradient(900px 360px at 12% -8%, var(--bg-yellow), transparent 60%),
       radial-gradient(820px 340px at 108% 0%, var(--bg-mint), transparent 62%),
       linear-gradient(180deg, var(--bg-base), var(--bg-base));
     display:grid; place-items:center;
-    padding: 20px 14px;
+    padding:22px 14px;
   }
 
-  /* 구름: 개수/크기 다양화 */
+  /* 구름 레이어(부드럽게) */
   .clouds{
-    position:fixed; inset:0; pointer-events:none; z-index:-1; opacity:.88;
+    position:fixed; inset:0; pointer-events:none; z-index:-1; opacity:.9;
     background:
       radial-gradient(200px 80px  at 16% 30%, #fff 60%, transparent 61%),
       radial-gradient(150px 60px  at 27% 26%, #fff 60%, transparent 61%),
@@ -62,9 +59,7 @@
       radial-gradient(110px 45px  at 92% 56%, #fff 60%, transparent 61%);
   }
 
-  .wrap{ width:100%; max-width:820px; }
-
-  /* 우상단 교사용 칩 */
+  /* 우상단 칩 */
   #teacher-link{
     position:fixed; top:14px; right:14px;
     padding:10px 12px; font-size:12px;
@@ -74,79 +69,71 @@
   }
 
   .frame{ display:flex; justify-content:center; }
-
-  /* 카드: 로고 + 제목 + 폼 모두 포함 (스샷처럼) */
+  /* 카드: 종이결/갈색 inset 그림자 제거 */
   .card{
     width:min(92vw, 680px);
-    background:
-      repeating-linear-gradient(0deg, rgba(255,255,255,.0) 0 10px, rgba(0,0,0,.01) 10px 11px), /* 종이결 아주 미세 */
-      var(--card);
+    background:var(--card);
     border:1px solid var(--card-line);
     border-radius:26px;
     padding: 22px 24px 24px;
-    box-shadow:
-      0 18px 42px rgba(0,0,0,.10),
-      inset 0 10px 0 var(--card-edge);
+    box-shadow: 0 18px 42px rgba(0,0,0,.10); /* 바깥만 부드럽게 */
   }
 
-  /* 로고 박스: 카드 상단 중앙, 연민트 라인 */
+  /* 로고 박스(카드 안 상단 중앙) */
   .logo-box{
     width:96px; height:96px; margin: 6px auto 8px;
     display:flex; align-items:center; justify-content:center;
-    background:#fff;
-    border:3px solid #cfeee0;   /* 연민트 테두리 */
-    border-radius:16px;
+    background:#fff; border:3px solid #cfeee0; border-radius:16px;
     box-shadow:0 10px 24px rgba(0,0,0,.08);
   }
   #logo{ width:72px; height:72px; object-fit:contain; display:block; }
 
-  /* 제목: 두껍고 둥근 느낌(Jua) */
+  /* 제목: 귀엽고 또렷하게 */
   .title{
-    margin: 6px 0 6px;
-    font-family:"Jua", "Gowun Dodum", sans-serif;
-    font-weight:400;              /* Jua는 기본이 굵음 → 400로도 충분 */
-    font-size:34px;
-    letter-spacing:-.3px;
-    text-align:center;
+    margin: 6px 0 8px;
+    font-family:"Jua","Poor Story",sans-serif;
+    font-weight:400; font-size:34px; letter-spacing:-.3px; text-align:center;
   }
 
   label{
     display:block; font-size:15px; color:var(--muted);
     margin: 12px 2px 8px;
+    font-family: inherit;
   }
-  .field{ position:relative; margin-bottom:14px; }
 
-  /* 입력창: 큰 라운드, 스샷 톤 */
-  select, input[type="password"]{
-    width:100%;
-    font: inherit;
-    color:var(--text);
+  .field{ margin-bottom:14px; }
+
+  /* 셀렉트는 기존 스타일 유지 */
+  select{
+    width:100%; font: inherit; color:var(--text);
     background:var(--input-bg);
     border:2px solid var(--input-line);
-    border-radius:18px;
-    padding:16px 16px;
-    outline:none;
-    box-shadow:0 2px 0 rgba(0,0,0,.02) inset;
-    transition:border-color .12s ease, box-shadow .12s ease, background .12s ease;
-    appearance:none;
+    border-radius:18px; padding:16px 16px; outline:none;
+    box-shadow:0 2px 0 rgba(0,0,0,.02) inset; appearance:none;
+    transition:border-color .12s ease, box-shadow .12s ease;
   }
-  select:focus, input:focus{
-    border-color:#b9c7c5;
-    box-shadow:0 0 0 4px rgba(185,199,197,.28);
-    background:#ffffff;
-  }
-  ::placeholder{ color:#9aa6b2; }
+  select:focus{ border-color:#b9c7c5; box-shadow:0 0 0 4px rgba(185,199,197,.28); }
 
-  /* '보기' 버튼: 스샷처럼 작은 캡슐, 연회색 보더 */
+  /* 비밀번호 입력 + '보기'를 한 덩어리로(필드 안에 쏙) */
+  .input-row{
+    display:flex; align-items:center; gap:8px;
+    background:var(--input-bg);
+    border:2px solid var(--input-line);
+    border-radius:18px; padding:6px 6px 6px 10px;
+  }
+  .input-row input{
+    flex:1; min-width:0; border:none; outline:none; background:transparent;
+    font: inherit; color:var(--text); padding:10px 6px;
+  }
+  .input-row input::placeholder{ color:#9aa6b2; }
+
+  /* '보기' 버튼: 입력칸 내부에, 캡슐 형태 */
   .pw-toggle{
-    position:absolute; right:10px; top:0; bottom:0; margin:auto 0;
     height:36px; padding:0 12px;
     display:flex; align-items:center; justify-content:center;
-    background:#f6f7f9;
-    border:2px solid var(--input-line);
-    color:#566574;
-    border-radius:12px; cursor:pointer;
-    font: inherit;
+    background:#f6f7f9; border:2px solid var(--input-line);
+    color:#566574; border-radius:12px; cursor:pointer;
+    font: inherit; line-height:1;
   }
 
   #error-msg{ min-height:18px; text-align:center; font-size:14px; color:var(--error); margin:6px 0 2px; }
@@ -169,7 +156,7 @@
 
 <section class="frame">
   <main class="card" id="login-card">
-    <!-- 로고(카드 안 상단 중앙) -->
+    <!-- 로고 -->
     <div class="logo-box">
       <img id="logo" src="logo.png" alt="오늘 할 일 로고" />
     </div>
@@ -186,8 +173,10 @@
 
       <div class="field">
         <label for="password">비밀번호</label>
-        <input type="password" id="password" inputmode="numeric" pattern="\\d{4}" placeholder="비밀번호 4자리" maxlength="4" />
-        <button type="button" class="pw-toggle" id="togglePw">보기</button>
+        <div class="input-row">
+          <input type="password" id="password" inputmode="numeric" pattern="\\d{4}" placeholder="비밀번호 4자리" maxlength="4" />
+          <button type="button" class="pw-toggle" id="togglePw">보기</button>
+        </div>
       </div>
 
       <div id="error-msg"></div>
@@ -200,7 +189,7 @@
 <div class="footer">© 오늘 할 일 onhi</div>
 
 <script>
-  // 학생 목록 로드
+  // 학생 목록
   function loadStudents(){
     const raw = localStorage.getItem("students");
     const students = raw ? JSON.parse(raw) : [];
