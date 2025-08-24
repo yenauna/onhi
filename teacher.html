@@ -50,6 +50,9 @@
       border-radius:26px;
       box-shadow:0 16px 40px rgba(0,0,0,.10);
       padding:28px 24px 32px;
+      height: auto;              /* 내용에 따라 자동 늘어남 */
+      overflow: hidden;          /* 혹시 float 등으로 튀는 것 방지 */
+      overflow-wrap: break-word; /* 긴 텍스트 줄바꿈 */
     }
 
     /* 상단 로고 칩 (기존 header 유지, 위치만 중앙) */
