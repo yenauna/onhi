@@ -1,267 +1,339 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>오늘 할 일 - 메인</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>오늘 할 일 - 메인</title>
 
-<!-- 폰트: 제목=주아체(구글폰트), 본문,버튼=SUIT(GITHub CDN) -->
-<link href=https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css">
+  <!-- 폰트: 제목=주아체(구글폰트), 본문/버튼=SUIT(GitHub CDN) -->
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css" />
 
+  <style>
+    :root{
+      /* 배경 */
+      --bg-base:#eaf4ef;
+      --bg-yellow:#f6e4b5;
+      --bg-mint:#cfeee0;
 
-<style>
-  :root{
-    --bg-base:#eaf4ef;
-    --bg-yellow:#f6e4b5;
-    --bg-mint:#cfeee0;
+      /* 카드 */
+      --card:#fbf3da;
+      --card-line:#efe6cd;
 
-    --card:#fbf3da;
-    --card-line:#efe6cd;
+      /* 텍스트 */
+      --text:#1f2a33;
+      --muted:#6f7d8c;
+      --error:#e11d48;
 
-    --text:#1f2a33;
-    --muted:#6f7d8c;
-    --error:#e11d48;
+      /* 인풋/버튼 */
+      --input-bg:#ffffff;
+      --input-line:#dcdfe4;
+      --btn:#2e7d57;
+      --btn-shadow:rgba(46,125,87,.26);
+    }
 
-    --input-bg:#ffffff;
-    --input-line:#dcdfe4;
-    --btn:#2e7d57;
-    --btn-shadow:rgba(46,125,87,.26);
-  }
+    * { box-sizing:border-box }
+    html, body { height:100% }
 
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0;
-    font-family: 'SUIT', sans-serif; /* 본문 */
-    color:var(--text);
-    background:
-      radial-gradient(900px 360px at 12% -8%, var(--bg-yellow), transparent 60%),
-      radial-gradient(820px 340px at 108% 0%, var(--bg-mint), transparent 62%),
-      linear-gradient(180deg, var(--bg-base), var(--bg-base));
-    display:grid; place-items:center;
-    padding:22px 14px;
-  }
+    /* ===============================
+       배경 & 기본 타이포
+       =============================== */
+    body{
+      margin:0;
+      font-family:'SUIT', sans-serif; /* 본문/버튼 */
+      color:var(--text);
+      background:
+        radial-gradient(900px 360px at 12% -8%, var(--bg-yellow), transparent 60%),
+        radial-gradient(820px 340px at 108% 0%, var(--bg-mint), transparent 62%),
+        linear-gradient(180deg, var(--bg-base), var(--bg-base));
+      display:grid; place-items:center;
+      padding:22px 14px;
+    }
 
-  /* 구름 */
-  .clouds{
-    position:fixed; inset:0; pointer-events:none; z-index:-1; opacity:.9;
-    background:
-      radial-gradient(200px 80px  at 16% 30%, #fff 60%, transparent 61%),
-      radial-gradient(150px 60px  at 27% 26%, #fff 60%, transparent 61%),
-      radial-gradient(180px 70px  at 77% 28%, #fff 60%, transparent 61%),
-      radial-gradient(140px 60px  at 88% 35%, #fff 60%, transparent 61%),
-      radial-gradient(120px 50px  at 12% 52%, #fff 60%, transparent 61%),
-      radial-gradient(110px 45px  at 92% 56%, #fff 60%, transparent 61%);
-  }
+    /* 구름 레이어 */
+    .clouds{
+      position:fixed; inset:0; pointer-events:none; z-index:-1; opacity:.9;
+      background:
+        radial-gradient(200px 80px  at 16% 30%, #fff 60%, transparent 61%),
+        radial-gradient(150px 60px  at 27% 26%, #fff 60%, transparent 61%),
+        radial-gradient(180px 70px  at 77% 28%, #fff 60%, transparent 61%),
+        radial-gradient(140px 60px  at 88% 35%, #fff 60%, transparent 61%),
+        radial-gradient(120px 50px  at 12% 52%, #fff 60%, transparent 61%),
+        radial-gradient(110px 45px  at 92% 56%, #fff 60%, transparent 61%);
+    }
 
-  /* 우상단 칩 */
-  #teacher-link{
-    position:fixed; top:14px; right:14px;
-    padding:10px 12px; font-size:12px;
-    color:var(--text); background:#fffffff0;
-    border:1px solid var(--card-line); border-radius:999px;
-    box-shadow:0 6px 14px rgba(0,0,0,.06); cursor:pointer; user-select:none;
-  }
+    /* 우상단 교사용 칩 */
+    #teacher-link{
+      position:fixed; top:14px; right:14px;
+      padding:10px 12px; font-size:12px;
+      color:var(--text); background:#fffffff0;
+      border:1px solid var(--card-line); border-radius:999px;
+      box-shadow:0 6px 14px rgba(0,0,0,.06);
+      cursor:pointer; user-select:none;
+    }
 
-  /* 카드 (로고 포함) */
-  .wrap{ width:100%; max-width: 820px; }
-  .card{
-    width:min(92vw, 680px);
-    background:var(--card);
-    border:1px solid var(--card-line);
-    border-radius:26px;
-    padding: 24px 28px;
-    box-shadow: 0 16px 40px rgba(0,0,0,.10);
-    text-align:center;
-  }
+    /* ===============================
+       카드 (로고 포함)
+       =============================== */
+    .wrap{ width:100%; max-width:820px; }
 
-  /* 로고: 카드 안, 맨 위 중앙 */
-  .logo-box{
-    width:96px; height:96px; margin: 6px auto 8px;
-    display:flex; align-items:center; justify-content:center;
-    background:#fff; border:3px solid #cfeee0; border-radius:16px;
-    box-shadow:0 10px 24px rgba(0,0,0,.08);
-  }
-  #logo{ width:72px; height:72px; object-fit:contain; display:block; }
+    .card{
+      width:min(92vw, 680px);
+      background:var(--card);
+      border:1px solid var(--card-line);
+      border-radius:26px;
+      padding:24px 28px;
+      box-shadow:0 16px 40px rgba(0,0,0,.10);
+      text-align:center;
+    }
 
-  /* 제목: 주아체 */
-  h1.title{
-    font-family:'Jua', sans-serif;
-    font-size:34px; font-weight:400;
-    margin: 6px 0 18px; letter-spacing:-.2px;
-  }
+    /* 로고(카드 안, 중앙) */
+    .logo-box{
+      width:96px; height:96px; margin:6px auto 8px;
+      display:flex; align-items:center; justify-content:center;
+      background:#fff; border:3px solid #cfeee0; border-radius:16px;
+      box-shadow:0 10px 24px rgba(0,0,0,.08);
+    }
+    #logo{ width:72px; height:72px; object-fit:contain; display:block; }
 
-  label{
-    display:block; text-align:left; color:var(--muted);
-    margin:12px 0 6px; font-size:15px;
-  }
+    /* 제목 (주아체) */
+    h1.title{
+      font-family:'Jua', sans-serif;
+      font-size:34px; font-weight:400;
+      margin:6px 0 18px; letter-spacing:-.2px;
+    }
 
-  /* 셀렉트 */
-  select{
-    width:100%; font: inherit; color:var(--text);
-    background:var(--input-bg);
-    border:2px solid var(--input-line);
-    border-radius:18px; padding:16px 16px; outline:none;
-    box-shadow:0 2px 0 rgba(0,0,0,.02) inset; appearance:none;
-    transition:border-color .12s ease, box-shadow .12s ease;
-  }
-  select:focus{ border-color:#b9c7c5; box-shadow:0 0 0 4px rgba(185,199,197,.28); }
+    /* 라벨 */
+    label{
+      display:block; text-align:left; color:var(--muted);
+      margin:12px 0 6px; font-size:15px;
+    }
 
-  /* 비밀번호 입력 + 보기 버튼 한 덩어리 */
-  .input-row{
-    display:flex; align-items:center; gap:8px;
-    background:var(--input-bg);
-    border:2px solid var(--input-line);
-    border-radius:18px; padding:6px 6px 6px 10px;
-  }
-  .input-row input{
-    flex:1; min-width:0; border:none; outline:none; background:transparent;
-    font: inherit; color:var(--text); padding:10px 6px;
-  }
-  .input-row input::placeholder{ color:#9aa6b2; }
+    /* 셀렉트 */
+    select{
+      width:100%; font:inherit; color:var(--text);
+      background:var(--input-bg);
+      border:2px solid var(--input-line);
+      border-radius:18px; padding:16px 16px; outline:none;
+      box-shadow:0 2px 0 rgba(0,0,0,.02) inset; appearance:none;
+      transition:border-color .12s ease, box-shadow .12s ease;
+    }
+    select:focus{
+      border-color:#b9c7c5;
+      box-shadow:0 0 0 4px rgba(185,199,197,.28);
+    }
 
-  /* '보기' 버튼: 입력칸 안, 오른쪽 */
-  .pw-toggle{
-    height:36px; padding:0 12px;
-    display:flex; align-items:center; justify-content:center;
-    background:#f6f7f9; border:2px solid var(--input-line);
-    color:#566574; border-radius:12px; cursor:pointer;
-    font: inherit; line-height:1;
-  }
+    /* 비번 입력 + '보기' 버튼 한 덩어리 */
+    .input-row{
+      display:flex; align-items:center; gap:8px;
+      background:var(--input-bg);
+      border:2px solid var(--input-line);
+      border-radius:18px; padding:6px 6px 6px 10px;
+    }
+    .input-row input{
+      flex:1; min-width:0; border:none; outline:none; background:transparent;
+      font:inherit; color:var(--text); padding:10px 6px;
+    }
+    .input-row input::placeholder{ color:#9aa6b2; }
 
-  #error-msg{ min-height:18px; text-align:center; font-size:14px; color:var(--error); margin:8px 0 2px; }
+    /* '보기' 버튼 */
+    .pw-toggle{
+      height:36px; padding:0 12px;
+      display:flex; align-items:center; justify-content:center;
+      background:#f6f7f9; border:2px solid var(--input-line);
+      color:#566574; border-radius:12px; cursor:pointer;
+      font:inherit; line-height:1;
+    }
 
-  /* 버튼: SUIT */
-  .btn{
-    width:100%; border:0; border-radius:22px;
-    padding:18px 18px; font-size:20px; color:#fff;
-    background:var(--btn); box-shadow:0 12px 28px var(--btn-shadow);
-    cursor:pointer;
-    font-family:'SUIT',sans-serif;
-  }
+    /* 에러 메시지 */
+    #error-msg{
+      min-height:18px; text-align:center; font-size:14px;
+      color:var(--error); margin:8px 0 2px;
+    }
 
-  .hint{ text-align:center; font-size:13px; color:var(--muted); margin-top:8px; }
-  .footer{ margin-top:14px; text-align:center; font-size:13px; color:var(--muted); }
-</style>
+    /* 로그인 버튼 */
+    .btn{
+      width:100%; border:0; border-radius:22px;
+      padding:18px 18px; font-size:20px; color:#fff;
+      background:var(--btn);
+      box-shadow:0 12px 28px var(--btn-shadow);
+      cursor:pointer;
+      font-family:'SUIT',sans-serif;
+    }
+
+    /* 하단 안내/푸터 */
+    .hint{ text-align:center; font-size:13px; color:var(--muted); margin-top:8px; }
+    .footer{ margin-top:14px; text-align:center; font-size:13px; color:var(--muted); }
+  </style>
 </head>
 <body>
-<div class="clouds" aria-hidden="true"></div>
+  <!-- 구름 배경 -->
+  <div class="clouds" aria-hidden="true"></div>
 
-<div id="teacher-link" onclick="location.href='teacher.html';">교사용</div>
+  <!-- 교사용 링크 칩 -->
+  <div id="teacher-link" onclick="location.href='teacher.html';">교사용</div>
 
-<div class="wrap">
-  <main class="card" id="login-card">
-    <!-- 로고가 카드 안 맨 위 중앙 -->
-    <div class="logo-box">
-      <img id="logo" src="logo.png" alt="오늘 할 일 로고" />
-    </div>
-
-    <!-- 제목 = 주아체 -->
-    <h1 class="title">학생 로그인 🙂</h1>
-
-    <form id="login-form" novalidate>
-      <div class="field">
-        <label for="student-select-login">이름 선택</label>
-        <select id="student-select-login" required>
-          <option value="">-- 선택하세요 --</option>
-        </select>
+  <!-- 메인 카드 -->
+  <div class="wrap">
+    <main class="card" id="login-card">
+      <!-- 로고(카드 안 중앙) -->
+      <div class="logo-box">
+        <img id="logo" src="logo.png" alt="오늘 할 일 로고" />
       </div>
 
-      <div class="field">
-        <label for="password">비밀번호</label>
-        <div class="input-row">
-          <input type="password" id="password" inputmode="numeric" pattern="\\d{4}" placeholder="비밀번호 4자리" maxlength="4" />
-          <button type="button" class="pw-toggle" id="togglePw">보기</button>
+      <!-- 제목 -->
+      <h1 class="title">학생 로그인 🙂</h1>
+
+      <!-- 로그인 폼 -->
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="student-select-login">이름 선택</label>
+          <select id="student-select-login" required>
+            <option value="">-- 선택하세요 --</option>
+          </select>
         </div>
-      </div>
 
-      <div id="error-msg"></div>
-      <button id="login-btn" type="submit" class="btn">로그인</button>
-      <div class="hint">Enter키로도 로그인할 수 있어요.</div>
-    </form>
-  </main>
+        <div class="field">
+          <label for="password">비밀번호</label>
+          <div class="input-row">
+            <input
+              type="password"
+              id="password"
+              inputmode="numeric"
+              pattern="\\d{4}"
+              placeholder="비밀번호 4자리"
+              maxlength="4"
+            />
+            <button type="button" class="pw-toggle" id="togglePw">보기</button>
+          </div>
+        </div>
 
-  <div class="footer">© 오늘 할 일 onhi</div>
-</div>
+        <div id="error-msg"></div>
+        <button id="login-btn" type="submit" class="btn">로그인</button>
+        <div class="hint">Enter키로도 로그인할 수 있어요.</div>
+      </form>
+    </main>
 
-<script>
-  // ----- 학생 목록 로드 (localStorage.students 지원) -----
-  function loadStudents() {
-    try{
-      const raw = localStorage.getItem("students");
-      let students = [];
+    <div class="footer">© 오늘 할 일 onhi</div>
+  </div>
 
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        // 배열인 경우 그대로, 객체에 들어있는 경우도 대응
-        students = Array.isArray(parsed) ? parsed
-                  : Array.isArray(parsed.students) ? parsed.students
-                  : [];
+  <script>
+    /* =========================================
+       학생 목록 로드 (localStorage.students 지원)
+       ========================================= */
+    function loadStudents() {
+      try {
+        const raw = localStorage.getItem("students");
+        let students = [];
+
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // 배열/객체 모두 대응
+          students = Array.isArray(parsed)
+            ? parsed
+            : Array.isArray(parsed.students)
+              ? parsed.students
+              : [];
+        }
+
+        // 정렬 및 렌더링
+        students.sort((a, b) => Number(a.id) - Number(b.id));
+        const sel = document.getElementById("student-select-login");
+        sel.innerHTML = '<option value="">-- 선택하세요 --</option>';
+
+        if (students.length === 0) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "등록된 학생이 없습니다 (교사용 화면에서 등록)";
+          opt.disabled = true;
+          sel.appendChild(opt);
+          return;
+        }
+
+        students.forEach(stu => {
+          const opt = document.createElement("option");
+          opt.value = stu.name;
+          opt.textContent = `${Number(stu.id)} ${stu.name}`;
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        console.error(e);
+        const sel = document.getElementById("student-select-login");
+        sel.innerHTML =
+          '<option value="">(데이터 형식 오류) 교사용 화면에서 학생을 다시 저장해주세요</option>';
       }
+    }
 
-      // 정렬 및 렌더
-      students.sort((a,b)=> Number(a.id)-Number(b.id));
-      const sel = document.getElementById("student-select-login");
-      sel.innerHTML = '<option value="">-- 선택하세요 --</option>';
+    /* =========================================
+       비밀번호 보기/숨기기 토글
+       ========================================= */
+    const pw = document.getElementById("password");
+    const toggle = document.getElementById("togglePw");
 
-      if (students.length === 0) {
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "등록된 학생이 없습니다 (교사용 화면에서 등록)";
-        opt.disabled = true;
-        sel.appendChild(opt);
+    toggle.addEventListener("click", () => {
+      const hidden = pw.type === "password";
+      pw.type = hidden ? "text" : "password";
+      toggle.textContent = hidden ? "숨기기" : "보기";
+      pw.focus();
+    });
+
+    // 숫자만, 최대 4자리
+    pw.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
+    });
+
+    function showError(t) {
+      document.getElementById("error-msg").textContent = t || "";
+    }
+    function setBusy(b) {
+      const btn = document.getElementById("login-btn");
+      btn.disabled = b;
+      btn.textContent = b ? "확인 중…" : "로그인";
+    }
+
+    /* =========================================
+       로그인 처리
+       ========================================= */
+    function login() {
+      const name = document.getElementById("student-select-login").value;
+      const pass = pw.value.trim();
+
+      if (!name) {
+        showError("이름을 선택하세요.");
+        return;
+      }
+      if (pass.length !== 4) {
+        showError("비밀번호 4자리를 입력하세요.");
         return;
       }
 
-      students.forEach(stu=>{
-        const opt = document.createElement("option");
-        opt.value = stu.name;
-        opt.textContent = `${Number(stu.id)} ${stu.name}`;
-        sel.appendChild(opt);
-      });
-    } catch(e){
-      console.error(e);
-      const sel = document.getElementById("student-select-login");
-      sel.innerHTML = '<option value="">(데이터 형식 오류) 교사용 화면에서 학생을 다시 저장해주세요</option>';
+      const raw = localStorage.getItem("students");
+      const students = raw
+        ? (Array.isArray(JSON.parse(raw))
+            ? JSON.parse(raw)
+            : (JSON.parse(raw).students || []))
+        : [];
+
+      const ok = students.find(s => s.name === name && s.password === pass);
+
+      if (ok) {
+        showError("");
+        setBusy(true);
+        localStorage.setItem("currentStudent", ok.name);
+        setTimeout(() => (location.href = "student.html"), 150);
+      } else {
+        showError("이름 또는 비밀번호가 틀렸습니다.");
+      }
     }
-  }
 
-  // ----- 보기 토글 -----
-  const pw = document.getElementById("password");
-  const toggle = document.getElementById("togglePw");
-  toggle.addEventListener("click", ()=>{
-    const hidden = pw.type==="password";
-    pw.type = hidden ? "text" : "password";
-    toggle.textContent = hidden ? "숨기기" : "보기";
-    pw.focus();
-  });
-  pw.addEventListener("input",(e)=>{
-    e.target.value = e.target.value.replace(/[^0-9]/g,"").slice(0,4);
-  });
+    // 폼 제출 핸들러
+    document.getElementById("login-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      login();
+    });
 
-  function showError(t){ document.getElementById("error-msg").textContent=t||""; }
-  function setBusy(b){ const btn=document.getElementById("login-btn"); btn.disabled=b; btn.textContent=b?"확인 중…":"로그인"; }
-
-  // ----- 로그인 -----
-  function login(){
-    const name=document.getElementById("student-select-login").value;
-    const pass=pw.value.trim();
-    if(!name){ showError("이름을 선택하세요."); return; }
-    if(pass.length!==4){ showError("비밀번호 4자리를 입력하세요."); return; }
-
-    const raw=localStorage.getItem("students");
-    const students=raw? (Array.isArray(JSON.parse(raw))? JSON.parse(raw) : (JSON.parse(raw).students||[])) : [];
-    const ok=students.find(s=>s.name===name && s.password===pass);
-    if(ok){
-      showError(""); setBusy(true);
-      localStorage.setItem("currentStudent", ok.name);
-      setTimeout(()=>location.href="student.html", 150);
-    }else showError("이름 또는 비밀번호가 틀렸습니다.");
-  }
-
-  document.getElementById("login-form").addEventListener("submit",(e)=>{e.preventDefault(); login();});
-  window.addEventListener("load", loadStudents);
-</script>
+    // 초기화
+    window.addEventListener("load", loadStudents);
+  </script>
 </body>
 </html>
