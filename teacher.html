@@ -1074,11 +1074,8 @@
       if ($btns)     $btns.style.display = 'block';
       if ($selected) $selected.textContent = `선택: ${dateStr} — ${selectedTaskText}`;
 
-      // 5) 학생 목록 렌더 + 표시
-      if (typeof renderTaskCompletion === 'function') {
-        renderTaskCompletion(); // 내부에서 doneKey = `${selectedOriginDate}@@${selectedTaskText}`
-      }
-      if ($compBox) $compBox.style.display = 'block';
+      // 완료창은 확인 버튼에서 띄움
+      if ($compBox) $compBox.style.display = 'none';
     }
 
 
@@ -1089,35 +1086,48 @@
       const container = document.getElementById("completion-list");
       container.innerHTML = "";
 
-      const data = JSON.parse(localStorage.getItem(originKey) || "null");
-      if (!data) {
+      // 0) 인자 검증
+      if (!originKey || typeof taskIdx !== 'number') {
+        container.textContent = "원본 과제를 찾을 수 없습니다.";
+        return;
+      }
+
+      // 1) 원본 읽기
+      let data = null;
+      try {
+        data = JSON.parse(localStorage.getItem(originKey) || "null");
+      } catch (e) {
+        data = null;
+      }
+      if (!data || !Array.isArray(data.tasks) || data.tasks[taskIdx] == null) {
         container.textContent = "과제가 없습니다.";
         return;
       }
 
-      const task = data.tasks[taskIdx];
-      const originDate = originKey.replace("teacherTasks-","");  // ← 원본 날짜 추출
+      const task       = data.tasks[taskIdx];
+      const originDate = originKey.replace("teacherTasks-","");   // YYYY-MM-DD
+      const doneKey    = `${originDate}@@${task}`;                // ✅ 최종 완료 키
 
-      // 대상 학생 목록 구성(전체 or 지정) + 정렬
+      // 2) 대상 학생 구성 + 정렬
       let students = getStudentsSorted();
       if (!data.students.includes("전체")) {
-        const set = new Set(data.students);
-        students = students.filter(s => set.has(s.name));
+        const set = new Set(data.students || []);
+        students  = students.filter(s => set.has(s.name));
       }
 
+      // 3) 제목
       const h = document.createElement('h4');
-      h.textContent = `📌 ${task}`;
+      h.textContent = `📌 ${task} (${originDate})`;
       container.appendChild(h);
 
+      // 4) 학생 칩 렌더
       const grid = document.createElement('div');
       grid.className = "student-chip-grid";
 
       students.forEach(stu => {
-        // 날짜+과제명 키(신규 방식)
-       const doneKey = `${selectedOriginDate ?? selectedDate}@@${selectedTaskText}`;
-       const store   = getDoneTasks(stu.name);
-        // 하위 호환: 예전에 저장된(과제명만) 데이터도 같이 인정
-        const done = makeTaskKey(assign.date, task);
+        const store = getDoneTasks(stu.name) || {};
+        const done  = store[doneKey] === true;   // ✅ 여기!
+
         const chip = document.createElement('div');
         chip.className = "student-chip " + (done ? "" : "missed");
         chip.textContent = `${stu.id} ${stu.name}`;
