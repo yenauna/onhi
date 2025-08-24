@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>오늘 할 일 - 메인</title>
 
-<!-- 귀여운 한글 폰트: 제목=Jua, 본문=Poor Story -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Poor+Story&display=swap" rel="stylesheet">
+<!-- 웹폰트 불러오기 -->
+<link href="https://cdn.jsdelivr.net/gh/webfontworld/baemin/BMJua.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/webfontworld/naver/NanumSquareRound.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/webfontworld/elice/EliceDigitalBaeum.css" rel="stylesheet">
 
 <style>
   :root{
@@ -37,7 +37,7 @@
   html,body{height:100%}
   body{
     margin:0;
-    font-family:"Poor Story", system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", sans-serif;
+    font-family:"NanumSquareRound", system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", sans-serif;
     color:var(--text);
     background:
       radial-gradient(900px 360px at 12% -8%, var(--bg-yellow), transparent 60%),
@@ -47,7 +47,7 @@
     padding:22px 14px;
   }
 
-  /* 구름 레이어(부드럽게) */
+  /* 구름 레이어 */
   .clouds{
     position:fixed; inset:0; pointer-events:none; z-index:-1; opacity:.9;
     background:
@@ -65,178 +65,72 @@
     padding:10px 12px; font-size:12px;
     color:var(--text); background:#fffffff0;
     border:1px solid var(--card-line); border-radius:999px;
-    box-shadow:0 6px 14px rgba(0,0,0,.06); cursor:pointer; user-select:none;
   }
 
-  .frame{ display:flex; justify-content:center; }
-  /* 카드: 종이결/갈색 inset 그림자 제거 */
   .card{
     width:min(92vw, 680px);
     background:var(--card);
     border:1px solid var(--card-line);
     border-radius:26px;
-    padding: 22px 24px 24px;
-    box-shadow: 0 18px 42px rgba(0,0,0,.10); /* 바깥만 부드럽게 */
+    padding: 24px 28px;
+    box-shadow:0 8px 24px rgba(0,0,0,.08);
+    text-align:center;
   }
 
-  /* 로고 박스(카드 안 상단 중앙) */
-  .logo-box{
-    width:96px; height:96px; margin: 6px auto 8px;
-    display:flex; align-items:center; justify-content:center;
-    background:#fff; border:3px solid #cfeee0; border-radius:16px;
-    box-shadow:0 10px 24px rgba(0,0,0,.08);
-  }
-  #logo{ width:72px; height:72px; object-fit:contain; display:block; }
-
-  /* 제목: 귀엽고 또렷하게 */
-  .title{
-    margin: 6px 0 8px;
-    font-family:"Jua","Poor Story",sans-serif;
-    font-weight:400; font-size:34px; letter-spacing:-.3px; text-align:center;
+  /* 제목 */
+  h1{
+    font-family:'BMJua','NanumSquareRound',sans-serif;
+    font-size:32px; margin-bottom:20px;
   }
 
   label{
-    display:block; font-size:15px; color:var(--muted);
-    margin: 12px 2px 8px;
-    font-family: inherit;
+    display:block; text-align:left;
+    margin:12px 0 6px; font-size:15px;
+    font-family:'NanumSquareRound',sans-serif;
+    color:var(--muted);
   }
 
-  .field{ margin-bottom:14px; }
-
-  /* 셀렉트는 기존 스타일 유지 */
-  select{
-    width:100%; font: inherit; color:var(--text);
-    background:var(--input-bg);
+  input, select{
+    width:100%; padding:12px 14px;
     border:2px solid var(--input-line);
-    border-radius:18px; padding:16px 16px; outline:none;
-    box-shadow:0 2px 0 rgba(0,0,0,.02) inset; appearance:none;
-    transition:border-color .12s ease, box-shadow .12s ease;
-  }
-  select:focus{ border-color:#b9c7c5; box-shadow:0 0 0 4px rgba(185,199,197,.28); }
-
-  /* 비밀번호 입력 + '보기'를 한 덩어리로(필드 안에 쏙) */
-  .input-row{
-    display:flex; align-items:center; gap:8px;
-    background:var(--input-bg);
-    border:2px solid var(--input-line);
-    border-radius:18px; padding:6px 6px 6px 10px;
-  }
-  .input-row input{
-    flex:1; min-width:0; border:none; outline:none; background:transparent;
-    font: inherit; color:var(--text); padding:10px 6px;
-  }
-  .input-row input::placeholder{ color:#9aa6b2; }
-
-  /* '보기' 버튼: 입력칸 내부에, 캡슐 형태 */
-  .pw-toggle{
-    height:36px; padding:0 12px;
-    display:flex; align-items:center; justify-content:center;
-    background:#f6f7f9; border:2px solid var(--input-line);
-    color:#566574; border-radius:12px; cursor:pointer;
-    font: inherit; line-height:1;
+    border-radius:14px;
+    font:inherit; font-size:15px;
+    outline:none;
   }
 
-  #error-msg{ min-height:18px; text-align:center; font-size:14px; color:var(--error); margin:6px 0 2px; }
+  input:focus, select:focus{
+    border-color:#b9c7c5; box-shadow:0 0 0 3px rgba(185,199,197,.35);
+  }
 
-  .btn{
-    width:100%; border:0; border-radius:22px;
-    padding:18px 18px; font: inherit; font-size:20px; color:#fff;
-    background:var(--btn); box-shadow:0 12px 28px var(--btn-shadow);
+  /* 버튼 */
+  button{
+    margin-top:18px; width:100%;
+    padding:14px 16px; border:0; border-radius:18px;
+    background:var(--btn); color:#fff; font-size:18px;
+    font-family:'EliceDigitalBaeum','NanumSquareRound',sans-serif;
+    box-shadow:0 6px 14px var(--btn-shadow);
     cursor:pointer;
   }
-
-  .hint{ text-align:center; font-size:13px; color:var(--muted); margin-top:8px; }
-  .footer{ margin-top:14px; text-align:center; font-size:13px; color:var(--muted); }
+  button:hover{ filter:brightness(1.05) }
 </style>
 </head>
 <body>
-<div class="clouds" aria-hidden="true"></div>
+  <div class="clouds"></div>
 
-<div id="teacher-link" onclick="location.href='teacher.html';">교사용</div>
+  <div id="teacher-link" onclick="location.href='teacher.html';">교사용</div>
 
-<section class="frame">
-  <main class="card" id="login-card">
-    <!-- 로고 -->
-    <div class="logo-box">
-      <img id="logo" src="logo.png" alt="오늘 할 일 로고" />
-    </div>
+  <div class="card">
+    <h1>학생 로그인 🙂</h1>
 
-    <h1 class="title">학생 로그인 🙂</h1>
+    <label for="student">이름 선택</label>
+    <select id="student">
+      <option>-- 선택하세요 --</option>
+    </select>
 
-    <form id="login-form" novalidate>
-      <div class="field">
-        <label for="student-select-login">이름 선택</label>
-        <select id="student-select-login" required>
-          <option value="">-- 선택하세요 --</option>
-        </select>
-      </div>
+    <label for="pw">비밀번호</label>
+    <input type="password" id="pw" placeholder="비밀번호 4자리" maxlength="4">
 
-      <div class="field">
-        <label for="password">비밀번호</label>
-        <div class="input-row">
-          <input type="password" id="password" inputmode="numeric" pattern="\\d{4}" placeholder="비밀번호 4자리" maxlength="4" />
-          <button type="button" class="pw-toggle" id="togglePw">보기</button>
-        </div>
-      </div>
-
-      <div id="error-msg"></div>
-      <button id="login-btn" type="submit" class="btn">로그인</button>
-      <div class="hint">Enter키로도 로그인할 수 있어요.</div>
-    </form>
-  </main>
-</section>
-
-<div class="footer">© 오늘 할 일 onhi</div>
-
-<script>
-  // 학생 목록
-  function loadStudents(){
-    const raw = localStorage.getItem("students");
-    const students = raw ? JSON.parse(raw) : [];
-    students.sort((a,b)=>Number(a.id)-Number(b.id));
-    const sel=document.getElementById("student-select-login");
-    sel.innerHTML='<option value="">-- 선택하세요 --</option>';
-    students.forEach(stu=>{
-      const opt=document.createElement("option");
-      opt.value=stu.name; opt.textContent=`${Number(stu.id)} ${stu.name}`;
-      sel.appendChild(opt);
-    });
-  }
-
-  // '보기' 토글
-  const pw = document.getElementById("password");
-  const toggle = document.getElementById("togglePw");
-  toggle.addEventListener("click", ()=>{
-    const hidden = pw.type==="password";
-    pw.type = hidden? "text":"password";
-    toggle.textContent = hidden? "숨기기":"보기";
-    pw.focus();
-  });
-  pw.addEventListener("input",(e)=>{
-    e.target.value = e.target.value.replace(/[^0-9]/g,"").slice(0,4);
-  });
-
-  function showError(t){ document.getElementById("error-msg").textContent=t||""; }
-  function setBusy(b){ const btn=document.getElementById("login-btn"); btn.disabled=b; btn.textContent=b?"확인 중…":"로그인"; }
-
-  function login(){
-    const name=document.getElementById("student-select-login").value;
-    const pass=pw.value.trim();
-    if(!name){ showError("이름을 선택하세요."); return; }
-    if(pass.length!==4){ showError("비밀번호 4자리를 입력하세요."); return; }
-
-    const raw=localStorage.getItem("students");
-    const students=raw?JSON.parse(raw):[];
-    const ok=students.find(s=>s.name===name && s.password===pass);
-    if(ok){
-      showError(""); setBusy(true);
-      localStorage.setItem("currentStudent", ok.name);
-      setTimeout(()=>location.href="student.html", 150);
-    }else showError("이름 또는 비밀번호가 틀렸습니다.");
-  }
-
-  document.getElementById("login-form").addEventListener("submit",(e)=>{e.preventDefault(); login();});
-  window.addEventListener("load", loadStudents);
-</script>
+    <button>로그인</button>
+  </div>
 </body>
 </html>
