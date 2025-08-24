@@ -17,7 +17,7 @@
     }
 
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body{min-height:100%}
 
     /* 배경 & 기본 타이포 */
     body{
@@ -28,8 +28,11 @@
         radial-gradient(900px 360px at 12% -8%, var(--bg-yellow), transparent 60%),
         radial-gradient(820px 340px at 108% 0%, var(--bg-mint), transparent 62%),
         linear-gradient(180deg, var(--bg-base), var(--bg-base));
-      padding:140px 16px 40px;                /* 상단 로고칩 여백 */
-      display:flex; justify-content:center;
+     padding:140px 16px 40px;
+     display:flex;
+     justify-content:center;
+     align-items:flex-start;   /* 세로 가운데 고정 방지 */
+     overflow-y:auto;          /* 강제로 세로 스크롤 허용 */
     }
     body::before{
       content:""; position:fixed; inset:0; z-index:-1; opacity:.9; pointer-events:none;
@@ -44,14 +47,14 @@
 
     /* 가운데 카드 컨테이너 (본문을 감싸는 느낌) */
     .container{
-      width:min(960px, 100%);
+      max-width:960px;
+      width:100%;
       background:var(--card);
       border:1px solid var(--card-line);
       border-radius:26px;
       box-shadow:0 16px 40px rgba(0,0,0,.10);
       padding:28px 24px 32px;
       height: auto;              /* 내용에 따라 자동 늘어남 */
-      overflow: hidden;          /* 혹시 float 등으로 튀는 것 방지 */
       overflow-wrap: break-word; /* 긴 텍스트 줄바꿈 */
     }
 
