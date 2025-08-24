@@ -110,24 +110,53 @@
 
     /* 할 일 박스들 (JS가 배경색을 따로 지정해도 테두리/모양은 유지) */
     .task-box{
-      width: 46%;
-      display: inline-block;
-      margin: 10px 2%;
-      vertical-align: top;
-      border: 2px solid #dcdfe4;
-      padding: 16px 14px;
-      border-radius: 20px;
-      font-size: 18px;
-      cursor: pointer;
-      user-select: none;
-      box-shadow: 0 2px 0 rgba(0,0,0,.02) inset, 0 4px 10px rgba(0,0,0,.05);
+     width: 46%;
+     display: inline-flex;              /* ← inline-block → inline-flex 로 변경 */
+     justify-content: space-between;    /* 좌우 배치 */
+     align-items: center;
+     gap: 12px;                         /* 이름과 날짜 간격 */
+     border: 2px solid #dcdfe4;
+     padding: 16px 14px;
+     border-radius: 20px;
+     font-size: 18px;
+     cursor: pointer;
+     user-select: none;
+     box-shadow: 0 2px 0 rgba(0,0,0,.02) inset, 0 4px 10px rgba(0,0,0,.05);
     }
+    .task-name{ flex:1; min-width:0; text-align:left; 
+     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } /* 긴 제목 말줄임 */
+
+
+    .task-date{
+     font-size:13px;
+     padding:4px 10px;
+     border-radius:999px;
+     background:#ffffff;         /* 기본: 흰색 캡슐 */
+     color:#666;
+     white-space:nowrap;
+     border:1px solid rgba(0,0,0,.05);
+    }
+    
     .task-box.done{
       background: transparent !important;
       color: #9aa6b2 !important;
       border-color: #dcdfe4 !important;
       text-decoration: line-through;
     }
+
+    /* 과거 미완료(빨강 배경)에서도 읽기 좋은 색감 */
+    .task-box.past:not(.done) .task-date{
+     background: rgba(255,255,255,.9);
+     color:#7a2d2d;
+     border-color: transparent;
+    }
+ 
+   /* 오늘 표기 전용 강조(원하면 유지/삭제 가능) */
+   .task-date.is-today{
+    background:#2e7d57;
+    color:#fff;
+    border-color: transparent;
+   }
 
     /* 로그아웃 버튼 */
     button#logout-btn{
@@ -252,26 +281,47 @@
             return;
           }
 
-          const box = document.createElement("div");
-          box.className = "task-box" + (done ? " done" : "");
-          box.textContent = taskName;
+        const box = document.createElement("div");
+        box.className = "task-box" + (done ? " done" : "");
+ 
+        // 날짜 계산
+        const currDate0 = new Date(currentDate); currDate0.setHours(0,0,0,0);
+        const isToday = taskDate.getTime() === currDate0.getTime();
 
-          if (done) {
-            box.style.backgroundColor = "transparent";
-            box.style.color = "#999";
-          } else if (isPast) {
-            box.style.backgroundColor = "#f05555";
-            box.style.color = "#fff";
-          } else {
-            box.style.backgroundColor = "#f6c1c1";
-            box.style.color = "#000";
-          }
-          box.onclick = () => {
-            doneTasks[taskName] = !done;
-            setDoneTasks(currentStudent, doneTasks);
-            renderTasks();
-          };
-          todoContainer.appendChild(box);
+        // 날짜 라벨: 오늘이면 '오늘', 아니면 '8월 24일 (일)' 형식
+        const dayNames = ['일','월','화','수','목','금','토'];
+        const labelText = isToday
+          ? '오늘'
+          : `${taskDate.getMonth()+1}월 ${taskDate.getDate()}일 (${dayNames[taskDate.getDay()]})`;
+
+        // 내부 레이아웃 (이름 + 날짜 뱃지)
+        box.innerHTML = `
+          <span class="task-name">${taskName}</span>
+          <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
+        `;
+
+        // 상태별 배경색 (기존 로직 유지)
+        if (done) {
+          box.style.backgroundColor = "transparent";
+          box.style.color = "#999";
+        } else if (isPast) {
+          box.style.backgroundColor = "#f05555";
+          box.style.color = "#fff";
+          box.classList.add('past'); // ← 과거 미완료 스타일 보조
+        } else {
+          box.style.backgroundColor = "#f6c1c1";
+          box.style.color = "#000";
+        }
+
+        // 클릭 토글 (기존 로직 유지)
+        box.onclick = () => {
+          doneTasks[taskName] = !done;
+          setDoneTasks(currentStudent, doneTasks);
+          renderTasks();
+        };
+
+        todoContainer.appendChild(box);
+
         });
       });
   }
