@@ -237,6 +237,10 @@
     localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
   }
 
+  function makeTaskKey(dateStr, taskText){
+    return `${dateStr}@@${taskText}`;
+  }
+
   function getAllAssignments() {
     let assignments = [];
     for(let i=0; i<localStorage.length; i++) {
@@ -275,7 +279,14 @@
         const isPast = taskDate < today0;
 
         tasks.forEach(taskName => {
-          const done = doneTasks[taskName] === true;
+          const doneKey = makeTaskKey(date, taskName); // date는 forEach 상단에 있는 변수
+          const done = (doneTasks[doneKey] === true) || (doneTasks[taskName] === true);
+          if (doneTasks[taskName] === true && doneTasks[doneKey] !== true) {
+          doneTasks[doneKey] = true;
+          delete doneTasks[taskName];
+          setDoneTasks(currentStudent, doneTasks);
+          }
+
 
           if (done && isPast) {
             return;
@@ -313,12 +324,16 @@
           box.style.color = "#000";
         }
 
-        // 클릭 토글 (기존 로직 유지)
-        box.onclick = () => {
-          doneTasks[taskName] = !done;
-          setDoneTasks(currentStudent, doneTasks);
-          renderTasks();
-        };
+        // 클릭 토글
+       box.onclick = () => {
+         const k = makeTaskKey(date, taskName);
+         if (doneTasks[taskName] === true && doneTasks[k] !== true) {
+           delete doneTasks[taskName];
+         }
+         doneTasks[k] = !done;
+         setDoneTasks(currentStudent, doneTasks);
+         renderTasks();
+       };
 
         todoContainer.appendChild(box);
 
