@@ -4,1030 +4,486 @@
   <meta charset="UTF-8" />
   <title>과제 배정 (교사용)</title>
 
+  <!-- 폰트: 제목=Jua, 본문/버튼=SUIT -->
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css">
+
   <style>
-    header {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 5px;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    :root{
+      --bg-base:#eaf4ef; --bg-yellow:#f6e4b5; --bg-mint:#cfeee0;
+      --card:#fbf3da; --card-line:#efe6cd;
+      --text:#1f2a33; --muted:#6f7d8c;
+      --brand:#2e7d57; --btn-shadow:rgba(46,125,87,.26);
     }
-    #logo {
-      width: 50px;
-      height: auto;
-      cursor: pointer;
-      display: block;
-    }
-    body {
-      font-family: sans-serif;
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding-top: 80px;
-    }
-    h2 {
-      text-align: center;
-    }
-    section {
-      margin-top: 30px;
-    }
-    .task-input {
-      display: flex;
-      margin-bottom: 10px;
-    }
-    .task-input input {
-      flex: 1;
-      padding: 6px;
-      margin-right: 6px;
-    }
-    .student-checkboxes label {
-      margin-right: 10px;
-      display: inline-block;
-    }
-    .task-list, .saved-tasks, .student-status {
-      margin-top: 20px;
-    }
-    .saved-item, .student-item {
-      border-top: 1px dashed #ccc;
-      padding-top: 8px;
-      margin-top: 10px;
-    }
-    button {
-      margin: 5px 0;
-      padding: 6px 12px;
-      cursor: pointer;
-    }
-    select, input[type="date"] {
-      padding: 4px;
-      margin: 6px 0;
-    }
-    .toggle-buttons {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      gap: 10px;
-    }
-    .toggle-buttons button {
-      padding: 8px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .calendar {
-      display: none;
-    }
-    .calendar table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    .calendar th, .calendar td {
-      border: 1px solid #ccc;
-      width: 14.28%;
-      height: 80px;
-      text-align: left;
-      vertical-align: top;
-      padding: 4px;
-      font-size: 14px;
-    }
-    /* 달력 안에서 개별 과제 pill */
-.task-pill{
-  background:#f6c1c1; border-radius:8px; padding:2px 6px; margin-top:4px;
-  font-size:12px; cursor:pointer; display:inline-block;
-}
-.task-pill:hover{ opacity:.85; }
 
-/* 선택 표시 */
-#task-action-selected{ margin:6px 0; font-size:14px; color:#555; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
 
-/* 확인(과제별 완료여부) 카드형 */
-.student-chip-grid{ display:flex; flex-wrap:wrap; gap:8px; }
-.student-chip{ border:1px solid #bbb; border-radius:10px; padding:10px 12px;
-  min-width:88px; text-align:center; background:#fff; }
-.student-chip.missed{ background:#f6c1c1; border-color:#e5aaaa; }
+    /* 배경 & 기본 타이포 */
+    body{
+      margin:0;
+      font-family:'SUIT',system-ui,-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(900px 360px at 12% -8%, var(--bg-yellow), transparent 60%),
+        radial-gradient(820px 340px at 108% 0%, var(--bg-mint), transparent 62%),
+        linear-gradient(180deg, var(--bg-base), var(--bg-base));
+      padding:140px 16px 40px;                /* 상단 로고칩 여백 */
+      display:flex; justify-content:center;
+    }
+    body::before{
+      content:""; position:fixed; inset:0; z-index:-1; opacity:.9; pointer-events:none;
+      background:
+        radial-gradient(200px 80px at 16% 30%, #fff 60%, transparent 61%),
+        radial-gradient(150px 60px at 27% 26%, #fff 60%, transparent 61%),
+        radial-gradient(180px 70px at 77% 28%, #fff 60%, transparent 61%),
+        radial-gradient(140px 60px at 88% 35%, #fff 60%, transparent 61%),
+        radial-gradient(120px 50px at 12% 52%, #fff 60%, transparent 61%),
+        radial-gradient(110px 45px at 92% 56%, #fff 60%, transparent 61%);
+    }
 
-    /* 날짜 숫자를 줄바꿈되게 */
-.calendar td > strong { display:block; margin-bottom:6px; }
+    /* 가운데 카드 컨테이너 (본문을 감싸는 느낌) */
+    .container{
+      width:min(960px, 100%);
+      background:var(--card);
+      border:1px solid var(--card-line);
+      border-radius:26px;
+      box-shadow:0 16px 40px rgba(0,0,0,.10);
+      padding:28px 24px 32px;
+    }
 
+    /* 상단 로고 칩 (기존 header 유지, 위치만 중앙) */
+    header{
+      position:fixed; top:18px; left:50%; transform:translateX(-50%);
+      z-index:1000;
+      background:#fff;
+      padding:8px 10px;
+      border-radius:16px;
+      border:1px solid var(--card-line);
+      box-shadow:0 10px 24px rgba(0,0,0,.08);
+    }
+    #logo{ width:64px; height:auto; cursor:pointer; display:block; }
 
-/* 학생관리 표: 고정 레이아웃 + 셀 패딩 */
-#student-list {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;  /* 열 너비를 고정해서 인풋이 튀어나오지 않음 */
-}
-#student-list th, #student-list td {
-  padding: 4px;
-  text-align: center;
-  vertical-align: middle;
-}
+    /* 공통 제목/섹션 */
+    h2,h3{ margin:0 0 14px; }
+    h2{ text-align:center; font-family:'Jua',sans-serif; font-weight:400; letter-spacing:-.2px; }
+    section{ margin-top:26px; }
 
-/* 표 안 인풋은 셀 안에서 100%로 꽉 차되, 셀 경계 넘지 않게 */
-#student-list input[type="text"],
-#student-list input[type="password"] {
-  width: 100%;
-  height: 32px;
-  box-sizing: border-box;   /* 패딩/보더 포함해서 셀 안에 딱 맞춤 */
-  margin: 0;
-}
+    /* 상단 탭 버튼 */
+    .toggle-buttons{
+      display:flex; justify-content:center; gap:10px; margin-bottom:16px;
+    }
+    .toggle-buttons button{
+      padding:10px 18px; font-size:15px; cursor:pointer;
+      border-radius:999px; border:1px solid var(--card-line); background:#fff;
+      box-shadow:0 6px 14px rgba(0,0,0,.06);
+    }
+    .toggle-buttons button:active{ transform:translateY(1px); }
 
-/* 번호 칸 인풋은 조금 좁게(숫자 2~3자리) */
-#student-list td.col-id input {
-  text-align: left;
-}
+    /* 입력/셀렉트/버튼 기본 */
+    input[type="text"], input[type="password"], input[type="date"], select{
+      padding:10px 12px; border:2px solid #dcdfe4; border-radius:14px; outline:none;
+      font:inherit; background:#fff;
+    }
+    input:focus, select:focus{
+      border-color:#b9c7c5; box-shadow:0 0 0 4px rgba(185,199,197,.28);
+    }
+    button{
+      padding:10px 14px; cursor:pointer; border-radius:14px; border:1px solid var(--card-line); background:#fff;
+      font:inherit;
+    }
+    .btn-primary{
+      color:#fff; background:var(--brand); border-color:var(--brand);
+      box-shadow:0 12px 28px var(--btn-shadow);
+    }
 
-/* 작업 칸 버튼 가운데 정렬 */
-#student-list td.col-actions {
-  padding: 6px 10px;
-}
-#student-list td.col-actions .actions {
-  display: flex;
-  justify-content: center;   /* 가운데 */
-  align-items: center;
-  gap: 8px;                  /* 버튼 간격 */
-}
-#student-list td.col-actions .actions button {
-  height: 32px;
-  padding: 0 12px;
-  cursor: pointer;
-}
+    /* 과제 입력 행 */
+    .task-input{ display:flex; gap:8px; margin-bottom:10px; }
+    .task-input input{ flex:1; }
 
-    
+    /* 체크박스 라벨 정리 */
+    .student-checkboxes label{ display:inline-block; margin:6px 8px 0 0; padding:6px 10px; border:1px solid #e6e8eb; border-radius:12px; background:#fff; }
+
+    /* 저장내역/학생칩 */
+    .saved-item, .student-item{ border-top:1px dashed #d5d5d5; padding-top:8px; margin-top:10px; }
+
+    /* 달력 */
+    .calendar{ display:none; }
+    .calendar table{ width:100%; border-collapse:collapse; margin-top:14px; background:#fff; border-radius:14px; overflow:hidden; }
+    .calendar th, .calendar td{
+      border:1px solid #ececec; width:14.28%; height:96px;
+      text-align:left; vertical-align:top; padding:8px; font-size:14px;
+    }
+    .calendar thead th{ background:#f9fafb; }
+
+    /* 달력 과제 pill */
+    .task-pill{
+      background:#f6c1c1; border-radius:10px; padding:4px 8px; margin-top:6px;
+      font-size:12px; cursor:pointer; display:inline-block;
+      border:1px solid rgba(0,0,0,.06);
+    }
+    .task-pill:hover{ opacity:.9; }
+
+    /* 선택 안내/버튼 영역 */
+    #task-action-selected{ margin:10px 0; font-size:14px; color:#555; }
+
+    /* 확인(과제별 완료여부) 카드형 */
+    .student-chip-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+    .student-chip{
+      border:1px solid #e6e8eb; border-radius:12px; padding:10px 12px; min-width:92px; text-align:center; background:#fff;
+    }
+    .student-chip.missed{ background:#f6c1c1; border-color:#e9b3b3; }
+
+    /* 학생 관리 표 */
+    #student-list{ width:100%; border-collapse:collapse; table-layout:fixed; background:#fff; border-radius:14px; overflow:hidden; }
+    #student-list th, #student-list td{ padding:10px; text-align:center; vertical-align:middle; border:1px solid #ececec; }
+    #student-list thead tr{ background:#f9fafb; }
+    #student-list input[type="text"], #student-list input[type="password"]{
+      width:100%; height:36px; margin:0; box-sizing:border-box; border:2px solid #dcdfe4; border-radius:10px; padding:6px 8px;
+    }
+    #student-list td.col-actions{ padding:8px 10px; }
+    #student-list td.col-actions .actions{ display:flex; justify-content:center; align-items:center; gap:8px; }
+    #student-list td.col-actions .actions button{ height:34px; padding:0 12px; }
+
+    /* 카드 안 소제목 아이콘 느낌 */
+    h3{ font-weight:600; }
+
+    /* 반응형 */
+    @media (max-width:720px){
+      .container{ padding:22px 18px; }
+      #student-list th, #student-list td{ padding:8px; }
+    }
   </style>
 </head>
 <body>
-  
   <header>
     <img src="logo.png" alt="오늘 할 일 로고" id="logo" style="cursor:pointer" onclick="location.href='index.html'">
   </header>
 
-  <div class="toggle-buttons">
-    <button onclick="showStudentStatus()">오늘 할 일</button>
-    <button onclick="showTaskManagement()">과제 관리</button>
-    <button onclick="showStudentManagement()">학생 관리</button>
-  </div>
+  <div class="container">
+    <div class="toggle-buttons">
+      <button onclick="showStudentStatus()">오늘 할 일</button>
+      <button onclick="showTaskManagement()">과제 관리</button>
+      <button onclick="showStudentManagement()">학생 관리</button>
+    </div>
 
-  <div id="student-status-page" style="display:none; margin-top: 20px;">
-    <h3>✅ 학생별 과제 완료 현황</h3>
-    <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"></div>
-</div>
+    <div id="student-status-page" style="display:none; margin-top: 8px;">
+      <h3>✅ 학생별 과제 완료 현황</h3>
+      <div id="student-status-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"></div>
+    </div>
 
-  
-  <div id="task-management" style="display:none; margin-top: 20px;">
-    <h2>📋 과제 추가 및 달력</h2>
+    <div id="task-management" style="display:none; margin-top: 8px;">
+      <h2>📋 과제 추가 및 달력</h2>
 
-    <section>
-      <label>📅 과제 날짜:</label>
-      <input type="date" id="task-date" />
+      <section>
+        <label>📅 과제 날짜:</label>
+        <input type="date" id="task-date" />
 
-      <div class="task-list" id="task-list">
-        <div class="task-input">
-          <input type="text" placeholder="할 일 입력" />
-          <button onclick="removeTask(this)">⊖</button>
+        <div class="task-list" id="task-list">
+          <div class="task-input">
+            <input type="text" placeholder="할 일 입력" />
+            <button onclick="removeTask(this)">⊖</button>
+          </div>
         </div>
+        <button class="btn-primary" onclick="addTask()">+ 할 일 추가</button>
+
+        <label style="display:block; margin-top:10px;">🔁 반복 설정:</label>
+        <select id="repeat">
+          <option value="none">없음</option>
+          <option value="daily">매일</option>
+          <option value="mon">매주 월요일</option>
+          <option value="tue">매주 화요일</option>
+          <option value="wed">매주 수요일</option>
+          <option value="thu">매주 목요일</option>
+          <option value="fri">매주 금요일</option>
+        </select>
+
+        <label style="display:block; margin-top:10px;">👥 대상 선택:</label>
+        <select id="target">
+          <option value="all">전체 학생</option>
+          <option value="selected">특정 학생 지정</option>
+        </select>
+
+        <div id="student-checkboxes" class="student-checkboxes" style="display: none;"></div>
+
+        <button class="btn-primary" style="margin-top:10px;" onclick="saveAssignment()">💾 저장하기</button>
+      </section>
+
+      <section class="calendar" style="margin-top:20px;">
+        <h3>🗓️ 달력 (과제 클릭 시 수정/삭제/확인 버튼 표시)</h3>
+        <table>
+          <thead>
+            <tr><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th></tr>
+          </thead>
+          <tbody id="calendar-body"></tbody>
+        </table>
+      </section>
+
+      <div id="task-action-selected"></div>
+
+      <div id="task-action-buttons" style="margin-top:10px; display:none;">
+        <button onclick="editTask()">수정</button>
+        <button onclick="deleteTaskClicked()">삭제</button>
+        <button class="btn-primary" onclick="showTaskCompletion()">확인</button>
       </div>
-      <button onclick="addTask()">+ 할 일 추가</button>
 
-      <label>🔁 반복 설정:</label>
-      <select id="repeat">
-        <option value="none">없음</option>
-        <option value="daily">매일</option>
-        <option value="mon">매주 월요일</option>
-        <option value="tue">매주 화요일</option>
-        <option value="wed">매주 수요일</option>
-        <option value="thu">매주 목요일</option>
-        <option value="fri">매주 금요일</option>
-      </select>
+      <div id="task-completion" style="margin-top:20px; display:none;">
+        <h3>과제별 학생 완료 여부</h3>
+        <div id="completion-list"></div>
+        <button style="margin-top:8px;" onclick="closeTaskCompletion()">닫기</button>
+      </div>
+    </div>
 
-      <label>👥 대상 선택:</label>
-      <select id="target">
-        <option value="all">전체 학생</option>
-        <option value="selected">특정 학생 지정</option>
-      </select>
+    <div id="student-management" style="display:none; margin-top:20px;">
+      <h3>👩‍🎓 학생 관리</h3>
 
-      <div id="student-checkboxes" class="student-checkboxes" style="display: none;">
-      
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <input type="text" id="new-student-id" placeholder="번호" style="flex:0 0 110px;" />
+        <input type="text" id="new-student-name" placeholder="이름" style="flex:1 1 160px;" />
+        <input type="password" id="new-student-password" placeholder="비밀번호" style="flex:0 0 140px;" />
+        <button class="btn-primary" onclick="addStudent()">추가</button>
       </div>
 
-      <button onclick="saveAssignment()">💾 저장하기</button>
-    </section>
+      <div style="display:flex; align-items:center; gap:12px; margin:8px 0;">
+        <label><input type="checkbox" id="show-all-passwords" onchange="toggleAllPw(this)"> 비밀번호 모두 보기</label>
+      </div>
 
- <section class="calendar" style="margin-top:20px;">
-    <h3>🗓️ 달력 (과제 클릭 시 수정/삭제/확인 버튼 표시)</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body"></tbody>
-    </table>
-  </section>
-
-    <!-- 과제 클릭 시 보이는 버튼 영역 -->
-    <div id="task-action-selected"></div>
-
-  <div id="task-action-buttons" style="margin-top:10px; display:none;">
-    <button onclick="editTask()">수정</button>
-    <button onclick="deleteTaskClicked()">삭제</button>
-    <button onclick="showTaskCompletion()">확인</button>
+      <table id="student-list" border="1" style="margin-top:10px; width: 100%; border-collapse:collapse;">
+        <colgroup>
+          <col style="width: 90px;">
+          <col>
+          <col style="width: 180px;">
+          <col style="width: 70px;">
+          <col style="width: 170px;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th>이름</th>
+            <th>비밀번호</th>
+            <th>보기</th>
+            <th>작업</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- 확인 시 학생별 완료 여부 표시 -->
-  <div id="task-completion" style="margin-top:20px; display:none;">
-    <h3>과제별 학생 완료 여부</h3>
-    <div id="completion-list"></div>
-    <button onclick="closeTaskCompletion()">닫기</button>
-  </div>
-</div>
-
-   
-  <div id="student-management" style="display:none; margin-top:20px;">
-  <h3>👩‍🎓 학생 관리</h3>
-
-  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-    <input type="text" id="new-student-id" placeholder="번호" style="flex:0 0 110px;" />
-    <input type="text" id="new-student-name" placeholder="이름" style="flex:1 1 160px;" />
-    <input type="password" id="new-student-password" placeholder="비밀번호" style="flex:0 0 140px;" />
-    <button onclick="addStudent()">추가</button>
-  </div>
-
-  <div style="display:flex; align-items:center; gap:12px; margin:8px 0;">
-    <label><input type="checkbox" id="show-all-passwords" onchange="toggleAllPw(this)"> 비밀번호 모두 보기</label>
-  </div>
-
-  <table id="student-list" border="1" style="margin-top:10px; width: 100%; border-collapse:collapse;">
-   <colgroup>
-    <col style="width: 90px;">   <!-- 번호 -->
-    <col>                        <!-- 이름 : 자동 확장 -->
-    <col style="width: 180px;">  <!-- 비밀번호 -->
-    <col style="width: 70px;">   <!-- 보기 (있으면) -->
-    <col style="width: 170px;">  <!-- 작업 -->
-  </colgroup>
-    <thead>
-      <tr style="background:#f7f7f7;">
-        <th style="width:90px;">번호</th>
-        <th>이름</th>
-        <th style="width:160px;">비밀번호</th>
-        <th style="width:90px;">보기</th>
-        <th style="width:160px;">작업</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-
-
- 
-<script>
-
-  let selectedDate = null;         // 달력에서 선택한 날짜
-  let selectedTaskIndex = null;    // 선택한 과제 인덱스
-  let selectedTaskText = "";       // 선택한 과제 텍스트
-  let isEditing = false;           // 편집 모드인지
-  let editingOriginalDate = null;  // 편집 시작 시 원래 날짜
-
-  // ★ 달력에 표시된 각 날짜별 과제 참조(원본키/인덱스) 매핑
-//   calendarRefs["2025-03-12"] = [{key:"teacherTasks-2025-03-01", taskIndex:0}, ...]
-const calendarRefs = {};
-
-  // === 학생 정렬/표시 공통 헬퍼 ===
-  function _toNum(v){ const n=parseInt(String(v),10); return isNaN(n)?0:n; }
-  // 1~50 먼저, 51~ 이후 + 각 그룹 내 오름차순
-  function sortStudents(arr){
-   return (arr||[]).slice().sort((a,b)=>{
-    const an=_toNum(a.id), bn=_toNum(b.id);
-    const ag = an>50 ? 1 : 0, bg = bn>50 ? 1 : 0;
-    if (ag!==bg) return ag-bg;
-    return an-bn;
-  });
-}
-  // 저장된 학생을 정렬해서 가져오기
-  function getStudentsSorted(){ return sortStudents(loadStudents()); }
-  // 화면에 보일 라벨: "번호 이름"
-  function labelOf(stu){ return `${stu.id} ${stu.name}`; }
-  
-    // 페이지 로드 시 <오늘 할 일> 보여주기
-  window.onload = function() {
-    showStudentStatus();
-  };
-  
-function showStudentStatus() {
-  document.getElementById("student-status-page").style.display = "block";
-  document.getElementById("task-management").style.display = "none";
-  document.getElementById("student-management").style.display = "none";
-  renderStudentStatus();
-}
-
-function showTaskManagement() {
-  document.getElementById("student-status-page").style.display = "none";
-  document.getElementById("task-management").style.display = "block";
-  document.getElementById("student-management").style.display = "none";
-  renderCalendar();
-  renderStudentListToCheckbox(); 
-  // 달력 보이도록 처리 추가
-  const calendarSection = document.querySelector("#task-management section.calendar");
-  if (calendarSection) {
-    calendarSection.style.display = "block";
-  }
-}
-
-function showStudentManagement() {
-  document.getElementById("student-status-page").style.display = "none";
-  document.getElementById("task-management").style.display = "none";
-  document.getElementById("student-management").style.display = "block";
-  renderStudentList();
-}
-
-function renderStudentListToCheckbox() {
-  const container = document.getElementById("student-checkboxes");
-  container.innerHTML = "";
-  const students = getStudentsSorted();
-  students.forEach(stu => {
-    const label = document.createElement("label");
-    // value는 name 그대로 유지(내부 로직 호환), 보여지는 텍스트만 "번호 이름"
-    label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${labelOf(stu)}`;
-    container.appendChild(label);
-  });
-}
-
-
-
-  
-  // 학생별 완료 저장 함수
-  function getDoneTasks(student) {
-    return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
-  }
-  function setDoneTasks(student, doneTasks) {
-    localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
-  }
-
-  document.getElementById("target").addEventListener("change", function() {
-    const show = this.value === "selected";
-    document.getElementById("student-checkboxes").style.display = show ? "block" : "none";
-  });
-
-  function addTask() {
-    const div = document.createElement("div");
-    div.className = "task-input";
-    div.innerHTML = '<input type="text" placeholder="할 일 입력" /><button onclick="removeTask(this)">⊖</button>';
-    document.getElementById("task-list").appendChild(div);
-  }
-
-  function removeTask(btn) {
-    btn.parentElement.remove();
-  }
-
-  function saveAssignment() {
-    const date = document.getElementById("task-date").value;
-    if (!date) {
-      alert("과제 날짜를 선택하세요.");
-      return;
-    }
-    const repeat = document.getElementById("repeat").value;
-    const target = document.getElementById("target").value;
-    const newTasks = Array.from(document.querySelectorAll("#task-list input"))
-      .map(i => i.value.trim())
-      .filter(t => t !== "");
-    if (newTasks.length === 0) {
-      alert("과제를 하나 이상 입력하세요.");
-      return;
-    }
-
-    let students = [];
-    if (target === "selected") {
-      students = Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value);
-      if (students.length === 0) {
-        alert("학생을 하나 이상 선택하세요.");
-        return;
+  <!-- ↓↓↓ 아래부터 스크립트: 기능은 그대로 두었습니다 ↓↓↓ -->
+  <script>
+    /* === 기존 스크립트 원본 그대로 === */
+    let selectedDate = null; let selectedTaskIndex = null; let selectedTaskText = ""; let isEditing = false; let editingOriginalDate = null;
+    const calendarRefs = {};
+    function _toNum(v){ const n=parseInt(String(v),10); return isNaN(n)?0:n; }
+    function sortStudents(arr){ return (arr||[]).slice().sort((a,b)=>{ const an=_toNum(a.id), bn=_toNum(b.id); const ag = an>50 ? 1 : 0, bg = bn>50 ? 1 : 0; if (ag!==bg) return ag-bg; return an-bn; }); }
+    function getStudentsSorted(){ return sortStudents(loadStudents()); }
+    function labelOf(stu){ return `${stu.id} ${stu.name}`; }
+    window.onload = function() { showStudentStatus(); };
+    function showStudentStatus() { document.getElementById("student-status-page").style.display = "block"; document.getElementById("task-management").style.display = "none"; document.getElementById("student-management").style.display = "none"; renderStudentStatus(); }
+    function showTaskManagement() { document.getElementById("student-status-page").style.display = "none"; document.getElementById("task-management").style.display = "block"; document.getElementById("student-management").style.display = "none"; renderCalendar(); renderStudentListToCheckbox(); const calendarSection = document.querySelector("#task-management section.calendar"); if (calendarSection) { calendarSection.style.display = "block"; } }
+    function showStudentManagement() { document.getElementById("student-status-page").style.display = "none"; document.getElementById("task-management").style.display = "none"; document.getElementById("student-management").style.display = "block"; renderStudentList(); }
+    function renderStudentListToCheckbox() { const container = document.getElementById("student-checkboxes"); container.innerHTML = ""; const students = getStudentsSorted(); students.forEach(stu => { const label = document.createElement("label"); label.innerHTML = `<input type="checkbox" value="${stu.name}" /> ${labelOf(stu)}`; container.appendChild(label); }); }
+    function getDoneTasks(student) { return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}"); }
+    function setDoneTasks(student, doneTasks) { localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks)); }
+    document.getElementById("target").addEventListener("change", function() { const show = this.value === "selected"; document.getElementById("student-checkboxes").style.display = show ? "block" : "none"; });
+    function addTask() { const div = document.createElement("div"); div.className = "task-input"; div.innerHTML = '<input type="text" placeholder="할 일 입력" /><button onclick="removeTask(this)">⊖</button>'; document.getElementById("task-list").appendChild(div); }
+    function removeTask(btn) { btn.parentElement.remove(); }
+    function saveAssignment() { const date = document.getElementById("task-date").value; if (!date) { alert("과제 날짜를 선택하세요."); return; } const repeat = document.getElementById("repeat").value; const target = document.getElementById("target").value; const newTasks = Array.from(document.querySelectorAll("#task-list input")).map(i => i.value.trim()).filter(t => t !== ""); if (newTasks.length === 0) { alert("과제를 하나 이상 입력하세요."); return; } let students = []; if (target === "selected") { students = Array.from(document.querySelectorAll("#student-checkboxes input:checked")).map(cb => cb.value); if (students.length === 0) { alert("학생을 하나 이상 선택하세요."); return; } } else { students = ["전체"]; } if (isEditing) { const originalKey = "teacherTasks-" + editingOriginalDate; const newKey = "teacherTasks-" + date; const data = { tasks: newTasks, repeat: repeat, students: students }; if (newKey !== originalKey) { localStorage.removeItem(originalKey); } localStorage.setItem(newKey, JSON.stringify(data)); isEditing = false; editingOriginalDate = null; alert("수정되었습니다!"); renderCalendar(); renderStudentStatus(); return; } const key = "teacherTasks-" + date; const existingDataRaw = localStorage.getItem(key); let existingData = null; if (existingDataRaw) { try { existingData = JSON.parse(existingDataRaw); } catch { existingData = null; } } let mergedTasks = []; let mergedStudents = []; if (existingData) { mergedTasks = Array.from(new Set(existingData.tasks.concat(newTasks))); mergedStudents = Array.from(new Set(existingData.students.concat(students))); } else { mergedTasks = newTasks; mergedStudents = students; } const data = { tasks: mergedTasks, repeat: repeat, students: mergedStudents }; localStorage.setItem(key, JSON.stringify(data)); alert("저장되었습니다!"); loadSavedTasks(); renderCalendar(); renderStudentStatus(); }
+    function loadSavedTasks() { const container = document.getElementById("task-storage"); if (!container) return; const filter = document.getElementById("filter-date")?.value || ""; container.innerHTML = ""; for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); if (key.startsWith("teacherTasks-")) { const date = key.replace("teacherTasks-", ""); if (filter && filter !== date) continue; const data = JSON.parse(localStorage.getItem(key)); const div = document.createElement("div"); div.className = "saved-item"; const d = new Date(date); const dayNames = ['일','월','화','수','목','금','토']; const formattedDate = `${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`; div.innerHTML = `<strong>${date}</strong> (${formattedDate}) | 대상: ${data.students.join(", ")}<br>📌 ${data.tasks.join(", ")}<br>🔁 반복: ${data.repeat}<br><button onclick="copyTask('${date}')">📄 복사</button> <button onclick="deleteTask('${date}')">❌ 삭제</button>`; container.appendChild(div); } } }
+    function deleteTask(date) { if (!confirm("삭제하시겠습니까?")) return; localStorage.removeItem("teacherTasks-" + date); loadSavedTasks(); renderCalendar(); renderStudentStatus(); }
+    function copyTask(date) { const data = JSON.parse(localStorage.getItem("teacherTasks-" + date)); const taskList = document.getElementById("task-list"); taskList.innerHTML = ""; data.tasks.forEach(task => { const div = document.createElement("div"); div.className = "task-input"; div.innerHTML = `<input type="text" value="${task}" /><button onclick="removeTask(this)">⊖</button>`; taskList.appendChild(div); }); document.getElementById("task-date").value = date; document.getElementById("repeat").value = data.repeat; document.getElementById("target").value = data.students.includes("전체") ? "all" : "selected"; document.getElementById("student-checkboxes").style.display = data.students.includes("전체") ? "none" : "block"; if (!data.students.includes("전체")) { document.querySelectorAll("#student-checkboxes input").forEach(input => { input.checked = data.students.includes(input.value); }); } }
+    function renderCalendar() {
+      const tbody = document.getElementById("calendar-body");
+      tbody.innerHTML = "";
+      Object.keys(calendarRefs).forEach(k => delete calendarRefs[k]);
+      const today = new Date(); const year = today.getFullYear(); const month = today.getMonth();
+      const firstDay = new Date(year, month, 1); const startDay = firstDay.getDay(); const adjustedStartDay = (startDay + 6) % 7;
+      const lastDate = new Date(year, month + 1, 0).getDate();
+      const originals = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key.startsWith("teacherTasks-")) continue;
+        const dateKey = key.replace("teacherTasks-", "");
+        const data = JSON.parse(localStorage.getItem(key) || "null");
+        if (!data) continue;
+        originals.push({ key, dateKey, data });
       }
-    } else {
-      students = ["전체"];
-    }
-
-      // === 편집 모드 저장: 기존 항목 덮어쓰기 ===
-  if (isEditing) {
-    const originalKey = "teacherTasks-" + editingOriginalDate; // 처음 편집을 시작한 날짜
-    const newKey      = "teacherTasks-" + date;                 // 현재 입력창의 날짜(바꿨을 수 있음)
-
-    const data = {
-      tasks: newTasks,
-      repeat: repeat,
-      students: students
-    };
-
-    // 날짜가 바뀌었으면 원래 키 삭제 후 새 키로 저장
-    if (newKey !== originalKey) {
-      localStorage.removeItem(originalKey);
-    }
-    localStorage.setItem(newKey, JSON.stringify(data));
-
-    // 편집 상태 초기화 후 화면 갱신
-    isEditing = false;
-    editingOriginalDate = null;
-    alert("수정되었습니다!");
-    renderCalendar();
-    renderStudentStatus();
-    return; // 아래 '병합 저장' 로직은 타지 않도록 종료
-  }
-
-
-    const key = "teacherTasks-" + date;
-    const existingDataRaw = localStorage.getItem(key);
-    let existingData = null;
-    if (existingDataRaw) {
-      try {
-        existingData = JSON.parse(existingDataRaw);
-      } catch {
-        existingData = null;
-      }
-    }
-
-    let mergedTasks = [];
-    let mergedStudents = [];
-
-    if (existingData) {
-      mergedTasks = Array.from(new Set(existingData.tasks.concat(newTasks)));
-      mergedStudents = Array.from(new Set(existingData.students.concat(students)));
-    } else {
-      mergedTasks = newTasks;
-      mergedStudents = students;
-    }
-
-    const data = {
-      tasks: mergedTasks,
-      repeat: repeat,
-      students: mergedStudents
-    };
-
-    localStorage.setItem(key, JSON.stringify(data));
-    alert("저장되었습니다!");
-    loadSavedTasks();
-    renderCalendar();
-    renderStudentStatus();
-  } 
-
-  function loadSavedTasks() {
-    const container = document.getElementById("task-storage");
-    if (!container) return; // 섹션 없을 때 그냥 종료
-    const filter = document.getElementById("filter-date")?.value || "";
-    container.innerHTML = "";
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith("teacherTasks-")) {
-        const date = key.replace("teacherTasks-", "");
-        if (filter && filter !== date) continue;
-        const data = JSON.parse(localStorage.getItem(key));
-        const div = document.createElement("div");
-        div.className = "saved-item";
-
-        // 날짜 오른쪽에 "7월 17일 (목)" 형식 표시
-        const d = new Date(date);
-        const dayNames = ['일','월','화','수','목','금','토'];
-        const formattedDate = `${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`;
-
-        div.innerHTML = `<strong>${date}</strong> (${formattedDate}) | 대상: ${data.students.join(", ")}<br>
-          📌 ${data.tasks.join(", ")}<br>
-          🔁 반복: ${data.repeat}<br>
-          <button onclick="copyTask('${date}')">📄 복사</button>
-          <button onclick="deleteTask('${date}')">❌ 삭제</button>`;
-        container.appendChild(div);
-      }
-    }
-  }
-
-  function deleteTask(date) {
-    if (!confirm("삭제하시겠습니까?")) return;
-
-    localStorage.removeItem("teacherTasks-" + date);
-    loadSavedTasks();
-    renderCalendar();
-    renderStudentStatus();
-  }
-
-  function copyTask(date) {
-    const data = JSON.parse(localStorage.getItem("teacherTasks-" + date));
-    const taskList = document.getElementById("task-list");
-    taskList.innerHTML = "";
-    data.tasks.forEach(task => {
-      const div = document.createElement("div");
-      div.className = "task-input";
-      div.innerHTML = `<input type="text" value="${task}" /><button onclick="removeTask(this)">⊖</button>`;
-      taskList.appendChild(div);
-    });
-    document.getElementById("task-date").value = date;
-    document.getElementById("repeat").value = data.repeat;
-    document.getElementById("target").value = data.students.includes("전체") ? "all" : "selected";
-    document.getElementById("student-checkboxes").style.display = data.students.includes("전체") ? "none" : "block";
-    if (!data.students.includes("전체")) {
-      document.querySelectorAll("#student-checkboxes input").forEach(input => {
-        input.checked = data.students.includes(input.value);
-      });
-    }
-  }
-
-function renderCalendar() {
-  const tbody = document.getElementById("calendar-body");
-  tbody.innerHTML = "";
-  Object.keys(calendarRefs).forEach(k => delete calendarRefs[k]); // 매핑 초기화
-
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const startDay = firstDay.getDay();
-  const adjustedStartDay = (startDay + 6) % 7;
-  const lastDate = new Date(year, month + 1, 0).getDate();
-
-  // 1) 로컬스토리지에서 모든 원본 과제 로드
-  const originals = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key.startsWith("teacherTasks-")) continue;
-    const dateKey = key.replace("teacherTasks-", "");  // 원본 저장 날짜
-    const data = JSON.parse(localStorage.getItem(key) || "null");
-    if (!data) continue;
-    originals.push({ key, dateKey, data });            // key=teacherTasks-YYYY-MM-DD
-  }
-
-  // 2) 이번 달에 표시될 인스턴스 목록을 생성(반복 고려)
-  //    instancesMap["YYYY-MM-DD"] = [{ key, taskIndex, text }]
-  const instancesMap = {};
-  const pushInstance = (dateStr, key, taskIndex, text) => {
-    instancesMap[dateStr] ??= [];
-    instancesMap[dateStr].push({ key, taskIndex, text });
-  };
-
-  const pad2 = (n) => String(n).padStart(2, "0");
-  for (const { key, dateKey, data } of originals) {
-    const tasks = data.tasks || [];
-    const rpt = data.repeat || "none";
-
-    if (rpt === "daily") {
-      for (let d = 1; d <= lastDate; d++) {
-        const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
-        tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
-      }
-    } else if (["mon","tue","wed","thu","fri"].includes(rpt)) {
-      const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
-      for (let d = 1; d <= lastDate; d++) {
-        const dateObj = new Date(year, month, d);
-        if (dateObj.getDay() === dayMap[rpt]) {
-          const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
+      const instancesMap = {};
+      const pushInstance = (dateStr, key, taskIndex, text) => {
+        instancesMap[dateStr] ??= [];
+        instancesMap[dateStr].push({ key, taskIndex, text });
+      };
+      const pad2 = (n) => String(n).padStart(2, "0");
+      for (const { key, dateKey, data } of originals) {
+        const tasks = data.tasks || []; const rpt = data.repeat || "none";
+        if (rpt === "daily") {
+          for (let d = 1; d <= lastDate; d++) {
+            const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
+            tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
+          }
+        } else if (["mon","tue","wed","thu","fri"].includes(rpt)) {
+          const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+          for (let d = 1; d <= lastDate; d++) {
+            const dateObj = new Date(year, month, d);
+            if (dateObj.getDay() === dayMap[rpt]) {
+              const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
+              tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
+            }
+          }
+        } else {
+          const dateStr = dateKey;
           tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
         }
       }
-    } else {
-      // 반복 없음: 원본 날짜만 표시
-      const dateStr = dateKey;
-      tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
+      for (const [dateStr, arr] of Object.entries(instancesMap)) {
+        calendarRefs[dateStr] = arr.map(({ key, taskIndex }) => ({ key, taskIndex }));
+      }
+      let html = "<tr>";
+      for (let i = 0; i < adjustedStartDay; i++) html += "<td></td>";
+      for (let day = 1; day <= lastDate; day++) {
+        const dateStr = `${year}-${pad2(month + 1)}-${pad2(day)}`;
+        const pills = (instancesMap[dateStr] || []).map((inst, idx) => {
+          const esc = inst.text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+          return `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${esc}</div>`;
+        }).join("");
+        html += `<td><strong>${day}</strong>${pills}</td>`;
+        if ((adjustedStartDay + day) % 7 === 0) html += "</tr><tr>";
+      }
+      html += "</tr>";
+      tbody.innerHTML = html;
     }
-  }
-
-  // 3) calendarRefs 구성 (날짜별 → [{key, taskIndex}...])
-  for (const [dateStr, arr] of Object.entries(instancesMap)) {
-    calendarRefs[dateStr] = arr.map(({ key, taskIndex }) => ({ key, taskIndex }));
-  }
-
-  // 4) 표 그리기
-  let html = "<tr>";
-  for (let i = 0; i < adjustedStartDay; i++) html += "<td></td>";
-
-  for (let day = 1; day <= lastDate; day++) {
-    const dateStr = `${year}-${pad2(month + 1)}-${pad2(day)}`;
-    const pills = (instancesMap[dateStr] || []).map((inst, idx) => {
-      const esc = inst.text
-        .replace(/&/g,"&amp;").replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-      // idx는 '이 날짜 안에서'의 인덱스 (calendarRefs[dateStr][idx]로 원본 참조 가능)
-      return `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${esc}</div>`;
-    }).join("");
-
-    html += `<td><strong>${day}</strong>${pills}</td>`;
-    if ((adjustedStartDay + day) % 7 === 0) html += "</tr><tr>";
-  }
-  html += "</tr>";
-  tbody.innerHTML = html;
-}
-
-function editTask() {
-  if (!selectedDate) return alert("과제를 먼저 선택하세요.");
-
-  const refs = calendarRefs[selectedDate] || [];
-  const found = refs.find(r => {
-    // 이미 selectTask에서 selectedTaskIndex는 '원본 인덱스'로 세팅됨
-    const data = JSON.parse(localStorage.getItem(r.key) || "null");
-    return data?.tasks?.[selectedTaskIndex] !== undefined;
-  });
-  if (!found) return alert("원본 과제를 찾을 수 없습니다.");
-
-  const data = JSON.parse(localStorage.getItem(found.key) || "{}");
-
-  // 위 입력창에 불러오기
-  const taskList = document.getElementById('task-list');
-  taskList.innerHTML = '';
-  (data.tasks || []).forEach(task => {
-    const div = document.createElement('div');
-    div.className = 'task-input';
-    div.innerHTML = `<input type="text" value="${task}"/><button onclick="removeTask(this)">⊖</button>`;
-    taskList.appendChild(div);
-  });
-
-  // 원본 키에서 날짜만 추출
-  const originalDate = found.key.replace("teacherTasks-", "");
-  document.getElementById('task-date').value = originalDate;
-  document.getElementById('repeat').value = data.repeat || 'none';
-
-  const target = (data.students || []).includes('전체') ? 'all' : 'selected';
-  document.getElementById('target').value = target;
-  document.getElementById('student-checkboxes').style.display = (target==='selected') ? 'block' : 'none';
-  if (target === 'selected'){
-    const set = new Set(data.students || []);
-    document.querySelectorAll('#student-checkboxes input').forEach(cb=>{
-      cb.checked = set.has(cb.value);
-    });
-  }
-
-  isEditing = true;
-  editingOriginalDate = originalDate;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function deleteTaskClicked() {
-  if (!selectedDate || selectedTaskIndex == null) {
-    alert("과제를 먼저 선택하세요.");
-    return;
-  }
-  const refs = calendarRefs[selectedDate] || [];
-  // 이번 날짜에서 선택한 과제의 원본 참조를 꺼냄
-  const ref = refs.find(r => {
-    const d = JSON.parse(localStorage.getItem(r.key) || "null");
-    return d?.tasks?.[selectedTaskIndex] !== undefined;
-  });
-  if (!ref) return alert("원본 과제를 찾을 수 없습니다.");
-
-  const data = JSON.parse(localStorage.getItem(ref.key) || "null");
-  const target = data.tasks[selectedTaskIndex];
-
-  if (!confirm(`"${target}" 과제를 삭제할까요?`)) return;
-
-  data.tasks.splice(selectedTaskIndex, 1);
-  if (data.tasks.length === 0) {
-    localStorage.removeItem(ref.key);
-  } else {
-    localStorage.setItem(ref.key, JSON.stringify(data));
-  }
-
-  selectedTaskIndex = null;
-  document.getElementById('task-action-buttons').style.display = 'none';
-  renderCalendar();
-  renderStudentStatus();
-}
-
-function showTaskCompletion() {
-  if (!selectedDate || selectedTaskIndex == null) {
-    alert("과제를 먼저 선택하세요.");
-    return;
-  }
-  document.getElementById("task-action-buttons").style.display = "none";
-  document.getElementById("task-completion").style.display = "block";
-
-  // 원본 키 찾아서 전달
-  const refs = calendarRefs[selectedDate] || [];
-  const ref = refs.find(r => {
-    const d = JSON.parse(localStorage.getItem(r.key) || "null");
-    return d?.tasks?.[selectedTaskIndex] !== undefined;
-  });
-  if (!ref) {
-    document.getElementById("completion-list").textContent = "원본 과제를 찾을 수 없습니다.";
-    return;
-  }
-  renderTaskCompletion(ref.key, selectedTaskIndex);
-}
-
-
-function renderTaskCompletion(originKey, taskIdx) {
-  const container = document.getElementById("completion-list");
-  container.innerHTML = "";
-
-  const data = JSON.parse(localStorage.getItem(originKey) || "null");
-  if (!data) { container.textContent = "과제가 없습니다."; return; }
-
-  const task = data.tasks[taskIdx];
-
-  // 학생 목록 구성(전체 또는 지정) + 정렬
-  let students = getStudentsSorted();
-  if (!data.students.includes("전체")) {
-    const set = new Set(data.students);
-    students = students.filter(s => set.has(s.name));
-  }
-
-  const h = document.createElement('h4');
-  h.textContent = `📌 ${task}`;
-  container.appendChild(h);
-
-  const grid = document.createElement('div');
-  grid.className = "student-chip-grid";
-
-  students.forEach(stu => {
-    const done = (getDoneTasks(stu.name)[task] === true);
-    const chip = document.createElement('div');
-    chip.className = "student-chip " + (done ? "" : "missed");
-    chip.textContent = `${stu.id} ${stu.name}`;
-    grid.appendChild(chip);
-  });
-
-  container.appendChild(grid);
-}
-
-
-
-function closeTaskCompletion() {
-  document.getElementById("task-completion").style.display = "none";
-}
-
-
-
-function selectTask(dateStr, idx) {
-  selectedDate = dateStr;  // 표시용
-  selectedTaskIndex = null;
-  selectedTaskText = "";
-
-  const refs = calendarRefs[dateStr] || [];
-  const ref = refs[idx];
-  if (!ref) {
-    document.getElementById('task-action-buttons').style.display = 'none';
-    document.getElementById('task-action-selected').textContent = "";
-    return;
-  }
-
-  // 원본 데이터에서 과제 텍스트 구하기
-  const data = JSON.parse(localStorage.getItem(ref.key) || "null");
-  const text = data?.tasks?.[ref.taskIndex] ?? "";
-
-  selectedTaskIndex = ref.taskIndex;
-  selectedTaskText  = text;
-
-  document.getElementById('task-action-buttons').style.display = 'block';
-  document.getElementById('task-completion').style.display = 'none';
-  document.getElementById('task-action-selected').textContent =
-    `선택: ${dateStr} — ${selectedTaskText}`;
-}
-
-
-  
-function renderStudentStatus() {
-  const container = document.getElementById("student-status-list");
-  container.innerHTML = "";
-
-  // ✅ 여기! 이름 배열이 아니라 '학생 객체' 정렬 배열로 변경
-  const students = getStudentsSorted(); // [{id,name,password}, ...]
-
-  // 모든 과제 불러오기
-  let allAssignments = [];
-  for(let i=0; i<localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if(key.startsWith("teacherTasks-")) {
-      const data = JSON.parse(localStorage.getItem(key));
-      const dateStr = key.replace("teacherTasks-", "");
-      allAssignments.push({...data, date: dateStr});
-    }
-  }
-
-  const today = new Date();
-  today.setHours(0,0,0,0);
-
-  const validAssignments = allAssignments
-    .filter(assign => {
-      if (!assign.date) return false;
-      const dateObj = new Date(assign.date);
-      if (isNaN(dateObj)) return false;
-      dateObj.setHours(0,0,0,0);
-      return dateObj <= today;          // 오늘 이전/오늘 것만
-    })
-    .map(assign => {
-      const dateObj = new Date(assign.date);
-      dateObj.setHours(0,0,0,0);
-      const dayNames = ['일','월','화','수','목','금','토'];
-      const formattedDate = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayNames[dateObj.getDay()]})`;
-      return {...assign, dateObj, formattedDate};
-    })
-    .sort((a,b)=> b.dateObj - a.dateObj); // 날짜 역순
-
-  function isDone(studentName, task) {
-    const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${studentName}`) || "{}");
-    return doneTasks[task] === true;
-  }
-
-  // ✅ 여기! 루프에서 'stu' 객체 사용(표시는 labelOf(stu), 체크는 stu.name)
-  students.forEach(stu => {
-    const div = document.createElement("div");
-    div.style.border = "2px solid #aaa";
-    div.style.padding = "10px";
-    div.style.borderRadius = "16px";
-    div.style.marginBottom = "10px";
-
-    // 제목: 번호 이름
-    div.innerHTML = `👦 ${labelOf(stu)}<div style="margin-top: 10px;">`;
-
-    validAssignments.forEach(assign => {
-      const assigned = assign.students.includes("전체") || assign.students.includes(stu.name);
-      if(!assigned) return;
-
-      assign.tasks.forEach(task => {
-        const done = isDone(stu.name, task);   // ← 저장키는 '이름' 그대로 사용
-        const isPast = assign.dateObj < today;
-
-        if (done && isPast) return;           // 과거 완료 과제는 숨김
-
-        let color = "#f6c1c1";                // 기본: 오늘 미완료
-        let dateColor = "#666";
-        if (isPast && !done) { color = "#c0392b"; dateColor = "#fff"; }    // 지난 미완료(붉은색)
-        else if (!isPast && done) { color = "white"; dateColor = "#666"; } // 오늘 완료(흰색)
-
-        div.innerHTML += `<div style="border: 1px solid #888; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
-          <span>${task}</span><span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
-        </div>`;
+    function editTask() { if (!selectedDate) return alert("과제를 먼저 선택하세요."); const refs = calendarRefs[selectedDate] || []; const found = refs.find(r => { const data = JSON.parse(localStorage.getItem(r.key) || "null"); return data?.tasks?.[selectedTaskIndex] !== undefined; }); if (!found) return alert("원본 과제를 찾을 수 없습니다."); const data = JSON.parse(localStorage.getItem(found.key) || "{}"); const taskList = document.getElementById('task-list'); taskList.innerHTML = ''; (data.tasks || []).forEach(task => { const div = document.createElement('div'); div.className = 'task-input'; div.innerHTML = `<input type="text" value="${task}"/><button onclick="removeTask(this)">⊖</button>`; taskList.appendChild(div); }); const originalDate = found.key.replace("teacherTasks-", ""); document.getElementById('task-date').value = originalDate; document.getElementById('repeat').value = data.repeat || 'none'; const target = (data.students || []).includes('전체') ? 'all' : 'selected'; document.getElementById('target').value = target; document.getElementById('student-checkboxes').style.display = (target==='selected') ? 'block' : 'none'; if (target === 'selected'){ const set = new Set(data.students || []); document.querySelectorAll('#student-checkboxes input').forEach(cb=>{ cb.checked = set.has(cb.value); }); } isEditing = true; editingOriginalDate = originalDate; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    function deleteTaskClicked() { if (!selectedDate || selectedTaskIndex == null) { alert("과제를 먼저 선택하세요."); return; } const refs = calendarRefs[selectedDate] || []; const ref = refs.find(r => { const d = JSON.parse(localStorage.getItem(r.key) || "null"); return d?.tasks?.[selectedTaskIndex] !== undefined; }); if (!ref) return alert("원본 과제를 찾을 수 없습니다."); const data = JSON.parse(localStorage.getItem(ref.key) || "null"); const target = data.tasks[selectedTaskIndex]; if (!confirm(`"${target}" 과제를 삭제할까요?`)) return; data.tasks.splice(selectedTaskIndex, 1); if (data.tasks.length === 0) { localStorage.removeItem(ref.key); } else { localStorage.setItem(ref.key, JSON.stringify(data)); } selectedTaskIndex = null; document.getElementById('task-action-buttons').style.display = 'none'; renderCalendar(); renderStudentStatus(); }
+    function showTaskCompletion() { if (!selectedDate || selectedTaskIndex == null) { alert("과제를 먼저 선택하세요."); return; } document.getElementById("task-action-buttons").style.display = "none"; document.getElementById("task-completion").style.display = "block"; const refs = calendarRefs[selectedDate] || []; const ref = refs.find(r => { const d = JSON.parse(localStorage.getItem(r.key) || "null"); return d?.tasks?.[selectedTaskIndex] !== undefined; }); if (!ref) { document.getElementById("completion-list").textContent = "원본 과제를 찾을 수 없습니다."; return; } renderTaskCompletion(ref.key, selectedTaskIndex); }
+    function renderTaskCompletion(originKey, taskIdx) {
+      const container = document.getElementById("completion-list"); container.innerHTML = "";
+      const data = JSON.parse(localStorage.getItem(originKey) || "null"); if (!data) { container.textContent = "과제가 없습니다."; return; }
+      const task = data.tasks[taskIdx];
+      let students = getStudentsSorted();
+      if (!data.students.includes("전체")) { const set = new Set(data.students); students = students.filter(s => set.has(s.name)); }
+      const h = document.createElement('h4'); h.textContent = `📌 ${task}`; container.appendChild(h);
+      const grid = document.createElement('div'); grid.className = "student-chip-grid";
+      students.forEach(stu => {
+        const done = (getDoneTasks(stu.name)[task] === true);
+        const chip = document.createElement('div'); chip.className = "student-chip " + (done ? "" : "missed"); chip.textContent = `${stu.id} ${stu.name}`; grid.appendChild(chip);
       });
-    });
+      container.appendChild(grid);
+    }
+    function closeTaskCompletion() { document.getElementById("task-completion").style.display = "none"; }
+    function selectTask(dateStr, idx) {
+      selectedDate = dateStr; selectedTaskIndex = null; selectedTaskText = "";
+      const refs = calendarRefs[dateStr] || []; const ref = refs[idx];
+      if (!ref) { document.getElementById('task-action-buttons').style.display = 'none'; document.getElementById('task-action-selected').textContent = ""; return; }
+      const data = JSON.parse(localStorage.getItem(ref.key) || "null"); const text = data?.tasks?.[ref.taskIndex] ?? "";
+      selectedTaskIndex = ref.taskIndex; selectedTaskText  = text;
+      document.getElementById('task-action-buttons').style.display = 'block';
+      document.getElementById('task-completion').style.display = 'none';
+      document.getElementById('task-action-selected').textContent = `선택: ${dateStr} — ${selectedTaskText}`;
+    }
+    function renderStudentStatus() {
+      const container = document.getElementById("student-status-list"); container.innerHTML = "";
+      const students = getStudentsSorted();
+      let allAssignments = [];
+      for(let i=0; i<localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if(key.startsWith("teacherTasks-")) {
+          const data = JSON.parse(localStorage.getItem(key));
+          const dateStr = key.replace("teacherTasks-", "");
+          allAssignments.push({...data, date: dateStr});
+        }
+      }
+      const today = new Date(); today.setHours(0,0,0,0);
+      const validAssignments = allAssignments
+        .filter(assign => { if (!assign.date) return false; const dateObj = new Date(assign.date); if (isNaN(dateObj)) return false; dateObj.setHours(0,0,0,0); return dateObj <= today; })
+        .map(assign => { const dateObj = new Date(assign.date); dateObj.setHours(0,0,0,0); const dayNames = ['일','월','화','수','목','금','토']; const formattedDate = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayNames[dateObj.getDay()]})`; return {...assign, dateObj, formattedDate}; })
+        .sort((a,b)=> b.dateObj - a.dateObj);
+      function isDone(studentName, task) { const doneTasks = JSON.parse(localStorage.getItem(`doneTasks-${studentName}`) || "{}"); return doneTasks[task] === true; }
+      students.forEach(stu => {
+        const div = document.createElement("div");
+        div.style.border = "1px solid #e6e8eb"; div.style.padding = "12px"; div.style.borderRadius = "16px"; div.style.background="#fff"; div.style.boxShadow="0 4px 10px rgba(0,0,0,.04)";
+        div.style.marginBottom = "10px";
+        div.innerHTML = `👦 ${labelOf(stu)}<div style="margin-top: 10px;">`;
+        validAssignments.forEach(assign => {
+          const assigned = assign.students.includes("전체") || assign.students.includes(stu.name);
+          if(!assigned) return;
+          assign.tasks.forEach(task => {
+            const done = isDone(stu.name, task);
+            const isPast = assign.dateObj < today;
+            if (done && isPast) return;
+            let color = "#f6c1c1"; let dateColor = "#666";
+            if (isPast && !done) { color = "#c0392b"; dateColor = "#fff"; }
+            else if (!isPast && done) { color = "white"; dateColor = "#666"; }
+            div.innerHTML += `<div style="border: 1px solid #e6e8eb; background: ${color}; padding: 8px; border-radius: 12px; margin: 6px 0; display:flex; justify-content:space-between; align-items:center;">
+              <span>${task}</span><span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
+            </div>`;
+          });
+        });
+        div.innerHTML += "</div>";
+        container.appendChild(div);
+      });
+    }
+    loadSavedTasks(); renderCalendar(); renderStudentStatus();
 
-    div.innerHTML += "</div>";
-    container.appendChild(div);
-  });
-}
-
-
-
-
-
-  loadSavedTasks();
-  renderCalendar();
-  renderStudentStatus();
-
-
-// 학생 정보 저장 로드 함수
-function loadStudents() {
-  const raw = localStorage.getItem("students");
-  return raw ? JSON.parse(raw) : [];
-}
-
-// 학생 정보 저장 함수
-function saveStudents(students) {
-  localStorage.setItem("students", JSON.stringify(students));
-}
-
-// 학생 리스트 화면 출력
-function renderStudentList() {
-  const students = getStudentsSorted();                 // 정렬 함수 기존 그대로 사용
-  const showAll = document.getElementById("show-all-passwords")?.checked;
-  const tbody = document.querySelector("#student-list tbody");
-  tbody.innerHTML = "";
-
-  students.forEach(stu => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>
-        <input data-field="id" value="${stu.id}" style="width:80px;" />
-      </td>
-      <td>
-        <input data-field="name" value="${stu.name}" style="width:100%;" />
-      </td>
-      <td>
-        <input data-field="password" ${showAll ? 'type="text"' : 'type="password"'}
-               value="${stu.password}" style="width:100%;" />
-      </td>
-      <td style="text-align:center;">
-        <input type="checkbox" onchange="toggleRowPw(this)" ${showAll ? "checked" : ""}/>
-      </td>
-      <td>
-        <button onclick="saveStudentRow('${stu.id}','${stu.name}', this)">저장</button>
-        <button onclick="deleteStudentByKey('${stu.id}','${stu.name}')">삭제</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-  // ===== 행 단위 비밀번호 보기 토글 =====
-function toggleRowPw(checkboxEl) {
-  const tr = checkboxEl.closest("tr");
-  const pwInput = tr.querySelector('input[data-field="password"]');
-  pwInput.type = checkboxEl.checked ? "text" : "password";
-}
-
-// ===== 전체 비밀번호 보기 토글 =====
-function toggleAllPw(masterCheckbox) {
-  const show = masterCheckbox.checked;
-  document
-    .querySelectorAll('#student-list tbody input[data-field="password"]')
-    .forEach(inp => (inp.type = show ? "text" : "password"));
-
-  // 각 행의 개별 체크도 상태 맞추기(선택)
-  document
-    .querySelectorAll('#student-list tbody input[type="checkbox"]')
-    .forEach(cb => (cb.checked = show));
-}
-
-// 학생 추가 함수
-function addStudent() {
-  const id = document.getElementById("new-student-id").value.trim();
-  const name = document.getElementById("new-student-name").value.trim();
-  const password = document.getElementById("new-student-password").value.trim();
-
-  if (!id || !name || !password) {
-    alert("번호, 이름, 비밀번호를 모두 입력하세요.");
-    return;
-  }
-
-  const students = loadStudents();
-
-  // 중복 번호 체크
-  if (students.some(s => s.id === id)) {
-    alert("이미 존재하는 번호입니다.");
-    return;
-  }
-
-  students.push({ id, name, password });
-  saveStudents(students);
-
-  // 입력창 초기화
-  document.getElementById("new-student-id").value = "";
-  document.getElementById("new-student-name").value = "";
-  document.getElementById("new-student-password").value = "";
-
-  renderStudentList();
-}
-
-function saveStudentRow(oldId, oldName, btnEl) {
-  const tr = btnEl.closest("tr");
-  const newId = tr.querySelector('input[data-field="id"]').value.trim();
-  const newName = tr.querySelector('input[data-field="name"]').value.trim();
-  const newPw = tr.querySelector('input[data-field="password"]').value.trim();
-
-  if (!newId || !newName || !newPw) {
-    alert("번호, 이름, 비밀번호를 모두 입력하세요.");
-    return;
-  }
-    const students = loadStudents();
-  const idx = students.findIndex(s => String(s.id) === String(oldId) && s.name === oldName);
-  if (idx < 0) {
-    alert("대상 학생을 찾을 수 없습니다.");
-    return;
-  }
-
-  // 번호가 바뀌었을 때 중복 번호 방지
-  if (String(newId) !== String(oldId) && students.some(s => String(s.id) === String(newId))) {
-    alert("이미 존재하는 번호입니다.");
-    return;
-  }
-
-  // 업데이트
-  students[idx] = { id: newId, name: newName, password: newPw };
-  saveStudents(students);
-
-  // 화면 갱신 (체크박스/현황/달력 등 함께 갱신)
-  renderStudentList();
-  renderStudentListToCheckbox?.();
-  renderStudentStatus?.();
-}
-  
-  
-// 학생 삭제 함수
-function deleteStudent(index) {
-  if (!confirm("정말 삭제하시겠습니까?")) return;
-  const students = loadStudents();
-  students.splice(index, 1);
-  saveStudents(students);
-  renderStudentList();
-}
-
- function deleteStudentByKey(id, name) {
-  if (!confirm("정말 삭제하시겠습니까?")) return;
-  const students = loadStudents();
-  const idx = students.findIndex(s => String(s.id)===String(id) && s.name===name);
-  if (idx >= 0) {
-    students.splice(idx, 1);
-    saveStudents(students);
+    function loadStudents() { const raw = localStorage.getItem("students"); return raw ? JSON.parse(raw) : []; }
+    function saveStudents(students) { localStorage.setItem("students", JSON.stringify(students)); }
+    function renderStudentList() {
+      const students = getStudentsSorted(); const showAll = document.getElementById("show-all-passwords")?.checked;
+      const tbody = document.querySelector("#student-list tbody"); tbody.innerHTML = "";
+      students.forEach(stu => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="col-id"><input data-field="id" value="${stu.id}" /></td>
+          <td><input data-field="name" value="${stu.name}" /></td>
+          <td><input data-field="password" ${showAll ? 'type="text"' : 'type="password"'} value="${stu.password}" /></td>
+          <td style="text-align:center;"><input type="checkbox" onchange="toggleRowPw(this)" ${showAll ? "checked" : ""}/></td>
+          <td class="col-actions"><div class="actions"><button onclick="saveStudentRow('${stu.id}','${stu.name}', this)">저장</button><button onclick="deleteStudentByKey('${stu.id}','${stu.name}')">삭제</button></div></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    function toggleRowPw(checkboxEl) { const tr = checkboxEl.closest("tr"); const pwInput = tr.querySelector('input[data-field="password"]'); pwInput.type = checkboxEl.checked ? "text" : "password"; }
+    function toggleAllPw(masterCheckbox) {
+      const show = masterCheckbox.checked;
+      document.querySelectorAll('#student-list tbody input[data-field="password"]').forEach(inp => (inp.type = show ? "text" : "password"));
+      document.querySelectorAll('#student-list tbody input[type="checkbox"]').forEach(cb => (cb.checked = show));
+    }
+    function addStudent() {
+      const id = document.getElementById("new-student-id").value.trim();
+      const name = document.getElementById("new-student-name").value.trim();
+      const password = document.getElementById("new-student-password").value.trim();
+      if (!id || !name || !password) { alert("번호, 이름, 비밀번호를 모두 입력하세요."); return; }
+      const students = loadStudents();
+      if (students.some(s => s.id === id)) { alert("이미 존재하는 번호입니다."); return; }
+      students.push({ id, name, password }); saveStudents(students);
+      document.getElementById("new-student-id").value = "";
+      document.getElementById("new-student-name").value = "";
+      document.getElementById("new-student-password").value = "";
+      renderStudentList();
+    }
+    function saveStudentRow(oldId, oldName, btnEl) {
+      const tr = btnEl.closest("tr");
+      const newId = tr.querySelector('input[data-field="id"]').value.trim();
+      const newName = tr.querySelector('input[data-field="name"]').value.trim();
+      const newPw = tr.querySelector('input[data-field="password"]').value.trim();
+      if (!newId || !newName || !newPw) { alert("번호, 이름, 비밀번호를 모두 입력하세요."); return; }
+      const students = loadStudents();
+      const idx = students.findIndex(s => String(s.id) === String(oldId) && s.name === oldName);
+      if (idx < 0) { alert("대상 학생을 찾을 수 없습니다."); return; }
+      if (String(newId) !== String(oldId) && students.some(s => String(s.id) === String(newId))) { alert("이미 존재하는 번호입니다."); return; }
+      students[idx] = { id: newId, name: newName, password: newPw }; saveStudents(students);
+      renderStudentList(); renderStudentListToCheckbox?.(); renderStudentStatus?.();
+    }
+    function deleteStudent(index) {
+      if (!confirm("정말 삭제하시겠습니까?")) return;
+      const students = loadStudents(); students.splice(index, 1); saveStudents(students); renderStudentList();
+    }
+    function deleteStudentByKey(id, name) {
+      if (!confirm("정말 삭제하시겠습니까?")) return;
+      const students = loadStudents(); const idx = students.findIndex(s => String(s.id)===String(id) && s.name===name);
+      if (idx >= 0) { students.splice(idx, 1); saveStudents(students); renderStudentList(); renderStudentListToCheckbox(); renderStudentStatus(); }
+    }
     renderStudentList();
-    // 체크박스/다른 화면 갱신도 함께
-    renderStudentListToCheckbox();
-    renderStudentStatus();
-  }
-}
-
-
-// 초기 렌더링 시 학생 리스트 출력
-renderStudentList();
-
-
-</script>
-
+  </script>
 </body>
 </html>
