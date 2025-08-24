@@ -595,6 +595,12 @@
     // ===========================================================
     // 과제 저장 (신규/편집 모드 공용)
     // ===========================================================
+   
+        // 날짜+과제명으로 유니크 키 생성
+    function makeTaskKey(dateStr, taskText){
+     return `${dateStr}@@${taskText}`;
+    }
+    
     function saveAssignment() {
       // 1) 기본 입력값 검증
       const date = document.getElementById("task-date").value;
@@ -1024,6 +1030,7 @@
       }
 
       const task = data.tasks[taskIdx];
+      const originDate = originKey.replace("teacherTasks-","");  // ← 원본 날짜 추출
 
       // 대상 학생 목록 구성(전체 or 지정) + 정렬
       let students = getStudentsSorted();
@@ -1040,7 +1047,11 @@
       grid.className = "student-chip-grid";
 
       students.forEach(stu => {
-        const done = (getDoneTasks(stu.name)[task] === true);
+        // 날짜+과제명 키(신규 방식)
+       const doneKey = makeTaskKey(assign.date, task);
+       const store   = getDoneTasks(stu.name);
+        // 하위 호환: 예전에 저장된(과제명만) 데이터도 같이 인정
+        const done = makeTaskKey(assign.date, task);
         const chip = document.createElement('div');
         chip.className = "student-chip " + (done ? "" : "missed");
         chip.textContent = `${stu.id} ${stu.name}`;
