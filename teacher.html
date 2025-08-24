@@ -389,6 +389,14 @@
       <!-- 달력 -->
       <section class="calendar" style="margin-top:20px;">
         <h3>🗓️ 달력 (과제 클릭 시 수정/삭제/확인 버튼 표시)</h3>
+         <!-- 달력 월 네비게이션 -->
+         <div id="cal-controls" style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;">
+           <button type="button" onclick="changeMonth(-1)">◀</button>
+           <div id="cal-label" style="font-weight:600;min-width:120px;text-align:center;"></div>
+           <button type="button" onclick="changeMonth(1)">▶</button>
+           <button type="button" onclick="goToday()" style="margin-left:8px;">오늘</button>
+         </div>
+
         <table>
           <thead>
             <tr>
@@ -475,6 +483,34 @@
     // 날짜별로 달력에 뿌려진 과제의 '원본 참조'(키/인덱스) 맵
     // 예) calendarRefs["2025-03-12"] = [{ key:"teacherTasks-2025-03-01", taskIndex:0 }, ...]
     const calendarRefs = {};
+
+    // 달력 뷰 상태(표시 중인 연/월)
+    let viewYear  = (new Date()).getFullYear();
+    let viewMonth = (new Date()).getMonth(); // 0=1월, 11=12월
+
+    function pad2(n){ return String(n).padStart(2,'0'); }
+
+    function setCalLabel(){
+      const label = document.getElementById('cal-label');
+      if (!label) return;
+      label.textContent = `${viewYear}년 ${viewMonth+1}월`;
+     }
+
+    function changeMonth(delta){
+      // delta = -1(이전달) / +1(다음달)
+      viewMonth += delta;
+      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      if (viewMonth > 11){ viewMonth = 0;  viewYear++; }
+      renderCalendar();  // 새 월로 다시 그림
+    }
+
+    function goToday(){
+      const today = new Date();
+      viewYear  = today.getFullYear();
+      viewMonth = today.getMonth();
+      renderCalendar();
+    }
+
 
     // ===========================================================
     // 유틸리티: 학생 정렬/라벨
@@ -775,9 +811,8 @@
       // 날짜별 참조 초기화
       Object.keys(calendarRefs).forEach(k => delete calendarRefs[k]);
 
-      const today = new Date();
-      const year  = today.getFullYear();
-      const month = today.getMonth();
+      const year  = viewYear;
+      const month = viewMonth;
 
       const firstDay         = new Date(year, month, 1);
       const startDay         = firstDay.getDay();      // 0(일)~6(토)
@@ -863,6 +898,7 @@
 
       html += "</tr>";
       tbody.innerHTML = html;
+      setCalLabel();
     }
 
     // ===========================================================
