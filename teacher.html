@@ -1096,7 +1096,7 @@
       let data = null;
       try {
         data = JSON.parse(localStorage.getItem(originKey) || "null");
-      } catch (e) {
+      } catch {
         data = null;
       }
       if (!data || !Array.isArray(data.tasks) || data.tasks[taskIdx] == null) {
@@ -1105,10 +1105,10 @@
       }
 
       const task       = data.tasks[taskIdx];
-      const originDate = originKey.replace("teacherTasks-","");   // YYYY-MM-DD
-      const doneKey    = `${originDate}@@${task}`;                // ✅ 최종 완료 키
+      const originDate = originKey.replace("teacherTasks-",""); // YYYY-MM-DD
+      const doneKey    = `${originDate}@@${task}`;
 
-      // 2) 대상 학생 구성 + 정렬
+      // 2) 대상 학생 + 정렬
       let students = getStudentsSorted();
       if (!data.students.includes("전체")) {
         const set = new Set(data.students || []);
@@ -1120,21 +1120,50 @@
       h.textContent = `📌 ${task} (${originDate})`;
       container.appendChild(h);
 
-      // 4) 학생 칩 렌더
+      // 4) 칩 렌더 (클릭 토글)
       const grid = document.createElement('div');
       grid.className = "student-chip-grid";
+      grid.style.userSelect = "none"; // 드래그 방지
 
       students.forEach(stu => {
         const store = getDoneTasks(stu.name) || {};
-        const done  = store[doneKey] === true;   // ✅ 여기!
+        const isDone = store[doneKey] === true;
 
         const chip = document.createElement('div');
-        chip.className = "student-chip " + (done ? "" : "missed");
+        chip.className = "student-chip" + (isDone ? "" : " missed");
+        chip.dataset.student = stu.name;
+        chip.dataset.doneKey = doneKey;
+        chip.style.cursor = "pointer";
         chip.textContent = `${stu.id} ${stu.name}`;
         grid.appendChild(chip);
       });
 
       container.appendChild(grid);
+
+      // 5) 칩 클릭 → 저장/해제 + UI 즉시 반영 + 교사 화면 갱신
+      grid.onclick = (e) => {
+        const chip = e.target.closest('.student-chip');
+        if (!chip) return;
+
+        const student = chip.dataset.student;
+        const dKey    = chip.dataset.doneKey;
+        const map     = getDoneTasks(student) || {};
+
+        const nowDone = !('' + chip.className).includes('missed'); // 현재 상태
+        if (nowDone) {
+          // 현재 완료 → 클릭 시 미완료로 변경
+          delete map[dKey];
+          chip.classList.add('missed');
+        } else {
+      // 현재 미완료 → 클릭 시 완료로 변경
+          map[dKey] = true;
+          chip.classList.remove('missed');
+        }
+        setDoneTasks(student, map);
+
+        // 교사 ‘오늘 할 일’ 즉시 갱신
+        if (typeof renderStudentStatus === 'function') renderStudentStatus();
+      };
     }
 
     // ===========================================================
@@ -1197,7 +1226,9 @@
           if (!assigned) return;
 
           assign.tasks.forEach(task => {
-            const done = (getDoneTasks(stu.name)[task] === true);
+            const store  = getDoneTasks(stu.name) || {};
+            const doneKey = `${assign.date}@@${task}`;
+            const done   = store[doneKey] === true || store[task] === true; // ← 레거시 호환
             const isPast = assign.dateObj < today;
 
             if (done && isPast) return; // 과거 완료 과제는 숨김
