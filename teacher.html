@@ -477,12 +477,13 @@
     let selectedDate = null;         // 달력에서 '선택한 날짜'(YYYY-MM-DD)
     let selectedTaskIndex = null;    // 선택한 과제의 '원본 배열 인덱스'
     let selectedTaskText = "";       // 선택한 과제 텍스트
+    let selectedOriginDate = null;   // 완료키용 '원본 날짜'(teacherTasks-YYYY-MM-DD에서 YYYY-MM-DD)
     let isEditing = false;           // 편집 모드 여부
     let editingOriginalDate = null;  // 편집 시작 당시의 원래 날짜(YYYY-MM-DD)
 
     // 날짜별로 달력에 뿌려진 과제의 '원본 참조'(키/인덱스) 맵
     // 예) calendarRefs["2025-03-12"] = [{ key:"teacherTasks-2025-03-01", taskIndex:0 }, ...]
-    const calendarRefs = {};
+    let calendarRefs = {};
 
     // 달력 뷰 상태(표시 중인 연/월)
     let viewYear  = (new Date()).getFullYear();
@@ -809,8 +810,8 @@
       tbody.innerHTML = "";
 
       // 날짜별 참조 초기화
-      Object.keys(calendarRefs).forEach(k => delete calendarRefs[k]);
-
+      calendarRefs = {};
+      
       const year  = viewYear;
       const month = viewMonth;
 
@@ -1024,33 +1025,62 @@
     }
 
     // ===========================================================
-    // 달력: 과제 선택 시 상태 갱신
-    // ===========================================================
+  // 달력: 과제 선택 시 상태 갱신
+   // ===========================================================
     function selectTask(dateStr, idx) {
       selectedDate = dateStr;
       selectedTaskIndex = null;
       selectedTaskText = "";
-
+      selectedOriginDate = null;
+  
       const refs = calendarRefs[dateStr] || [];
       const ref  = refs[idx];
 
+      const $btns     = document.getElementById('task-action-buttons');
+      const $selected = document.getElementById('task-action-selected');
+      const $compBox  = document.getElementById('task-completion');
+
+      // 1) 유효성 검사
       if (!ref) {
-        document.getElementById('task-action-buttons').style.display = 'none';
-        document.getElementById('task-action-selected').textContent = "";
+        if ($btns)     $btns.style.display = 'none';
+        if ($compBox)  $compBox.style.display = 'none';
+        if ($selected) $selected.textContent = "";
         return;
       }
 
-      const data = JSON.parse(localStorage.getItem(ref.key) || "null");
-      const text = data?.tasks?.[ref.taskIndex] ?? "";
+      // 2) 원본 데이터 읽기 (null-safe)
+      let pack = null;
+      try {
+        pack = JSON.parse(localStorage.getItem(ref.key) || 'null');
+      } catch (e) {
+        pack = null;
+      }
+      const text = pack?.tasks?.[ref.taskIndex];
 
-      selectedTaskIndex = ref.taskIndex;
-      selectedTaskText  = text;
+      if (typeof text !== 'string' || text.trim() === "") {
+        // 데이터 손상/인덱스 불일치
+        if ($btns)     $btns.style.display = 'none';
+        if ($compBox)  $compBox.style.display = 'none';
+        if ($selected) $selected.textContent = "";
+        return;
+      }
 
-      document.getElementById('task-action-buttons').style.display = 'block';
-      document.getElementById('task-completion').style.display = 'none';
-      document.getElementById('task-action-selected').textContent =
-        `선택: ${dateStr} — ${selectedTaskText}`;
+      // 3) 상태 확정 (원본 날짜 저장: doneKey 계산용)
+      selectedTaskIndex  = ref.taskIndex;
+      selectedTaskText   = text;
+      selectedOriginDate = ref.key.replace('teacherTasks-', ''); // ← 추가 핵심
+
+      // 4) UI 갱신
+      if ($btns)     $btns.style.display = 'block';
+      if ($selected) $selected.textContent = `선택: ${dateStr} — ${selectedTaskText}`;
+
+      // 5) 학생 목록 렌더 + 표시
+      if (typeof renderTaskCompletion === 'function') {
+        renderTaskCompletion(); // 내부에서 doneKey = `${selectedOriginDate}@@${selectedTaskText}`
+      }
+      if ($compBox) $compBox.style.display = 'block';
     }
+
 
     // ===========================================================
     // 과제별 학생 완료 여부 렌더링
@@ -1084,7 +1114,7 @@
 
       students.forEach(stu => {
         // 날짜+과제명 키(신규 방식)
-       const doneKey = makeTaskKey(assign.date, task);
+       const doneKey = `${selectedOriginDate ?? selectedDate}@@${selectedTaskText}`;
        const store   = getDoneTasks(stu.name);
         // 하위 호환: 예전에 저장된(과제명만) 데이터도 같이 인정
         const done = makeTaskKey(assign.date, task);
