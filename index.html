@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>오늘 할 일 - 메인</title>
 
-<!-- 폰트: 제목=주아체, 본문=나눔스퀘어라운드, 버튼=엘리스디지털배움체 -->
+<!-- 폰트: 제목=주아체(구글폰트), 본문,버튼=SUIT(GITHub CDN) -->
 <link href=https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/gh/webfontworld/naver/NanumSquareRound.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/gh/webfontworld/elice/EliceDigitalBaeum.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css">
+
 
 <style>
   :root{
@@ -33,7 +33,7 @@
   html,body{height:100%}
   body{
     margin:0;
-    font-family:"NanumSquareRound", system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", sans-serif; /* 본문 */
+    font-family: 'SUIT', sans-serif; /* 본문 */
     color:var(--text);
     background:
       radial-gradient(900px 360px at 12% -8%, var(--bg-yellow), transparent 60%),
@@ -132,13 +132,13 @@
 
   #error-msg{ min-height:18px; text-align:center; font-size:14px; color:var(--error); margin:8px 0 2px; }
 
-  /* 버튼: 엘리스디지털배움체 */
+  /* 버튼: SUIT */
   .btn{
     width:100%; border:0; border-radius:22px;
     padding:18px 18px; font-size:20px; color:#fff;
     background:var(--btn); box-shadow:0 12px 28px var(--btn-shadow);
     cursor:pointer;
-    font-family:'EliceDigitalBaeum',sans-serif;
+    font-family:'SUIT',sans-serif;
   }
 
   .hint{ text-align:center; font-size:13px; color:var(--muted); margin-top:8px; }
