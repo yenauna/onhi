@@ -1142,7 +1142,7 @@
       grid.style.userSelect = "none"; // 드래그 방지
 
       students.forEach(stu => {
-        const Done = isDone(stu.name, originDate, task);
+        const done = isDone(stu.name, originDate, task);
 
         const chip = document.createElement('div');
         chip.className = "student-chip" + (done ? "" : " missed");
