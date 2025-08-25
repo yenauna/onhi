@@ -93,26 +93,6 @@
     section{ margin-top:26px; }
 
     /* ================================
-       상단 탭 버튼
-       ================================ */
-    .toggle-buttons{
-      display:flex;
-      justify-content:center;
-      gap:10px;
-      margin-bottom:16px;
-    }
-    .toggle-buttons button{
-      padding:10px 18px;
-      font-size:15px;
-      cursor:pointer;
-      border-radius:999px;
-      border:1px solid var(--card-line);
-      background:#fff;
-      box-shadow:0 6px 14px rgba(0,0,0,.06);
-    }
-    .toggle-buttons button:active{ transform:translateY(1px); }
-
-    /* ================================
        입력/셀렉트/버튼 공통
        ================================ */
     input[type="text"],
@@ -371,13 +351,6 @@
        ===================================== -->
   <div class="container">
 
-    <!-- ===== 상단 탭(오늘 할 일 / 과제 관리 / 학생 관리) ===== -->
-    <div class="toggle-buttons">
-      <button onclick="showStudentStatus()">오늘 할 일</button>
-      <button onclick="showTaskManagement()">과제 관리</button>
-      <button onclick="showStudentManagement()">학생 관리</button>
-    </div>
-
     <!-- ===== 오늘 할 일(학생별 현황) ===== -->
     <div id="student-status-page" style="display:none; margin-top: 8px;">
       <h3>✅ 학생별 과제 완료 현황</h3>
@@ -594,12 +567,12 @@
     // ===========================================================
     function setActiveTab(key){
       const map = {
-        status:  document.getElementById('tab-status'),
-        task:    document.getElementById('tab-task'),
-        student: document.getElementById('tab-student')
+        status:  document.getElementById('tab-today'),
+        task:    document.getElementById('tab-tasks'),
+        student: document.getElementById('tab-studs')
       };
       // 모두 비활성
-      Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
+      document.querySelectorAll('.topbar .menu-area button')
       // 해당 탭 활성
       if (map[key]) map[key].classList.add('active');
     }
@@ -719,11 +692,6 @@
     // ===========================================================
     // 과제 저장 (신규/편집 모드 공용)
     // ===========================================================
-   
-        // 날짜+과제명으로 유니크 키 생성
-    function makeTaskKey(dateStr, taskText){
-     return `${dateStr}@@${taskText}`;
-    }
     
     function saveAssignment() {
       // 1) 기본 입력값 검증
@@ -812,45 +780,10 @@
       localStorage.setItem(key, JSON.stringify(data));
 
       alert("저장되었습니다!");
-      loadSavedTasks();
       renderCalendar();
       renderStudentStatus();
     }
 
-    // ===========================================================
-    // 저장된 과제 목록 출력(필요 시)
-    // ===========================================================
-    function loadSavedTasks() {
-      const container = document.getElementById("task-storage");
-      if (!container) return; // 해당 섹션이 없으면 종료
-
-      const filter = document.getElementById("filter-date")?.value || "";
-      container.innerHTML = "";
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key.startsWith("teacherTasks-")) continue;
-
-        const date = key.replace("teacherTasks-", "");
-        if (filter && filter !== date) continue;
-
-        const data = JSON.parse(localStorage.getItem(key));
-        const d = new Date(date);
-        const dayNames = ['일','월','화','수','목','금','토'];
-        const formattedDate = `${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`;
-
-        const div = document.createElement("div");
-        div.className = "saved-item";
-        div.innerHTML = `
-          <strong>${date}</strong> (${formattedDate}) | 대상: ${data.students.join(", ")}<br>
-          📌 ${data.tasks.join(", ")}<br>
-          🔁 반복: ${data.repeat}<br>
-          <button onclick="copyTask('${date}')">📄 복사</button>
-          <button onclick="deleteTask('${date}')">❌ 삭제</button>
-        `;
-        container.appendChild(div);
-      }
-    }
 
     // ===========================================================
     // 과제 삭제/복사
@@ -859,7 +792,6 @@
       if (!confirm("삭제하시겠습니까?")) return;
 
       localStorage.removeItem("teacherTasks-" + date);
-      loadSavedTasks();
       renderCalendar();
       renderStudentStatus();
     }
@@ -927,7 +859,6 @@
         instancesMap[dateStr] ??= [];
         instancesMap[dateStr].push({ key, taskIndex, text });
       };
-      const pad2 = (n) => String(n).padStart(2, "0");
 
       for (const { key, dateKey, data } of originals) {
         const tasks = data.tasks || [];
@@ -1300,7 +1231,6 @@
 
           assign.tasks.forEach(task => {
             const store  = getDoneTasks(stu.name) || {};
-            const doneKey = `${assign.date}@@${task}`;
             // 완료 여부 계산 (날짜+과제명 기준, 레거시 과제명 키도 허용)
             const done = isDone(stu.name, assign.date, task);
             const isPast = assign.dateObj < today;
@@ -1521,16 +1451,6 @@
       renderStudentStatus?.();
     }
 
-    // (미사용 경로 보호용)
-    function deleteStudent(index) {
-      if (!confirm("정말 삭제하시겠습니까?")) return;
-
-      const students = loadStudents();
-      students.splice(index, 1);
-      saveStudents(students);
-
-      renderStudentList();
-    }
 
     function deleteStudentByKey(id, name) {
       if (!confirm("정말 삭제하시겠습니까?")) return;
