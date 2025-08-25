@@ -412,7 +412,6 @@
       <div id="task-action-buttons" style="margin-top:10px; display:none;">
         <button onclick="editTask()">수정</button>
         <button onclick="deleteTaskClicked()">삭제</button>
-        <button class="btn-primary" onclick="showTaskCompletion()">확인</button>
       </div>
 
       <!-- 과제별 학생 완료 여부 -->
@@ -1019,22 +1018,6 @@
       renderStudentStatus();
     }
 
-    function showTaskCompletion() {
-      if (!selectedDate || selectedTaskIndex == null) {
-        alert("과제를 먼저 선택하세요.");
-        return;
-      }
-
-      document.getElementById("task-action-buttons").style.display = "none";
-      document.getElementById("task-completion").style.display = "block";
-
-      // ✅ 선택 시점에 저장해둔 키 사용 (실패 없음)
-      if (!selectedOriginKey) {
-         document.getElementById("completion-list").textContent = "원본 과제를 찾을 수 없습니다.";
-         return;
-       }
-     renderTaskCompletion(selectedOriginKey, selectedTaskIndex);
-    }
 
     function closeTaskCompletion() {
       document.getElementById("task-completion").style.display = "none";
@@ -1089,9 +1072,23 @@
       selectedOriginKey  = ref.key; // 확인 버튼에서 그대로 사용
 
       // 4) UI 갱신
-      if ($btns)     $btns.style.display = 'block';
       if ($selected) $selected.textContent = `선택: ${dateStr} — ${selectedTaskText}`;
-      if ($compBox) $compBox.style.display = 'none';       // 완료창은 확인 버튼에서 띄움
+
+      // 5) ✅ 학생 목록을 즉시 렌더 & 표시
+      if (typeof renderTaskCompletion === 'function') {
+        renderTaskCompletion(selectedOriginKey, selectedTaskIndex);
+      }
+      if ($compBox) $compBox.style.display = 'block';
+
+      // 6) ✅ 수정/삭제 버튼 표시 + 학생 목록 '아래'로 이동
+      if ($btns) {
+        $btns.style.display = 'block';
+        const parent = $compBox?.parentNode;
+        if (parent && $compBox) {
+          parent.insertBefore($btns, $compBox.nextSibling); // 목록 바로 다음으로 이동
+        }
+      }
+      
     }
 
 
