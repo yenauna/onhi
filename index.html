@@ -89,12 +89,21 @@
 
     /* 로고(카드 안, 중앙) */
     .logo-box{
-      width:96px; height:96px; margin:6px auto 8px;
+      /* 가로형: 카드 너비의 70%까지, 최대 420px */
+      width:min(70%, 420px);
+      margin:6px auto 8px;
+      padding:10px 14px;                 /* 세로가 낮은 로고에 여백 */
       display:flex; align-items:center; justify-content:center;
       background:#fff; border:3px solid #cfeee0; border-radius:16px;
       box-shadow:0 10px 24px rgba(0,0,0,.08);
     }
-    #logo{ width:72px; height:72px; object-fit:contain; display:block; }
+    #logo{
+      display:block;
+      width:100%;        /* 박스 너비에 맞춰 */
+      height:auto;       /* 세로는 비율대로 */
+      max-height:80px;   /* 너무 커지지 않게 상한만 */
+      object-fit:contain;
+    }
 
     /* 제목 (주아체) */
     h1.title{
