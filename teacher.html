@@ -323,7 +323,7 @@
       white-space:nowrap;               /* 줄바꿈 방지 (한 줄 유지) */
       color:#6f7d8c;
     }
-    .mode-btn{
+    .topbar .right-tools .mode-btn{
       font-size:12px;         /* 탭보다 작게 */
       padding:6px 10px;       /* 탭(8x16)보다 작게 */
       border-radius:999px;
@@ -333,6 +333,9 @@
       cursor:pointer;
       box-shadow:0 4px 10px rgba(0,0,0,.06);
       line-height:1;
+    }
+    .topbar .right-tools .mode-btn.is-edit{
+      background:#f0f7f4; border-color:#cfe7dc;
     }
     .mode-btn.view{  background:#f6f7f9; border-color:#dcdfe4; color:#495057; }            /* 보기 */
     .mode-btn.edit{  background:#eaf5ff; border-color:#b7dcff; color:#0b5cab; }            /* 편집 */
@@ -359,7 +362,6 @@
     
     <div class="right-tools">  
       <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
-      <span id="boardModeNow" class="mode-now"></span>
   </header>
 
 
@@ -633,31 +635,39 @@
       renderStudentList();
     }
 
-    
     // ===========================================================
-    // 교사용: 조회용 화면 모드 설정 (보기전용 / 편집전용)
+    // 교사용: 조회용 화면 모드 토글(보기전용 ↔ 편집전용)
     // ===========================================================
-    function setBoardMode(mode){
-      localStorage.setItem('boardMode', mode==='edit' ? 'edit' : 'view');
-      const t = mode==='edit'
-        ? '편집전용 (확인담당자 체크 가능)'
-        : '보기전용 (체크 불가)';
-      document.getElementById('boardModeNow').textContent = '현재: ' + t;
-      // 조회용 화면은 storage 이벤트로 자동 리렌더링됨
+
+    function applyBoardModeToButton() {
+      const btn = document.getElementById('modeBtn');
+      if (!btn) return;
+
+      const mode = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
+      const isEdit = mode === 'edit';
+     
+      btn.textContent = isEdit ? '편집전용' : '보기전용';
+      btn.setAttribute('aria-pressed', String(isEdit));
+      btn.classList.toggle('is-edit', isEdit);   // 선택: 스타일 훅
     }
     
+    function toggleBoardMode() {
+      const cur = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
+      const next = cur === 'edit' ? 'view' : 'edit';
+      localStorage.setItem('boardMode', next);
+      applyBoardModeToButton();
+      // 조회용 화면은 storage 이벤트를 듣고 있으면 자동 리렌더됨
+    }
     
-    // ===========================================================
-    // 교사용: 조회용 화면 모드 초기 표시
-    // ===========================================================
-    (function(){ 
-      const m = localStorage.getItem('boardMode')==='edit'
-        ? '편집전용 (확인담당자 체크 가능)'
-        : '보기전용 (체크 불가)';
-      const el = document.getElementById('boardModeNow');
-      if(el) el.textContent = '현재: ' + m;
-    })();
-
+    // 초기 상태 세팅 + 클릭 바인딩
+    window.addEventListener('load', () => {
+      if (!localStorage.getItem('boardMode')) localStorage.setItem('boardMode', 'view');
+      applyBoardModeToButton();
+      
+      const btn = document.getElementById('modeBtn');
+      if (btn) btn.addEventListener('click', toggleBoardMode);
+    });
+   
     
     // ===========================================================
     // 학생 체크박스 렌더링(과제 대상 지정용)
