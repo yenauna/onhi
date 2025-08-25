@@ -294,7 +294,7 @@
       padding:0 20px;
       box-shadow:0 2px 10px rgba(0,0,0,.08);
     }
-    .topbar .logo-area img{ height:80px; cursor:pointer; display:block; }
+    .topbar .logo-area img{ height:64px; cursor:pointer; display:block; }
     .topbar .menu-area{ display:flex; gap:10px; }
     .topbar .menu-area button{
       border:1px solid #dcdfe4; background:#fff; color:#1f2a33;
@@ -328,11 +328,6 @@
       opacity:.9;
     }
 
-
-
-    
-    /* 페이지 안의 ‘상단 탭 버튼’ 묶음은 제거(또는 숨김) */
-    .toggle-buttons{ display:none; }
 
 
   </style>
@@ -572,9 +567,9 @@
     // ===========================================================
     function setActiveTab(key){
       const map = {
-        status:  document.getElementById('nav-today'),
-        task:    document.getElementById('nav-tasks'),
-        student: document.getElementById('nav-studs')
+        status:  document.getElementById('tab-status'),
+        task:    document.getElementById('tab-task'),
+        student: document.getElementById('tab-student')
       };
       Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
       if (map[key]) map[key].classList.add('active');
@@ -585,7 +580,7 @@
     // 화면 전환: 탭 버튼 핸들러
     // ===========================================================
     function showStudentStatus() {
-      setActiveTab('today');
+      setActiveTab('status');
       document.getElementById("student-status-page").style.display = "block";
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "none";
@@ -595,7 +590,7 @@
     }
 
     function showTaskManagement() {
-      setActiveTab('tasks');
+      setActiveTab('task');
       document.getElementById("student-status-page").style.display = "none";
       document.getElementById("task-management").style.display = "block";
       document.getElementById("student-management").style.display = "none";
@@ -787,43 +782,6 @@
       renderStudentStatus();
     }
 
-
-    // ===========================================================
-    // 과제 삭제/복사
-    // ===========================================================
-    function deleteTask(date) {
-      if (!confirm("삭제하시겠습니까?")) return;
-
-      localStorage.removeItem("teacherTasks-" + date);
-      renderCalendar();
-      renderStudentStatus();
-    }
-
-    function copyTask(date) {
-      const data = JSON.parse(localStorage.getItem("teacherTasks-" + date));
-      const taskList = document.getElementById("task-list");
-      taskList.innerHTML = "";
-
-      (data.tasks || []).forEach(task => {
-        const div = document.createElement("div");
-        div.className = "task-input";
-        div.innerHTML = `<input type="text" value="${task}" /><button onclick="removeTask(this)">⊖</button>`;
-        taskList.appendChild(div);
-      });
-
-      document.getElementById("task-date").value = date;
-      document.getElementById("repeat").value = data.repeat;
-
-      const isAll = data.students.includes("전체");
-      document.getElementById("target").value = isAll ? "all" : "selected";
-      document.getElementById("student-checkboxes").style.display = isAll ? "none" : "block";
-
-      if (!isAll) {
-        document.querySelectorAll("#student-checkboxes input").forEach(input => {
-          input.checked = data.students.includes(input.value);
-        });
-      }
-    }
 
     // ===========================================================
     // 달력 렌더링 (반복 과제 계산 포함)
@@ -1491,7 +1449,6 @@
     // ===========================================================
     // 최초 로드 시 일부 렌더 호출
     // ===========================================================
-    loadSavedTasks();
     renderCalendar();
     renderStudentStatus();
     renderStudentList();
