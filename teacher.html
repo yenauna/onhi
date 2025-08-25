@@ -311,13 +311,13 @@
     
     /* 버튼 줄 한 줄 정렬 */
     #task-action-buttons{
-      display:flex !important;
+      display:none;
       gap:8px;
       align-items:center;
       flex-wrap:wrap;   /* 화면 좁을 때만 줄바꿈 */
     }
     
-    /* (선택) 버튼 높이/패딩 살짝 통일감 */
+    /* 버튼 높이/패딩 살짝 통일감 */
     #task-action-buttons button{
       height:36px;
       padding:0 14px;
@@ -518,6 +518,7 @@
       if (viewMonth < 0) { viewMonth = 11; viewYear--; }
       if (viewMonth > 11){ viewMonth = 0;  viewYear++; }
       renderCalendar();  // 새 월로 다시 그림
+      hideActionUI();
     }
 
     function goToday(){
@@ -525,6 +526,7 @@
       viewYear  = today.getFullYear();
       viewMonth = today.getMonth();
       renderCalendar();
+      hideActionUI();
     }
 
 
@@ -569,6 +571,7 @@
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "none";
 
+      hideActionUI();
       renderStudentStatus();
     }
 
@@ -578,6 +581,7 @@
       document.getElementById("student-management").style.display = "none";
 
       renderCalendar();
+      hideActionUI();
       renderStudentListToCheckbox();
 
       // 달력 섹션 표시
@@ -592,6 +596,7 @@
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "block";
 
+      hideActionUI();
       renderStudentList();
     }
 
@@ -729,6 +734,7 @@
 
         alert("수정되었습니다!");
         renderCalendar();
+        hideActionUI();
         renderStudentStatus();
         return;
       }
@@ -1030,12 +1036,13 @@
       document.getElementById('task-action-buttons').style.display = 'none';
 
       renderCalendar();
+      hideActionUI();
       renderStudentStatus();
     }
 
 
     function closeTaskCompletion() {
-      document.getElementById("task-completion").style.display = "none";
+      hideActionUI();
     }
 
     // ===========================================================
@@ -1097,7 +1104,7 @@
 
       // 6) ✅ 수정/삭제 버튼 표시 + 학생 목록 '아래'로 이동
       if ($btns) {
-        $btns.style.display = 'block';
+        $btns.style.display = 'flex';
         const parent = $compBox?.parentNode;
         if (parent && $compBox) {
           parent.insertBefore($btns, $compBox.nextSibling); // 목록 바로 다음으로 이동
@@ -1497,6 +1504,22 @@
       }
     }
 
+    function hideActionUI() {
+      const $btns     = document.getElementById('task-action-buttons');
+      const $selected = document.getElementById('task-action-selected');
+      const $compBox  = document.getElementById('task-completion');
+      
+      if ($btns)     $btns.style.display = 'none';
+      if ($compBox)  $compBox.style.display = 'none';
+      if ($selected) $selected.textContent = '';
+      
+      selectedDate = null;
+      selectedTaskIndex = null;
+      selectedTaskText = '';
+      selectedOriginDate = null;
+      selectedOriginKey = null;
+    }
+    
     // ===========================================================
     // 최초 로드 시 일부 렌더 호출
     // ===========================================================
