@@ -312,6 +312,11 @@
       border-color: var(--brand);
       box-shadow: 0 8px 18px var(--btn-shadow);
     }
+    .topbar .menu-area button.active:hover {
+      background: var(--accent, #4caf7d);
+      color:#fff;
+      border-color: var(--accent, #4caf7d);
+    }
     /* (선택) 활성 탭 밑줄 */
     .topbar .menu-area button.active::after{
       content:"";
@@ -567,13 +572,11 @@
     // ===========================================================
     function setActiveTab(key){
       const map = {
-        status:  document.getElementById('tab-today'),
-        task:    document.getElementById('tab-tasks'),
-        student: document.getElementById('tab-studs')
+        status:  document.getElementById('nav-today'),
+        task:    document.getElementById('nav-tasks'),
+        student: document.getElementById('nav-studs')
       };
-      // 모두 비활성
-      document.querySelectorAll('.topbar .menu-area button')
-      // 해당 탭 활성
+      Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
       if (map[key]) map[key].classList.add('active');
     }
 
@@ -582,7 +585,7 @@
     // 화면 전환: 탭 버튼 핸들러
     // ===========================================================
     function showStudentStatus() {
-      setActiveTab('status');
+      setActiveTab('today');
       document.getElementById("student-status-page").style.display = "block";
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "none";
@@ -592,7 +595,7 @@
     }
 
     function showTaskManagement() {
-      setActiveTab('task');
+      setActiveTab('tasks');
       document.getElementById("student-status-page").style.display = "none";
       document.getElementById("task-management").style.display = "block";
       document.getElementById("student-management").style.display = "none";
