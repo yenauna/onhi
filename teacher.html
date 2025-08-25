@@ -358,11 +358,11 @@
         <div class="task-list" id="task-list">
           <div class="task-input">
             <input type="text" placeholder="할 일 입력" />
-            <button ="removeTask(this)">⊖</button>
+            <button onclick="removeTask(this)">⊖</button>
           </div>
         </div>
 
-        <button class="btn-primary" ="addTask()">+ 할 일 추가</button>
+        <button class="btn-primary" onclick="addTask()">+ 할 일 추가</button>
 
         <label style="display:block; margin-top:10px;">🔁 반복 설정:</label>
         <select id="repeat">
@@ -383,7 +383,7 @@
 
         <div id="student-checkboxes" class="student-checkboxes" style="display: none;"></div>
 
-        <button class="btn-primary" style="margin-top:10px;" ="saveAssignment()">💾 저장하기</button>
+        <button class="btn-primary" style="margin-top:10px;" onclick="saveAssignment()">💾 저장하기</button>
       </section>
 
       <!-- 달력 -->
@@ -1048,7 +1048,7 @@
       selectedTaskIndex = null;
       selectedTaskText = "";
       selectedOriginDate = null;
-      electedOriginKey  = ref.key; // 확인 버튼에서 그대로 씀
+      selectedOriginKey  = null;
   
       const refs = calendarRefs[dateStr] || [];
       const ref  = refs[idx];
@@ -1069,7 +1069,7 @@
       let pack = null;
       try {
         pack = JSON.parse(localStorage.getItem(ref.key) || 'null');
-      } catch (e) {
+      } catch {
         pack = null;
       }
       const text = pack?.tasks?.[ref.taskIndex];
@@ -1085,14 +1085,13 @@
       // 3) 상태 확정 (원본 날짜 저장: doneKey 계산용)
       selectedTaskIndex  = ref.taskIndex;
       selectedTaskText   = text;
-      selectedOriginDate = ref.key.replace('teacherTasks-', ''); // ← 추가 핵심
+      selectedOriginDate = ref.key.replace('teacherTasks-', '');
+      selectedOriginKey  = ref.key; // 확인 버튼에서 그대로 사용
 
       // 4) UI 갱신
       if ($btns)     $btns.style.display = 'block';
       if ($selected) $selected.textContent = `선택: ${dateStr} — ${selectedTaskText}`;
-
-      // 완료창은 확인 버튼에서 띄움
-      if ($compBox) $compBox.style.display = 'none';
+      if ($compBox) $compBox.style.display = 'none';       // 완료창은 확인 버튼에서 띄움
     }
 
 
@@ -1143,7 +1142,7 @@
       grid.style.userSelect = "none"; // 드래그 방지
 
       students.forEach(stu => {
-        const isDone = isDone(stu.name, originDate, task);
+        const Done = isDone(stu.name, originDate, task);
 
         const chip = document.createElement('div');
         chip.className = "student-chip" + (done ? "" : " missed");
