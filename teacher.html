@@ -308,6 +308,21 @@
   .table-wrap{
    overflow-x:auto;
 }
+    
+    /* 버튼 줄 한 줄 정렬 */
+    #task-action-buttons{
+      display:flex !important;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;   /* 화면 좁을 때만 줄바꿈 */
+    }
+    
+    /* (선택) 버튼 높이/패딩 살짝 통일감 */
+    #task-action-buttons button{
+      height:36px;
+      padding:0 14px;
+    }
+    
 
   </style>
 </head>
@@ -410,15 +425,15 @@
       <!-- 과제 선택 안내 + 액션 버튼 -->
       <div id="task-action-selected"></div>
       <div id="task-action-buttons" style="margin-top:10px; display:none;">
-        <button onclick="editTask()">수정</button>
-        <button onclick="deleteTaskClicked()">삭제</button>
+        <button class="btn-primary" onclick="closeTaskCompletion()">닫기</button>
+        <button class="btn-primary" onclick="editTask()">수정</button>
+        <button class="btn-primary" onclick="deleteTaskClicked()">삭제</button>
       </div>
 
       <!-- 과제별 학생 완료 여부 -->
       <div id="task-completion" style="margin-top:20px; display:none;">
         <h3>과제별 학생 완료 여부</h3>
         <div id="completion-list"></div>
-        <button style="margin-top:8px;" onclick="closeTaskCompletion()">닫기</button>
       </div>
     </div>
 
