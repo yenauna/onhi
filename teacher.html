@@ -335,6 +335,12 @@
       <button id="tab-task"  onclick="showTaskManagement()">과제 관리</button>
       <button id="tab-student"  onclick="showStudentManagement()">학생 관리</button>
     </nav>
+    
+    <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
+      <button type="button" onclick="setBoardMode('view')">보기전용</button>
+      <button type="button" onclick="setBoardMode('edit')">편집전용</button>
+      <span id="boardModeNow" style="margin-left:6px; color:#6f7d8c;"></span>
+    </div>
   </header>
 
 
@@ -553,7 +559,7 @@
     window.onload = function () {
       showStudentStatus();
     };
-
+    
     // ===========================================================
     // 상단 풀바: 활성 탭 표시 함수
     // ===========================================================
@@ -608,6 +614,32 @@
       renderStudentList();
     }
 
+    
+    // ===========================================================
+    // 교사용: 조회용 화면 모드 설정 (보기전용 / 편집전용)
+    // ===========================================================
+    function setBoardMode(mode){
+      localStorage.setItem('boardMode', mode==='edit' ? 'edit' : 'view');
+      const t = mode==='edit'
+        ? '편집전용 (확인담당자 체크 가능)'
+        : '보기전용 (체크 불가)';
+      document.getElementById('boardModeNow').textContent = '현재: ' + t;
+      // 조회용 화면은 storage 이벤트로 자동 리렌더링됨
+    }
+    
+    
+    // ===========================================================
+    // 교사용: 조회용 화면 모드 초기 표시
+    // ===========================================================
+    (function(){ 
+      const m = localStorage.getItem('boardMode')==='edit'
+        ? '편집전용 (확인담당자 체크 가능)'
+        : '보기전용 (체크 불가)';
+  const el = document.getElementById('boardModeNow');
+      if(el) el.textContent = '현재: ' + m;
+    })();
+
+    
     // ===========================================================
     // 학생 체크박스 렌더링(과제 대상 지정용)
     // ===========================================================
