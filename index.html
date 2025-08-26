@@ -117,7 +117,7 @@
     </div>
     <nav class="menu" aria-label="주요 메뉴">
       <button class="active" type="button">전체확인</button>
-      <button type="button" onclick="location.href='login.html'">학생</button>
+      <button type="button" id="btn-student-login">학생</button>
       <button type="button" onclick="location.href='teacher.html'">선생님</button>
     </nav>
   </header>
@@ -236,6 +236,18 @@
       students.forEach(stu=>{
         const card = document.createElement('div');
         card.className='card';
+
+        // 카드 클릭하면 로그인 패널 열리도록 연결
+        card.dataset.student = stu.name;          // 선택된 학생 전달용
+        card.tabIndex = 0;                         // 키보드 접근성(Enter/Space)
+        card.addEventListener('click', ()=>{
+          highlightSelectedCard?.(stu.name);       // 선택된 카드 하이라이트(있으면)
+          openLoginPanel?.(stu.name);              // 우측 로그인 패널 열기
+        });
+        card.addEventListener('keydown', (e)=>{
+          if(e.key==='Enter' || e.key===' '){ e.preventDefault(); card.click(); }
+        });
+        
         const title = document.createElement('div');
         title.className='title';
         title.textContent = `${stu.id} ${stu.name}`;
@@ -417,6 +429,12 @@ function submitLogin(studentName){
     openLoginPanel(name);
   });
 })();
+    
+// 상단바 '학생' 클릭 시 팝업 열기 (이동 X)
+  document.getElementById('btn-student-login')?.addEventListener('click', (e)=>{
+    e.preventDefault();
+    openLoginPanel();       // 이미 만들어둔 함수 사용 (선택 학생 없이 열기)
+  });
   </script>
 </body>
 </html>
