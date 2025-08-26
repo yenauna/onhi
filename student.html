@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css">
 
+  <script src="js/common.js" defer></script>
+
   <style>
     :root{
       --bg-base:#eaf4ef;
@@ -228,29 +230,27 @@
     const day = dayNames[d.getDay()];
     return `${month}월 ${date}일 (${day})`;
   }
-
+  
   function getDoneTasks(student) {
-    return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
+    return getJSON("doneTasks-" + student, {});
   }
 
   function setDoneTasks(student, doneTasks) {
-    localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
+    setJSON("doneTasks-" + student, doneTasks);
   }
 
   function makeTaskKey(dateStr, taskText){
     return `${dateStr}@@${taskText}`;
   }
-
+  
   function getAllAssignments() {
-    let assignments = [];
-    for(let i=0; i<localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if(!key.startsWith("teacherTasks-")) continue;
-      const dateStr = key.replace("teacherTasks-", "");
-      const data = JSON.parse(localStorage.getItem(key));
-      assignments.push({date: dateStr, tasks: data.tasks});
-    }
-    return assignments;
+    // 공통: teacherTasks-* 전부 한 번에 로드
+    const originals = loadAllTeacherTasks();
+    // 학생 화면에서 필요한 필드(date, tasks)만 매핑
+    return originals.map(({ dateKey, data }) => ({
+      date: dateKey,
+      tasks: data?.tasks || []
+    }));
   }
 
   function renderTasks() {
@@ -258,8 +258,7 @@
     const doneTasks = getDoneTasks(currentStudent);
     const assignments = getAllAssignments();
 
-    const today0 = new Date();
-    today0.setHours(0,0,0,0);
+    const today0 = normalizeDate(new Date());
 
     const currDateStr = formatDate(currentDate);
 
@@ -267,15 +266,12 @@
 
     assignments
       .filter(a => {
-        const taskDate = new Date(a.date);
-        taskDate.setHours(0,0,0,0);
-        const currDate0 = new Date(currentDate);
-        currDate0.setHours(0,0,0,0);
+        const taskDate = normalizeDate(a.date);
+        const currDate0 = normalizeDate(currentDate);
         return taskDate <= currDate0;
       })
       .forEach(({date, tasks}) => {
-        const taskDate = new Date(date);
-        taskDate.setHours(0,0,0,0);
+        const taskDate = normalizeDate(a.date);
         const isPast = taskDate < today0;
 
         tasks.forEach(taskName => {
@@ -307,7 +303,7 @@
 
         // 내부 레이아웃 (이름 + 날짜 뱃지)
         box.innerHTML = `
-          <span class="task-name">${taskName}</span>
+          <span class="task-name">${escapeHTML(taskName)}</span>
           <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
         `;
 
