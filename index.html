@@ -102,6 +102,8 @@
       display:flex; justify-content:space-between; align-items:center;
       margin:6px 0; user-select:none;
     }
+    .card.selected { outline: 3px solid #2e7d57; outline-offset: 2px; }
+    
     /* 상태색: 오늘 미완료(연한), 지난 미완료(강조) */
     .chip.missed-today { background:#f6c1c1; }
     .chip.missed-past  { background:#c0392b; color:#fff; border-color:#b23326; }
@@ -240,6 +242,7 @@
         // 카드 클릭하면 로그인 패널 열리도록 연결
         card.dataset.student = stu.name;          // 선택된 학생 전달용
         card.tabIndex = 0;                         // 키보드 접근성(Enter/Space)
+        card.style.cursor = 'pointer';        // 마우스 포인터
         card.addEventListener('click', ()=>{
           highlightSelectedCard?.(stu.name);       // 선택된 카드 하이라이트(있으면)
           openLoginPanel?.(stu.name);              // 우측 로그인 패널 열기
@@ -281,6 +284,7 @@
             if (mode === 'edit') {
               chip.style.cursor='pointer';
               chip.addEventListener('click', ()=>{
+                e.stopPropagation(); // 카드(click)로 버블링 방지
                 setDone(stu.name, assign.date, task, true); // 체크 → 완료로 기록
                 chip.remove(); // 즉시 화면에서 제거
               });
@@ -435,6 +439,127 @@ function submitLogin(studentName){
     e.preventDefault();
     openLoginPanel();       // 이미 만들어둔 함수 사용 (선택 학생 없이 열기)
   });
+
+    let _selectedStudentForLogin = null;
+
+function openLoginPanel(studentName){
+  _selectedStudentForLogin = studentName;
+  const modal = document.getElementById('studentLoginModal');
+  const input = document.getElementById('studentPwInput');
+  const err   = document.getElementById('loginError');
+  if (!modal) return;
+  err.style.display = 'none';
+  input.value = '';
+  modal.style.display = 'block';
+  setTimeout(()=> input.focus(), 0);
+}
+
+function closeLoginPanel(){
+  const modal = document.getElementById('studentLoginModal');
+  if (modal) modal.style.display = 'none';
+  _selectedStudentForLogin = null;
+}
+
+function confirmStudentLogin(){
+  if (!_selectedStudentForLogin) return;
+  const pwInput = document.getElementById('studentPwInput');
+  const err     = document.getElementById('loginError');
+  const students = loadStudents(); // 이미 있는 함수
+
+  const me = students.find(s => s.name === _selectedStudentForLogin);
+  if (!me){ err.style.display='block'; return; }
+
+  if (String(me.password) === String(pwInput.value || '')){
+    
+    // 8시간 유지(세션 만료용 타임스탬프 저장)
+    localStorage.setItem('currentStudent', me.name);
+    localStorage.setItem('loginUntil', String(Date.now() + 8*60*60*1000));
+    closeLoginPanel();
+    // 학생 페이지로 이동
+    location.href = 'student.html';
+  } else {
+    err.style.display = 'block';
+  }
+}
+    
+// 카드 하이라이트: 선택된 학생 카드만 selected 클래스
+function highlightSelectedCard(name){
+  document.querySelectorAll('.grid .card').forEach(el=>{
+    el.classList.toggle('selected', el.dataset.student === name);
+  });
+}
+
+// 모달 열기/닫기/확인
+let _loginSelected = null;
+function openLoginPanel(studentName){
+  _loginSelected = studentName;
+  const modal  = document.getElementById('studentLoginModal');
+  const input  = document.getElementById('studentPwInput');
+  if (!modal || !input) return;
+  modal.style.display = 'block';
+  input.value = '';
+  setTimeout(()=>input.focus(), 0);
+}
+function closeLoginPanel(){
+  const modal  = document.getElementById('studentLoginModal');
+  if (modal) modal.style.display = 'none';
+  _loginSelected = null;
+}
+function confirmStudentLogin(){
+  if (!_loginSelected) return;
+  const input = document.getElementById('studentPwInput');
+  const pw = input ? input.value.trim() : '';
+  const students = loadStudents(); // 기존 공통 함수 사용
+  const stu = students.find(s => s.name === _loginSelected);
+  if (!stu) { alert('학생 정보를 찾지 못했습니다.'); return; }
+  if (stu.password === pw){
+    localStorage.setItem('currentStudent', stu.name); // 로그인 유지용
+    closeLoginPanel();
+    // 필요 시 학생 페이지로 이동(or 그대로 유지)
+    // location.href = 'student.html';
+  } else {
+    alert('비밀번호가 올바르지 않습니다.');
+    input?.focus();
+  }
+}
+
+    
+    
+    
   </script>
+  
+  <!-- 학생 로그인 모달: 보드(#board) 밖에 둔다 -->
+<div id="studentLoginModal" style="display:none; position:fixed; inset:0; z-index:2000;">
+  <!-- 반투명 백드롭 -->
+  <div style="position:absolute; inset:0; background:rgba(0,0,0,.35);" onclick="closeLoginPanel()"></div>
+
+  <!-- 팝업 카드 -->
+  <div style="
+    position:absolute; left:50%; top:20%;
+    transform:translateX(-50%);
+    width:min(640px, 92vw);
+    background:#fff; border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,.18);
+    padding:20px;
+  ">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+      <h3 style="margin:0; font-size:18px;">학생 로그인</h3>
+      <button type="button" onclick="closeLoginPanel()" style="all:unset; cursor:pointer; font-size:20px;">×</button>
+    </div>
+
+    <p style="margin:6px 0 12px; color:#596273;">선택한 학생의 비밀번호를 입력하세요.</p>
+
+    <input id="studentPwInput" type="password" placeholder="비밀번호"
+           style="width:100%; height:44px; border:1px solid #dcdfe4; border-radius:12px; padding:0 12px; font:inherit;">
+
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px;">
+      <button type="button" onclick="closeLoginPanel()">취소</button>
+      <button type="button" class="btn-primary" onclick="confirmStudentLogin()">확인</button>
+    </div>
+
+    <div id="loginError" style="display:none; color:#c62828; margin-top:8px; font-size:14px;">
+      비밀번호가 올바르지 않습니다.
+    </div>
+  </div>
+</div>
 </body>
 </html>
