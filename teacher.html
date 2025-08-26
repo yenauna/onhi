@@ -444,8 +444,6 @@
     let viewYear  = (new Date()).getFullYear();
     let viewMonth = (new Date()).getMonth(); // 0=1월, 11=12월
 
-    function pad2(n){ return String(n).padStart(2,'0'); }
-
     function setCalLabel(){
       const label = document.getElementById('cal-label');
       if (!label) return;
@@ -468,45 +466,7 @@
       hideActionUI();
     }
 
-    // ===========================================================
-    // 헬퍼 유틸
-    // ===========================================================
-    const qs  = (s, r=document) => r.querySelector(s);
-    const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
-    const pad2 = n => String(n).padStart(2,'0');
-    const dayNames = ['일','월','화','수','목','금','토'];
     
-    const escapeHTML = (s) => String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    const getJSON = (k, fb=null) => { try{ const v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch{ return fb; } };
-    const setJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-    
-    // 오늘 00:00 로 정규화
-    const normalizeDate = (d) => { const t=new Date(d); t.setHours(0,0,0,0); return t; };
-    
-    // students 캐시 (불필요한 JSON 파싱 최소화)
-    let _studentsCache = null;
-    function loadStudentsCached(){
-      if (_studentsCache) return _studentsCache;
-      _studentsCache = getJSON("students", []);
-      return _studentsCache;
-    }
-    function invalidateStudentsCache(){ _studentsCache = null; }
-    
-    // teacherTasks 전체를 한 번에 로드 (중복 파싱 방지)
-    function loadAllTeacherTasks(){
-      const res = [];
-      for (let i=0; i<localStorage.length; i++){
-        const key = localStorage.key(i);
-        if (!key.startsWith("teacherTasks-")) continue;
-        const data = getJSON(key, null);
-        if (!data) continue;
-        res.push({ key, dateKey: key.slice("teacherTasks-".length), data });
-      }
-      return res;
-    }
-
 
     // ===========================================================
     // 유틸리티: 학생 정렬/라벨
