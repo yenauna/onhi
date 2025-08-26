@@ -4,6 +4,8 @@
   --text:#1f2a33; --muted:#6f7d8c;
   --brand:#2e7d57; --btn-shadow:rgba(46,125,87,.26);
 }
+
+
 /* 공통 레이아웃 컨테이너(각 페이지 카드 바깥) */
 .container{
   max-width:960px; width:100%;
@@ -12,37 +14,46 @@
   padding:28px 24px 32px; height:auto; overflow-wrap:break-word;
 }
 
+
 /* ===== 상단바 ===== */
 .topbar{
   position:fixed; top:0; left:0; right:0; height:64px;
   background:#fff; z-index:1000;
   display:flex; align-items:center; justify-content:space-between;
-  padding:0 20px; box-shadow:0 2px 10px rgba(0,0,0,.08);
+  padding:0 16px; box-shadow:0 2px 10px rgba(0,0,0,.08);
 }
-.topbar .logo-area a{ display:block; line-height:0; }
-.topbar .logo-area img{
-  display:block; height:44px; width:auto; object-fit:contain;
+.topbar .logo, .topbar .logo-area{ display:flex; align-items:center; gap:10px; }
+.topbar .logo img, .topbar .logo-area img{
+  height:44px; width:auto; object-fit:contain; display:block; cursor:pointer;
 }
-.topbar .menu-area{ display:flex; gap:10px; flex:1; justify-content:center; min-width:0; }
+.topbar .menu, .topbar .menu-area{ display:flex; gap:8px; }
 .topbar .menu-area button{
   border:1px solid #dcdfe4; background:#fff; color:#1f2a33;
   border-radius:999px; padding:8px 16px; font-size:14px; cursor:pointer;
   box-shadow:0 6px 14px rgba(0,0,0,.06); transition:.18s;
 }
+.topbar .menu button,
+.topbar .menu-area button{
+  border:1px solid #dcdfe4; background:#fff; color:#1f2a33;
+  border-radius:999px; padding:8px 14px; font-size:14px; cursor:pointer;
+  box-shadow:0 6px 14px rgba(0,0,0,.06); transition:.18s;
+}
+.topbar .menu button:hover,
 .topbar .menu-area button:hover{
   background:var(--brand); color:#fff; border-color:var(--brand);
 }
+.topbar .menu button.active,
 .topbar .menu-area button.active{
-  background:var(--brand); color:#fff; border-color:var(--brand);
+  background:var(--accent,#4caf7d); color:#fff; border-color:var(--accent,#4caf7d);
   box-shadow:0 8px 18px var(--btn-shadow);
+}ound:var(--accent, #4caf7d); color:#fff; border-color:var(--accent, #4caf7d);
 }
-.topbar .menu-area button.active:hover{
-  background:var(--accent, #4caf7d); color:#fff; border-color:var(--accent, #4caf7d);
+.topbar .right-tools{ display:flex; align-items:center; gap:8px; }
+.topbar .right-tools .mode-btn.is-edit{
+  background:var(--brand); color:#fff; border-color:var(--brand);
 }
-.topbar .right-tools{
-  margin-left:auto; display:flex; gap:8px; align-items:center;
-  white-space:nowrap; color:#6f7d8c;
-}
+
+
 /* 조회용 모드 토글(교사용만 사용) */
 .topbar .right-tools .mode-btn{
   font-size:12px; padding:6px 10px; line-height:1;
@@ -51,6 +62,7 @@
   box-shadow:0 4px 10px rgba(0,0,0,.06);
 }
 .topbar .right-tools .mode-btn.is-edit{ background:#f0f7f4; border-color:#cfe7dc; }
+
 
 /* 공통 프라이머리 버튼 */
 .btn-primary{
