@@ -131,6 +131,43 @@
   </main>
 
   <script>
+    
+    // ==== common.js 폴백(없을 때만 정의) ====
+    (function(){ 
+      if (typeof getJSON !== 'function') {
+        window.getJSON = function(k, fb=null){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch{ return fb; } };
+      }
+      if (typeof setJSON !== 'function') {
+        window.setJSON = function(k, v){ localStorage.setItem(k, JSON.stringify(v)); };
+      }
+      if (typeof escapeHTML !== 'function') {
+        window.escapeHTML = function(s){ return String(s)
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+          .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
+      }
+      if (typeof normalizeDate !== 'function') {
+        window.normalizeDate = function(d){
+          const t = new Date(d); // 'YYYY-MM-DD' 문자열도 OK
+          t.setHours(0,0,0,0);
+          return t;
+        };
+      }
+      if (typeof loadAllTeacherTasks !== 'function') {
+        window.loadAllTeacherTasks = function(){
+          const res = [];
+          for (let i=0; i<localStorage.length; i++){
+            const key = localStorage.key(i);
+            if (!key.startsWith('teacherTasks-')) continue;
+            try{
+              const data = JSON.parse(localStorage.getItem(key));
+              res.push({ key, dateKey: key.slice('teacherTasks-'.length), data });
+            }catch{}
+          }
+          return res;
+        };
+      }
+    })();
+    
     // =============== 공통 스토리지 헬퍼 ===============
     function loadStudents() {
       return getJSON("students", []);
