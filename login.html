@@ -62,16 +62,6 @@
         radial-gradient(110px 45px  at 92% 56%, #fff 60%, transparent 61%);
     }
 
-    /* 우상단 교사용 칩 */
-    #teacher-link{
-      position:fixed; top:14px; right:14px;
-      padding:10px 12px; font-size:12px;
-      color:var(--text); background:#fffffff0;
-      border:1px solid var(--card-line); border-radius:999px;
-      box-shadow:0 6px 14px rgba(0,0,0,.06);
-      cursor:pointer; user-select:none;
-    }
-
     /* ===============================
        카드 (로고 포함)
        =============================== */
@@ -180,9 +170,6 @@
   <!-- 구름 배경 -->
   <div class="clouds" aria-hidden="true"></div>
 
-  <!-- 교사용 링크 칩 -->
-  <div id="teacher-link" onclick="location.href='teacher.html';">교사용</div>
-
   <!-- 메인 카드 -->
   <div class="wrap">
     <main class="card" id="login-card">
@@ -254,7 +241,7 @@
         if (students.length === 0) {
           const opt = document.createElement("option");
           opt.value = "";
-          opt.textContent = "등록된 학생이 없습니다 (교사용 화면에서 등록)";
+          opt.textContent = "등록된 학생이 없습니다 (선생님이 등록 가능)";
           opt.disabled = true;
           sel.appendChild(opt);
           return;
@@ -270,7 +257,7 @@
         console.error(e);
         const sel = document.getElementById("student-select-login");
         sel.innerHTML =
-          '<option value="">(데이터 형식 오류) 교사용 화면에서 학생을 다시 저장해주세요</option>';
+          '<option value="">(데이터 형식 오류) 선생님이 학생을 다시 저장해야 함</option>';
       }
     }
 
