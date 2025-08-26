@@ -8,6 +8,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css">
 
+  <link rel="stylesheet" href="css/common.css">
+  <script src="js/common.js" defer></script>
+
   <style>
     :root{
       --bg-base:#eaf4ef;
@@ -271,61 +274,7 @@
       padding:0 14px;
     }
 
-    /* ========== 상단 풀바(칩 버튼) ========== */
-    .topbar{
-      position: fixed; top:0; left:0; right:0; height:64px;
-      background:#fff; z-index:1000;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:0 20px;
-      box-shadow:0 2px 10px rgba(0,0,0,.08);
-    }
-    .topbar .logo-area img{ height:44px; cursor:pointer; display:block; }
-    .topbar .menu-area{ display:flex; gap:10px; flex:1; justify-content:center; min-width:0; }
-    .topbar .menu-area button{
-      border:1px solid #dcdfe4; background:#fff; color:#1f2a33;
-      border-radius:999px; padding:8px 16px; font-size:14px; cursor:pointer;
-      box-shadow:0 6px 14px rgba(0,0,0,.06);
-      transition:.18s;
-    }
-    .topbar .menu-area button:hover{
-      background:var(--brand); color:#fff; border-color:var(--brand);
-    }
-    .topbar .menu-area button.active{
-      background: var(--brand);
-      color: #fff;
-      border-color: var(--brand);
-      box-shadow: 0 8px 18px var(--btn-shadow);
-    }
-    .topbar .menu-area button.active:hover {
-      background: var(--accent, #4caf7d);
-      color:#fff;
-      border-color: var(--accent, #4caf7d);
-    }
-    .topbar .right-tools{
-      margin-left:auto;
-      display:flex; gap:8px; align-items:center;
-      white-space:nowrap;
-      color:#6f7d8c;
-    }
-    .topbar .right-tools .mode-btn{
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid #dcdfe4;
-      background:#f6f7f9;
-      color:#495057;
-      cursor:pointer;
-      box-shadow:0 4px 10px rgba(0,0,0,.06);
-      line-height:1;
-    }
-    .topbar .right-tools .mode-btn.is-edit{
-      background:#f0f7f4; border-color:#cfe7dc;
-    }
-    /* (미사용이지만 유지) */
-    .mode-btn.view{  background:#f6f7f9; border-color:#dcdfe4; color:#495057; }
-    .mode-btn.edit{  background:#eaf5ff; border-color:#b7dcff; color:#0b5cab; }
-    .mode-btn:hover{ filter:brightness(.98); }
-    .mode-now{ color:#6f7d8c; font-size:12px; }
+    
   </style>
 </head>
 <body>
@@ -590,31 +539,7 @@
       renderStudentList();
     }
 
-    // ===========================================================
-    // 교사용: 조회용 화면 모드 토글(보기전용 ↔ 편집전용)
-    // ===========================================================
-    function applyBoardModeToButton() {
-      const btn = document.getElementById('modeBtn');
-      if (!btn) return;
-      const mode = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
-      const isEdit = mode === 'edit';
-      btn.textContent = isEdit ? '편집전용' : '보기전용';
-      btn.setAttribute('aria-pressed', String(isEdit));
-      btn.classList.toggle('is-edit', isEdit);
-    }
-    function toggleBoardMode() {
-      const cur = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
-      const next = cur === 'edit' ? 'view' : 'edit';
-      localStorage.setItem('boardMode', next);
-      applyBoardModeToButton();
-    }
-    window.addEventListener('load', () => {
-      if (!localStorage.getItem('boardMode')) localStorage.setItem('boardMode', 'view');
-      applyBoardModeToButton();
-      const btn = document.getElementById('modeBtn');
-      if (btn) btn.addEventListener('click', toggleBoardMode);
-    });
-
+    
     // ===========================================================
     // 학생 체크박스 렌더링(과제 대상 지정용)
     // ===========================================================
