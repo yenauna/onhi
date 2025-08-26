@@ -43,7 +43,7 @@
 
 /* ====== 상단 탭 활성화 ====== */
 function makeActiveById(id){
-  document.querySelectorAll('.menu-area button').forEach(b=>{
+  document.querySelectorAll('.menu-area button, .menu button').forEach(b=>{
     b.classList.toggle('active', b.id === id);
   });
 }
