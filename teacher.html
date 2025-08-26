@@ -469,6 +469,46 @@
     }
 
     // ===========================================================
+    // 헬퍼 유틸
+    // ===========================================================
+    const qs  = (s, r=document) => r.querySelector(s);
+    const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
+    const pad2 = n => String(n).padStart(2,'0');
+    const dayNames = ['일','월','화','수','목','금','토'];
+    
+    const escapeHTML = (s) => String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const getJSON = (k, fb=null) => { try{ const v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch{ return fb; } };
+    const setJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+    
+    // 오늘 00:00 로 정규화
+    const normalizeDate = (d) => { const t=new Date(d); t.setHours(0,0,0,0); return t; };
+    
+    // students 캐시 (불필요한 JSON 파싱 최소화)
+    let _studentsCache = null;
+    function loadStudentsCached(){
+      if (_studentsCache) return _studentsCache;
+      _studentsCache = getJSON("students", []);
+      return _studentsCache;
+    }
+    function invalidateStudentsCache(){ _studentsCache = null; }
+    
+    // teacherTasks 전체를 한 번에 로드 (중복 파싱 방지)
+    function loadAllTeacherTasks(){
+      const res = [];
+      for (let i=0; i<localStorage.length; i++){
+        const key = localStorage.key(i);
+        if (!key.startsWith("teacherTasks-")) continue;
+        const data = getJSON(key, null);
+        if (!data) continue;
+        res.push({ key, dateKey: key.slice("teacherTasks-".length), data });
+      }
+      return res;
+    }
+
+
+    // ===========================================================
     // 유틸리티: 학생 정렬/라벨
     // ===========================================================
     function _toNum(v) {
@@ -562,10 +602,10 @@
     // 과제 완료 저장/조회 (학생별)
     // ===========================================================
     function getDoneTasks(student) {
-      return JSON.parse(localStorage.getItem("doneTasks-" + student) || "{}");
+      return getJSON("doneTasks-" + student, {});
     }
     function setDoneTasks(student, doneTasks) {
-      localStorage.setItem("doneTasks-" + student, JSON.stringify(doneTasks));
+      setJSON("doneTasks-" + student, doneTasks);
     }
     function makeDoneKey(dateStr, taskText) { return `${dateStr}@@${taskText}`; }
     function isDone(studentName, dateStr, taskText) {
@@ -658,76 +698,65 @@
     // 달력 렌더링 (반복 과제 계산 포함)
     // ===========================================================
     function renderCalendar() {
-      const tbody = document.getElementById("calendar-body");
+      const tbody = qs("#calendar-body");
       tbody.innerHTML = "";
       calendarRefs = {};
-
+      
       const year  = viewYear;
       const month = viewMonth;
-
+      
       const firstDay         = new Date(year, month, 1);
       const startDay         = firstDay.getDay();
       const adjustedStartDay = (startDay + 6) % 7;
       const lastDate         = new Date(year, month + 1, 0).getDate();
-
-      const originals = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key.startsWith("teacherTasks-")) continue;
-        const dateKey = key.replace("teacherTasks-", "");
-        const data    = JSON.parse(localStorage.getItem(key) || "null");
-        if (!data) continue;
-        originals.push({ key, dateKey, data });
-      }
-
+      
+      // 1) 원본 과제 한 번만 로드
+      const originals = loadAllTeacherTasks();
+      
+      // 2) 이번 달에 실제로 보여줄 인스턴스 구성
       const instancesMap = {};
-      const pushInstance = (dateStr, key, taskIndex, text) => {
-        instancesMap[dateStr] ??= [];
-        instancesMap[dateStr].push({ key, taskIndex, text });
+      const add = (dateStr, key, taskIndex, text) => {
+        (instancesMap[dateStr] ??= []).push({ key, taskIndex, text });
       };
-
+      
       for (const { key, dateKey, data } of originals) {
         const tasks = data.tasks || [];
         const rpt   = data.repeat || "none";
-
+        
         if (rpt === "daily") {
-          for (let d = 1; d <= lastDate; d++) {
-            const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
-            tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
+          for (let d=1; d<=lastDate; d++){
+            const dateStr = `${year}-${pad2(month+1)}-${pad2(d)}`;
+            tasks.forEach((t, idx) => add(dateStr, key, idx, t));
           }
         } else if (["mon","tue","wed","thu","fri"].includes(rpt)) {
           const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
-          for (let d = 1; d <= lastDate; d++) {
+          for (let d=1; d<=lastDate; d++){
             const dateObj = new Date(year, month, d);
             if (dateObj.getDay() === dayMap[rpt]) {
-              const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
-              tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
+              const dateStr = `${year}-${pad2(month+1)}-${pad2(d)}`;
+              tasks.forEach((t, idx) => add(dateStr, key, idx, t));
             }
           }
         } else {
           const dateStr = dateKey;
-          tasks.forEach((t, idx) => pushInstance(dateStr, key, idx, t));
+          tasks.forEach((t, idx) => add(dateStr, key, idx, t));
         }
       }
-
+      
+      // 3) calendarRefs 구성
       for (const [dateStr, arr] of Object.entries(instancesMap)) {
         calendarRefs[dateStr] = arr.map(({ key, taskIndex }) => ({ key, taskIndex }));
       }
-
+      
+      // 4) 표 HTML 생성 (escape 적용)
       let html = "<tr>";
-      for (let i = 0; i < adjustedStartDay; i++) html += "<td></td>";
-
-      for (let day = 1; day <= lastDate; day++) {
-        const dateStr = `${year}-${pad2(month + 1)}-${pad2(day)}`;
-        const pills = (instancesMap[dateStr] || []).map((inst, idx) => {
-          const esc = inst.text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-          return `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${esc}</div>`;
-        }).join("");
+      for (let i=0; i<adjustedStartDay; i++) html += "<td></td>";
+      
+      for (let day=1; day<=lastDate; day++){
+        const dateStr = `${year}-${pad2(month+1)}-${pad2(day)}`;
+        const pills = (instancesMap[dateStr] || []).map((inst, idx) =>
+          `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(inst.text)}</div>`
+                                                       ).join("");
         html += `<td><strong>${day}</strong>${pills}</td>`;
         if ((adjustedStartDay + day) % 7 === 0) html += "</tr><tr>";
       }
@@ -735,6 +764,7 @@
       tbody.innerHTML = html;
       setCalLabel();
     }
+
 
     // ===========================================================
     // 과제 편집/삭제/확인
@@ -932,139 +962,122 @@
     // '오늘 할 일' 화면 렌더링 (학생별 카드)
     // ===========================================================
     function renderStudentStatus() {
-      const container = document.getElementById("student-status-list");
+      const container = qs("#student-status-list");
       container.innerHTML = "";
-
+      
       const students = getStudentsSorted();
-
-      let allAssignments = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key.startsWith("teacherTasks-")) continue;
-        const data    = JSON.parse(localStorage.getItem(key));
-        const dateStr = key.replace("teacherTasks-", "");
-        allAssignments.push({ ...data, date: dateStr });
-      }
-
-      const today = new Date(); today.setHours(0,0,0,0);
-
+      const originals = loadAllTeacherTasks();
+      
+      // allAssignments: {tasks, repeat, students, date}
+      const allAssignments = originals.map(({data, dateKey}) => ({ ...data, date: dateKey }));
+      
+      const today = normalizeDate(new Date());
+      
       const validAssignments = allAssignments
         .filter(assign => {
           if (!assign.date) return false;
-          const dateObj = new Date(assign.date);
-          if (isNaN(dateObj)) return false;
-          dateObj.setHours(0,0,0,0);
-          return dateObj <= today;
+          const d = normalizeDate(assign.date);
+          return !isNaN(d) && d <= today;
         })
         .map(assign => {
-          const dateObj = new Date(assign.date);
-          dateObj.setHours(0,0,0,0);
-          const dayNames = ['일','월','화','수','목','금','토'];
-          const formattedDate = `${dateObj.getMonth()+1}월 ${dateObj.getDate()}일 (${dayNames[dateObj.getDay()]})`;
-          return { ...assign, dateObj, formattedDate };
+          const d = normalizeDate(assign.date);
+          return {
+            ...assign,
+            dateObj: d,
+            formattedDate: `${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`
+          };
         })
-        .sort((a, b) => b.dateObj - a.dateObj);
-
+        .sort((a,b) => b.dateObj - a.dateObj);
+      
+      // DOM Fragment로 조립 (레이아웃 스로틀링 방지)
+      const frag = document.createDocumentFragment();
+      
       students.forEach(stu => {
-        const div = document.createElement("div");
-        div.style.border = "1px solid #e6e8eb";
-        div.style.padding = "12px";
-        div.style.borderRadius = "16px";
-        div.style.background = "#fff";
-        div.style.boxShadow = "0 4px 10px rgba(0,0,0,.04)";
-        div.style.marginBottom = "10px";
-
-        div.innerHTML = `👦 ${labelOf(stu)}<div style="margin-top: 10px;">`;
-
+        const card = document.createElement("div");
+        Object.assign(card.style, {
+          border:"1px solid #e6e8eb", padding:"12px", borderRadius:"16px",
+          background:"#fff", boxShadow:"0 4px 10px rgba(0,0,0,.04)", marginBottom:"10px"
+        });
+        card.innerHTML = `👦 ${labelOf(stu)}<div style="margin-top: 10px;"></div>`;
+        const listBox = card.lastElementChild;
+        
         validAssignments.forEach(assign => {
           const assigned = assign.students.includes("전체") || assign.students.includes(stu.name);
           if (!assigned) return;
-
+          
           assign.tasks.forEach(task => {
             const done = isDone(stu.name, assign.date, task);
             const isPast = assign.dateObj < today;
-
             if (done && isPast) return;
-
-            let color = "#f6c1c1";
-            let dateColor = "#666";
-
-            if (isPast && !done) {
-              color = "#c0392b";
-              dateColor = "#fff";
-            } else if (!isPast && done) {
-              color = "white";
-              dateColor = "#666";
-            }
-
-            div.innerHTML += `
-              <div class="student-chip ${done ? '' : 'missed'}"
-                   style="
-                    border: 1px solid #e6e8eb;
-                    background: ${color};
-                    padding: 8px;
-                    border-radius: 12px;
-                    margin: 6px 0;
-                    display:flex;
-                    justify-content:space-between;
-                    align-items:center;
-                    cursor:pointer;"
-                   data-student="${stu.name}"
-                   data-date="${assign.date}"
-                   data-task="${task}">
-                <span>${task}</span>
-                <span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
-              </div>
+            
+            let bg = "#f6c1c1", dateColor = "#666";
+            if (isPast && !done) { bg = "#c0392b"; dateColor = "#fff"; }
+            else if (!isPast && done) { bg = "white"; dateColor = "#666"; }
+            
+            const chip = document.createElement("div");
+            chip.className = "student-chip" + (done ? "" : " missed");
+            chip.dataset.student = stu.name;
+            chip.dataset.date = assign.date;
+            chip.dataset.task = task;
+            chip.style.cssText = `
+            border:1px solid #e6e8eb; background:${bg}; padding:8px; border-radius:12px;
+            margin:6px 0; display:flex; justify-content:space-between; align-items:center; cursor:pointer;`;
+            chip.innerHTML = `
+            <span>${escapeHTML(task)}</span>
+            <span style="font-size:10px; color:${dateColor};">${assign.formattedDate}</span>
             `;
+            listBox.appendChild(chip);
           });
         });
-
-        div.innerHTML += "</div>";
-        container.appendChild(div);
+        
+        frag.appendChild(card);
       });
+      
+      container.appendChild(frag);
     }
+
 
     // '오늘 할 일' 학생 칩 클릭 델리게이션
     (function attachStudentStatusDelegation(){
-      const container = document.getElementById('student-status-list');
+      const container = qs('#student-status-list');
       if (!container) return;
-
-      container.addEventListener('click', (e) => {
-        const chip = e.target.closest('.student-chip');
-        if (!chip || !container.contains(chip)) return;
-
-        const student = chip.dataset.student;
-        const dateStr = chip.dataset.date;
-        const taskTxt = chip.dataset.task;
-
-        const nowIsDone = !chip.classList.contains('missed');
-
-        const dKey  = `${dateStr}@@${taskTxt}`;
-        const store = getDoneTasks(student) || {};
-        if (nowIsDone) {
-          delete store[dKey];
-          chip.classList.add('missed');
-        } else {
-          store[dKey] = true;
-          chip.classList.remove('missed');
-        }
-        setDoneTasks(student, store);
-
-        renderStudentStatus();
-      }, false);
+      
+      // rAF 기반 재렌더 스로틀러 (중복 호출 억제)
+      let raf = null;
+      const schedule = () => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => { raf = null; renderStudentStatus(); });
+      }
+      
+        container.addEventListener('click', (e) => {
+          const chip = e.target.closest('.student-chip');
+          if (!chip || !container.contains(chip)) return;
+          
+          const { student, date:dateStr, task:taskTxt } = chip.dataset;
+          const nowIsDone = !chip.classList.contains('missed');
+          
+          const dKey  = `${dateStr}@@${taskTxt}`;
+          const store = getDoneTasks(student) || {};
+          if (nowIsDone) { delete store[dKey]; chip.classList.add('missed'); }
+          else { store[dKey] = true; chip.classList.remove('missed'); }
+          setDoneTasks(student, store);
+          
+          schedule(); // 렌더 요청 (여러 번 눌러도 1프레임에 1회만)
+        }, false);
     })();
+
 
     // ===========================================================
     // 학생 데이터 로드/저장
     // ===========================================================
     function loadStudents() {
-      const raw = localStorage.getItem("students");
-      return raw ? JSON.parse(raw) : [];
+      return loadStudentsCached();
     }
+    
     function saveStudents(students) {
-      localStorage.setItem("students", JSON.stringify(students));
+      setJSON("students", students);
+      invalidateStudentsCache();
     }
-
     // ===========================================================
     // 학생 리스트 렌더링
     // ===========================================================
@@ -1160,6 +1173,7 @@
 
       students[idx] = { id: newId, name: newName, password: newPw };
       saveStudents(students);
+      invalidateStudentsCache();
 
       renderStudentList();
       renderStudentListToCheckbox?.();
@@ -1175,6 +1189,8 @@
       if (idx >= 0) {
         students.splice(idx, 1);
         saveStudents(students);
+        invalidateStudentsCache();
+        
         renderStudentList();
         renderStudentListToCheckbox();
         renderStudentStatus();
