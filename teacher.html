@@ -966,7 +966,6 @@
           if (!assigned) return;
           
           assign.tasks.forEach(task => {
-            const done = isDone(stu.name, assign.date, task);
 
             //레거시 키('과제명'만 저장된 것)를 표준 키로 이주
             const store = getDoneTasks(stu.name) || {};
@@ -977,7 +976,9 @@
               delete store[task];
               setDoneTasks(stu.name, store);
             }
-          
+            
+            const done = isDone(stu.name, assign.date, task);
+
             const isPast = assign.dateObj < today;
             if (done && isPast) return;
             
@@ -1006,6 +1007,23 @@
       
       container.appendChild(frag);
     }
+
+    (function attachStudentStatusDelegation(){
+  const container = document.getElementById('student-status-list');
+  if (!container) return;
+
+  container.addEventListener('click', (e) => {
+    const chip = e.target.closest('.student-chip');
+    if (!chip || !container.contains(chip)) return;
+
+    const { student, date, task } = chip.dataset;
+    const nowIsDone = !chip.classList.contains('missed'); // 현재 상태
+
+    // 체크 토글
+    setDone(student, date, task, !nowIsDone);
+    chip.classList.toggle('missed', nowIsDone);
+  }, false);
+})();
 
 
     // '오늘 할 일' 학생 칩 클릭 델리게이션
