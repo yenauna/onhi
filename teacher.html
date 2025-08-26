@@ -1009,21 +1009,23 @@
     }
 
     (function attachStudentStatusDelegation(){
-  const container = document.getElementById('student-status-list');
-  if (!container) return;
+      const container = document.getElementById('student-status-list');
+      if (!container) return;
+      
+      container.addEventListener('click', (e) => {
+        const chip = e.target.closest('.student-chip');
+        if (!chip || !container.contains(chip)) return;
+        
+        const { student, date, task } = chip.dataset;
+        const nowIsDone = !chip.classList.contains('missed'); // 현재 상태
+        
+        // 체크 토글
+        setDone(student, date, task, !nowIsDone);
 
-  container.addEventListener('click', (e) => {
-    const chip = e.target.closest('.student-chip');
-    if (!chip || !container.contains(chip)) return;
-
-    const { student, date, task } = chip.dataset;
-    const nowIsDone = !chip.classList.contains('missed'); // 현재 상태
-
-    // 체크 토글
-    setDone(student, date, task, !nowIsDone);
-    chip.classList.toggle('missed', nowIsDone);
-  }, false);
-})();
+        // 화면 즉시 반영
+        chip.classList.toggle('missed', nowIsDone);
+      }, false);
+    })();
 
 
     // '오늘 할 일' 학생 칩 클릭 델리게이션
