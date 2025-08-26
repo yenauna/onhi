@@ -8,6 +8,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css" />
 
+  <script src="js/common.js" defer></script>
+
+
   <style>
     :root{
       --bg-base:#eaf4ef;
@@ -130,10 +133,7 @@
   <script>
     // =============== 공통 스토리지 헬퍼 ===============
     function loadStudents() {
-      try {
-        const raw = localStorage.getItem("students");
-        return raw ? JSON.parse(raw) : [];
-      } catch { return []; }
+      return getJSON("students", []);
     }
     function _toNum(v){ const n = parseInt(String(v),10); return isNaN(n)?0:n; }
     function sortStudents(arr){
@@ -143,31 +143,31 @@
       });
     }
     function getDoneStore(name){
-      try{ return JSON.parse(localStorage.getItem("doneTasks-"+name)||"{}"); }catch{ return {}; }
+      return getJSON("doneTasks-" + name, {});
     }
     function makeDoneKey(dateStr, taskText){ return `${dateStr}@@${taskText}`; }
     function isDone(name,dateStr,taskText){
       const s=getDoneStore(name); const k=makeDoneKey(dateStr,taskText);
       return s[k]===true || s[taskText]===true; // 레거시 허용
     }
-    function setDone(name,dateStr,taskText,done){
-      const s=getDoneStore(name); const k=makeDoneKey(dateStr,taskText);
-      if(done) s[k]=true; else delete s[k];
-      localStorage.setItem("doneTasks-"+name, JSON.stringify(s));
+    function setDone(name, dateStr, taskText, done){
+      const k = `${dateStr}@@${taskText}`;
+      const store = getDoneStore(name);
+      if (done) store[k] = true; else delete store[k];
+      setJSON("doneTasks-" + name, store);
     }
 
     // =============== 과제 로드 ===============
     function loadAllAssignments(){
-      const list=[];
-      for(let i=0;i<localStorage.length;i++){
-        const key=localStorage.key(i);
-        if(!key.startsWith("teacherTasks-")) continue;
-        try{
-          const data=JSON.parse(localStorage.getItem(key));
-          list.push({ key, date: key.replace("teacherTasks-",""), ...data });
-        }catch{}
-      }
-      return list;
+      // 공통: teacherTasks-* 전부 읽기
+      const originals = loadAllTeacherTasks();
+      // 조회용에서 쓰는 필드만 추려서 반환
+      return originals.map(({ key, dateKey, data }) => ({
+        key,
+        date: dateKey,
+        students: data?.students || [],
+        tasks: data?.tasks || []
+      }));
     }
 
     // =============== 보드 렌더 ===============
@@ -182,17 +182,20 @@
       const assigns  = loadAllAssignments();
 
       // 오늘과 과거만(미래 제외)
-      const today = new Date(); today.setHours(0,0,0,0);
+      const today = normalizeDate(new Date());
 
       const dayNames = ['일','월','화','수','목','금','토'];
       const filtered = assigns
         .map(a => {
-          const d=new Date(a.date); if(isNaN(d)) return null;
-          d.setHours(0,0,0,0);
-          return { ...a, dateObj:d, formatted:`${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})` };
+          const d = normalizeDate(a.date);
+          return { 
+            ...a, 
+            dateObj: d, 
+            formatted: `${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`
+          };
         })
         .filter(a => a && a.dateObj <= today)
-        .sort((a,b)=> b.dateObj - a.dateObj); // 최근 먼저
+        .sort((a,b)=> b.dateObj - a.dateObj);
 
       students.forEach(stu=>{
         const card = document.createElement('div');
@@ -222,7 +225,7 @@
             chip.dataset.date = assign.date;
             chip.dataset.task = task;
             chip.innerHTML = `
-              <span>${task}</span>
+              <span>${escapeHTML(task)}</span>
               <span class="date">${assign.formatted}</span>
             `;
 
