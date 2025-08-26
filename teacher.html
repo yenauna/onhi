@@ -967,6 +967,17 @@
           
           assign.tasks.forEach(task => {
             const done = isDone(stu.name, assign.date, task);
+
+            //레거시 키('과제명'만 저장된 것)를 표준 키로 이주
+            const store = getDoneTasks(stu.name) || {};
+            const legacy = store[task];            // '과제명'만으로 체크된 예전 키
+            const fullKey = `${assign.date}@@${task}`;
+            if (legacy && store[fullKey] !== true) {
+              store[fullKey] = true;
+              delete store[task];
+              setDoneTasks(stu.name, store);
+            }
+          
             const isPast = assign.dateObj < today;
             if (done && isPast) return;
             
@@ -998,9 +1009,9 @@
 
 
     // '오늘 할 일' 학생 칩 클릭 델리게이션
-    (function attachStudentStatusDelegation(){
-      const container = qs('#student-status-list');
-      if (!container) return;
+     window.addEventListener('load', () => {
+       const container = document.getElementById('student-status-list');
+       if (!container) return;
       
       // rAF 기반 재렌더 스로틀러 (중복 호출 억제)
       let raf = null;
@@ -1015,7 +1026,8 @@
           
           const { student, date:dateStr, task:taskTxt } = chip.dataset;
           const nowIsDone = !chip.classList.contains('missed');
-          
+
+          // 저장 키 토글
           const dKey  = `${dateStr}@@${taskTxt}`;
           const store = getDoneTasks(student) || {};
           if (nowIsDone) { delete store[dKey]; chip.classList.add('missed'); }
