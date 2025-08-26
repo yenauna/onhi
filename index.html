@@ -283,10 +283,10 @@
             // 편집모드일 때만 클릭 토글 허용
             if (mode === 'edit') {
               chip.style.cursor='pointer';
-              chip.addEventListener('click', ()=>{
-                e.stopPropagation(); // 카드(click)로 버블링 방지
-                setDone(stu.name, assign.date, task, true); // 체크 → 완료로 기록
-                chip.remove(); // 즉시 화면에서 제거
+              chip.addEventListener('click', (e)=>{
+                e.stopPropagation(); // 이벤트 객체 받아서 사용
+                setDone(stu.name, assign.date, task, true);
+                chip.remove();
               });
             }
             card.appendChild(chip);
@@ -324,94 +324,7 @@ function isSessionValid(){
   if (!isSessionValid()) clearSession(); // 조용히 만료 처리(알림 없음)
 })();
 
-/* ===== 패널 DOM 생성/제거 ===== */
-function openLoginPanel(studentName){
-  const container = document.querySelector('.container');
-  if (!container) return;
 
-  // 이미 열려 있으면 교체만
-  closeLoginPanel();
-
-  const dim = document.createElement('div');
-  dim.className = 'login-dim';
-  dim.addEventListener('click', closeLoginPanel);
-
-  const panel = document.createElement('div');
-  panel.className = 'login-panel';
-  panel.setAttribute('role','dialog');
-  panel.setAttribute('aria-modal','true');
-
-  panel.innerHTML = `
-    <header>
-      <div>학생 로그인</div>
-      <button class="close" aria-label="닫기">✕</button>
-    </header>
-    <div class="desc">선택한 학생의 비밀번호를 입력하세요.</div>
-    <input id="lpw" type="password" placeholder="비밀번호" autocomplete="current-password" />
-    <div class="error" id="lerr"></div>
-    <div class="btns">
-      <button class="cancel">취소</button>
-      <button class="ok">확인</button>
-    </div>
-  `;
-
-  // 카드 하이라이트 전환(선택 안내는 색만)
-  highlightSelectedCard(studentName);
-
-  // 핸들러
-  panel.querySelector('.close').onclick  = closeLoginPanel;
-  panel.querySelector('.cancel').onclick = closeLoginPanel;
-  panel.querySelector('.ok').onclick     = () => submitLogin(studentName);
-  panel.addEventListener('keydown', (e)=>{
-    if (e.key === 'Escape') closeLoginPanel();
-    if (e.key === 'Enter')  submitLogin(studentName);
-  });
-
-  // 컨테이너에 추가
-  container.appendChild(dim);
-  container.appendChild(panel);
-
-  // 입력에 자동 포커스
-  setTimeout(()=> panel.querySelector('#lpw')?.focus(), 0);
-}
-
-function closeLoginPanel(){
-  document.querySelector('.login-dim')?.remove();
-  document.querySelector('.login-panel')?.remove();
-  // 카드 하이라이트 초기화
-  document.querySelectorAll('.card.is-selected')?.forEach(el=>el.classList.remove('is-selected'));
-}
-
-/* ===== 선택 카드 하이라이트(텍스트에서 이름 추출 방식, 렌더 변경 없이 사용 가능) ===== */
-function highlightSelectedCard(studentName){
-  document.querySelectorAll('.card').forEach(card=>{
-    const nameText = card.querySelector('.title')?.textContent?.trim() || '';
-    const nameOnly = nameText.split(/\s+/).slice(1).join(' ');
-    if (nameOnly === studentName) card.classList.add('is-selected');
-    else card.classList.remove('is-selected');
-  });
-}
-
-/* ===== 실제 검증 & 이동 ===== */
-function submitLogin(studentName){
-  const pw = document.getElementById('lpw')?.value ?? '';
-  const err = document.getElementById('lerr');
-
-  // 학생 목록에서 비번 비교
-  const students = (getJSON('students', []) || []);
-  const stu = students.find(s => s.name === studentName);
-  if (!stu){ err.textContent = '학생 정보를 찾을 수 없습니다.'; return; }
-
-  if (String(stu.password) !== String(pw)){
-    err.textContent = '비밀번호가 올바르지 않습니다.';
-    return;
-  }
-
-  // 성공: 세션 저장(8시간), 이동 또는 현재 페이지 유지
-  setSession(studentName);
-  // 원하는 행동 선택: 학생 전용 페이지로 이동
-  location.href = 'student.html';
-}
 
 /* ===== 카드 클릭 시 패널 열기(이벤트 델리게이션) ===== */
 /* index.html의 학생 카드 구조:
@@ -440,47 +353,7 @@ function submitLogin(studentName){
     openLoginPanel();       // 이미 만들어둔 함수 사용 (선택 학생 없이 열기)
   });
 
-    let _selectedStudentForLogin = null;
 
-function openLoginPanel(studentName){
-  _selectedStudentForLogin = studentName;
-  const modal = document.getElementById('studentLoginModal');
-  const input = document.getElementById('studentPwInput');
-  const err   = document.getElementById('loginError');
-  if (!modal) return;
-  err.style.display = 'none';
-  input.value = '';
-  modal.style.display = 'block';
-  setTimeout(()=> input.focus(), 0);
-}
-
-function closeLoginPanel(){
-  const modal = document.getElementById('studentLoginModal');
-  if (modal) modal.style.display = 'none';
-  _selectedStudentForLogin = null;
-}
-
-function confirmStudentLogin(){
-  if (!_selectedStudentForLogin) return;
-  const pwInput = document.getElementById('studentPwInput');
-  const err     = document.getElementById('loginError');
-  const students = loadStudents(); // 이미 있는 함수
-
-  const me = students.find(s => s.name === _selectedStudentForLogin);
-  if (!me){ err.style.display='block'; return; }
-
-  if (String(me.password) === String(pwInput.value || '')){
-    
-    // 8시간 유지(세션 만료용 타임스탬프 저장)
-    localStorage.setItem('currentStudent', me.name);
-    localStorage.setItem('loginUntil', String(Date.now() + 8*60*60*1000));
-    closeLoginPanel();
-    // 학생 페이지로 이동
-    location.href = 'student.html';
-  } else {
-    err.style.display = 'block';
-  }
-}
     
 // 카드 하이라이트: 선택된 학생 카드만 selected 클래스
 function highlightSelectedCard(name){
@@ -513,7 +386,7 @@ function confirmStudentLogin(){
   const stu = students.find(s => s.name === _loginSelected);
   if (!stu) { alert('학생 정보를 찾지 못했습니다.'); return; }
   if (stu.password === pw){
-    localStorage.setItem('currentStudent', stu.name); // 로그인 유지용
+    setSession(stu.name);   // 위쪽에 이미 있는 8시간 만료 세션 유틸 사용
     closeLoginPanel();
     // 필요 시 학생 페이지로 이동(or 그대로 유지)
     // location.href = 'student.html';
