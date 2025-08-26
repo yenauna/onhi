@@ -299,7 +299,7 @@
   <div class="container">
     <!-- ===== 오늘 할 일(학생별 현황) ===== -->
     <div id="student-status-page" style="display:none; margin-top: 8px;">
-      <h3>✅ 학생별 과제 완료 현황</h3>
+
       <div
         id="student-status-list"
         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"
@@ -308,11 +308,11 @@
 
     <!-- ===== 과제 관리 + 달력 ===== -->
     <div id="task-management" style="display:none; margin-top: 8px;">
-      <h2>📋 과제 추가 및 달력</h2>
+      <h2>📋 과제 추가</h2>
 
       <!-- 과제 입력 영역 -->
       <section>
-        <label>📅 과제 날짜:</label>
+        <label>📅 날짜:</label>
         <input type="date" id="task-date" />
 
         <div class="task-list" id="task-list">
@@ -348,7 +348,7 @@
 
       <!-- 달력 -->
       <section class="calendar" style="margin-top:20px;">
-        <h3>🗓️ 달력 (과제 클릭 시 수정/삭제 버튼 표시)</h3>
+        <h3>🗓️ 달력 </h3>
         <div id="cal-controls" style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;">
           <button type="button" onclick="changeMonth(-1)">◀</button>
           <div id="cal-label" style="font-weight:600;min-width:120px;text-align:center;"></div>
