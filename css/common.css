@@ -3,6 +3,7 @@
   --card:#fbf3da; --card-line:#efe6cd;
   --text:#1f2a33; --muted:#6f7d8c;
   --brand:#2e7d57; --btn-shadow:rgba(46,125,87,.26);
+  --accent:#4caf7d;
 }
 
 
@@ -44,9 +45,8 @@
 }
 .topbar .menu button.active,
 .topbar .menu-area button.active{
-  background:var(--accent,#4caf7d); color:#fff; border-color:var(--accent,#4caf7d);
+  background:var(--accent,#4caf7d); color:#fff; border-color:var(--accent);
   box-shadow:0 8px 18px var(--btn-shadow);
-}ound:var(--accent, #4caf7d); color:#fff; border-color:var(--accent, #4caf7d);
 }
 .topbar .right-tools{ display:flex; align-items:center; gap:8px; }
 .topbar .right-tools .mode-btn.is-edit{
