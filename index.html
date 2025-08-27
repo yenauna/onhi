@@ -49,7 +49,7 @@
     }
     .topbar .logo{ display:flex; align-items:center; gap:10px; }
     .topbar .logo img{
-      height:44px; width:auto;          /* ⬅️ 직사각형 로고 대응 */
+      height:44px; width:auto;          /* 직사각형 로고 대응 */
       object-fit:contain; display:block; /* 비율 유지 */
     }
     .topbar .menu{ display:flex; gap:8px; }
@@ -110,6 +110,24 @@
     .chip.done { display:none; } /* 완료는 아예 숨김(오늘 완료도 숨김) */
 
     .date { font-size:10px; opacity:.9; }
+
+    /* 학생 로그인 선택 모드 표시 */
+    body.login-pick-mode .topbar .menu #btn-student-login.active{
+      background: var(--accent); color:#fff; border-color: var(--accent);
+    }
+    
+    /* 모드가 켜지면 카드가 선택 가능한 느낌 */
+    body.login-pick-mode .grid .card{ 
+      cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(46,125,87,.18) inset;
+    }
+    
+    /* 실제로 선택된 카드 */
+    .grid .card.selected{
+      outline: 3px solid #2e7d57; outline-offset: 2px;
+    }
+
+    
   </style>
 </head>
 <body>
@@ -241,15 +259,6 @@
 
         // 카드 클릭하면 로그인 패널 열리도록 연결
         card.dataset.student = stu.name;          // 선택된 학생 전달용
-        card.tabIndex = 0;                         // 키보드 접근성(Enter/Space)
-        card.style.cursor = 'pointer';        // 마우스 포인터
-        card.addEventListener('click', ()=>{
-          highlightSelectedCard?.(stu.name);       // 선택된 카드 하이라이트(있으면)
-          openLoginPanel?.(stu.name);              // 우측 로그인 패널 열기
-        });
-        card.addEventListener('keydown', (e)=>{
-          if(e.key==='Enter' || e.key===' '){ e.preventDefault(); card.click(); }
-        });
         
         const title = document.createElement('div');
         title.className='title';
@@ -305,6 +314,35 @@
       });
     }
 
+    // ===== 카드 클릭은 "로그인 선택 모드"일 때만 동작 =====
+    (function attachPickHandler(){
+      const grid = document.getElementById('board');
+      if (!grid) return;
+      
+      grid.addEventListener('click', (e) => {
+        if (!loginPickMode) return;                    // ← 모드 OFF면 무시
+        
+        const card = e.target.closest('.card');
+        if (!card || !grid.contains(card)) return;
+        
+        // 선택 표시 갱신
+          document.querySelectorAll('.grid .card.selected')
+            .forEach(el => el.classList.remove('selected'));
+        card.classList.add('selected');
+        
+        // 학생 이름 추출 (data-student 또는 타이틀 텍스트)
+        const name = card.dataset.student ||
+          (card.querySelector('.title')?.textContent?.trim().split(/\s+/).slice(1).join(' ') || '');
+        if (!name) return;
+        
+        // 비밀번호 입력창 열기
+        openLoginPanel(name);
+      });
+    })();
+
+
+
+    
     window.addEventListener('load', renderBoard);
 
     /* ===== 세션 유틸 ===== */
@@ -361,30 +399,32 @@ function confirmStudentLogin(){
     setSession(stu.name);   // 위쪽에 이미 있는 8시간 만료 세션 유틸 사용
     closeLoginPanel();
     // 필요 시 학생 페이지로 이동(or 그대로 유지)
-    // location.href = 'student.html';
+    location.href = 'student.html';
   } else {
     alert('비밀번호가 올바르지 않습니다.');
     input?.focus();
   }
 }
-    // 상단 '학생' 버튼: 선택된 카드가 있으면 그 학생으로 모달 열기
-    // 없으면 보드로 스크롤만 해서 "카드를 먼저 눌러달라"는 제스처.
-    document.getElementById('btn-student-login')?.addEventListener('click', () => {
-      const selected = document.querySelector('.grid .card.selected');
-      if (selected) {
-        openLoginPanel(selected.dataset.student);
-        return;
+
+    // ===== 학생 버튼 토글: 로그인 선택 모드 =====
+    let loginPickMode = false;
+    
+    const btnStudent = document.getElementById('btn-student-login');
+    btnStudent?.addEventListener('click', () => {
+      loginPickMode = !loginPickMode;
+      
+      // 버튼 / 바디 상태 토글
+      btnStudent.classList.toggle('active', loginPickMode);
+      document.body.classList.toggle('login-pick-mode', loginPickMode);
+      
+      // 끌 때는 선택/모달 정리
+      if (!loginPickMode) {
+        document.querySelectorAll('.grid .card.selected')
+          .forEach(el => el.classList.remove('selected'));
+        closeLoginPanel?.();
       }
-      // 선택된 카드가 없으면 보드로 안내
-      const board = document.getElementById('board');
-      board?.scrollIntoView({ behavior:'smooth', block:'start' });
-      // 살짝 강조(0.8초)
-      document.querySelectorAll('.grid .card').forEach(c => {
-        c.style.transition = 'box-shadow .2s';
-        c.style.boxShadow = '0 0 0 3px rgba(46,125,87,.35)';
-        setTimeout(() => { c.style.boxShadow = ''; }, 800);
-      });
     });
+
 
     
     
