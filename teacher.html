@@ -8,6 +8,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css">
 
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr">
+
+  
   <link rel="stylesheet" href="css/common.css">
   <script src="js/common.js" defer></script>
 
@@ -320,7 +324,7 @@
             <button onclick="removeTask(this)">⊖</button>
           </div>
         </div>
-
+        
         <button class="btn-primary" onclick="addTask()">+ 할 일 추가</button>
 
         <label style="display:block; margin-top:10px;">🔁 반복 설정:</label>
@@ -590,6 +594,14 @@
       document.getElementById("task-list").appendChild(div);
     }
     function removeTask(btn) { btn.parentElement.remove(); }
+    
+    // 월요일 시작, 포맷은 기존 코드 그대로 'YYYY-MM-DD'
+    flatpickr("#task-date", {
+      dateFormat: "Y-m-d",
+      defaultDate: new Date(),
+      locale: { firstDayOfWeek: 1 }, // 1 = Monday
+      disableMobile: true            // 모바일에서도 기본 달력 대신 flatpickr 사용
+        });
 
     // ===========================================================
     // 과제 저장 (신규/편집 모드 공용)
