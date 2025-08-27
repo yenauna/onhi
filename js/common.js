@@ -54,6 +54,81 @@
     return map;
   }
 
+    // === UID/V2 저장소 유틸 ===
+  // 개별 과제에 고유 ID를 부여하고, 모든 과제를 하나의 배열 키로 저장
+  function genUID() {
+    return 't_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  // V2 저장 키: teacherTasksV2
+  // 구조: [{ id, date:'YYYY-MM-DD', text, repeat:'none'|'daily'|'mon'..'fri', students:['전체']|['이름',...]}]
+  function getTasks() { return getJSON('teacherTasksV2', []); }
+  function setTasks(arr) { setJSON('teacherTasksV2', arr); }
+
+  // (구버전 → V2) 1회 마이그레이션
+  // - 기존 teacherTasks-YYYY-MM-DD 키들에서 과제들을 잘라 UID 부여 후 V2 배열로 옮김
+  // - doneTasks-학생명 에 저장된 완료키(date@@text)를 UID로 치환
+  // - 끝나면 구버전 키 삭제 + 플래그 기록
+  function migrateToUIDOnce() {
+    if (localStorage.getItem('teacherTasksMigrated') === 'yes') return;
+
+    const v2 = getTasks();
+    const old = [];
+    // teacherTasks-YYYY-MM-DD 전부 수집
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('teacherTasks-')) {
+        const data = getJSON(k, null);
+        if (data && Array.isArray(data.tasks)) {
+          old.push({ key: k, date: k.slice('teacherTasks-'.length), data });
+        }
+      }
+    }
+
+    if (old.length === 0) {
+      localStorage.setItem('teacherTasksMigrated', 'yes');
+      return;
+    }
+
+    // 1) V2로 옮기기
+    const newTasks = [];
+    old.forEach(({ date, data }) => {
+      const { tasks = [], repeat = 'none', students = ['전체'] } = data;
+      tasks.forEach(text => {
+        newTasks.push({ id: genUID(), date, text, repeat, students: students.slice() });
+      });
+    });
+    setTasks(v2.concat(newTasks));
+
+    // 2) 완료 키(date@@text) → UID로 이관
+    const indexByDateText = new Map(); // "YYYY-MM-DD@@text" -> id
+    newTasks.forEach(t => indexByDateText.set(`${t.date}@@${t.text}`, t.id));
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('doneTasks-')) {
+        const store = getJSON(k, {});
+        let changed = false;
+        Object.keys(store).forEach(oldKey => {
+          if (oldKey.includes('@@')) {
+            const uid = indexByDateText.get(oldKey);
+            if (uid) {
+              store[uid] = true;
+              delete store[oldKey];
+              changed = true;
+            }
+          }
+        });
+        if (changed) setJSON(k, store);
+      }
+    }
+
+    // 3) 구버전 키들 삭제
+    old.forEach(({ key }) => localStorage.removeItem(key));
+
+    localStorage.setItem('teacherTasksMigrated', 'yes');
+  }
+
 
   // 전역으로 노출
   Object.assign(w, {
@@ -61,6 +136,7 @@
     getJSON, setJSON, normalizeDate,
     loadStudentsCached, invalidateStudentsCache, loadAllTeacherTasks,
     ensureHolidays,
+    genUID, getTasks, setTasks, migrateToUIDOnce,
   });
 })(window);
 
