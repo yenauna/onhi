@@ -182,6 +182,43 @@
     }
     .calendar thead th{ background:#f9fafb; }
     .calendar td > strong{ display:block; margin-bottom:6px; }
+    
+    /* 요일 헤더 가운데 정렬 + 높이 줄이기 */
+    .calendar thead th{
+      text-align:center;
+      height: 36px;            /* 기존보다 낮게 */
+      padding: 6px 0;          /* 회색칸 높이 축소 */
+      vertical-align:middle;
+    }
+    
+    /* 주말 요일 빨간색 */
+    .calendar thead th.sat,
+    .calendar thead th.sun{
+      color:#d33;              /* 빨간색 */
+      font-weight:600;
+    }
+    
+    /* 날짜 숫자(왼쪽 굵은 숫자) 스타일 */
+    .calendar td > strong{
+      display:inline-block;
+      margin-right:6px;
+    }
+    
+    /* 토/일(weekend), 공휴일, 방학인 날의 '숫자' 빨간색 */
+    .calendar td.weekend > strong,
+    .calendar td.holiday > strong,
+    .calendar td.vacation > strong{
+      color:#d33;
+    }
+    
+    /* 공휴일/방학 라벨 (숫자 옆에 붙는 텍스트) */
+    .calendar .day-label{
+      font-size:12px;
+      font-weight:600;
+      color:#d33;
+      margin-left:4px;
+      white-space:nowrap;
+    }
 
     /* 달력 과제 pill */
     .task-pill{
@@ -279,6 +316,24 @@
       padding:0 14px;
     }
 
+    /* 요일 가운데 정렬 + 높이 줄이기 */
+    .calendar thead th { text-align:center; height: 36px; padding:6px 0; }
+    /* 토/일 & 공휴일/방학 표시용 */
+    .calendar td .day-num { font-weight:600; }
+    .calendar td.sun  .day-num,
+    .calendar td.sat  .day-num { color:#d74b4b; }     /* 주말 빨강 */
+    .calendar td.holiday .day-num,
+    .calendar td.vacation .day-num { color:#d74b4b; } /* 공휴일/방학 빨강 */
+   
+    .badge-holiday, .badge-vacation{
+      display:inline-block; margin-left:6px; font-size:12px;
+      padding:2px 6px; border-radius:8px; background:#ffe6e6; color:#b61d1d;
+    }
+    /* (선택) 토/일 요일 머리글도 빨간색 */
+    .calendar thead th:nth-child(6),
+    .calendar thead th:nth-child(7) { color:#d74b4b; }
+
+    
     
   </style>
 </head>
@@ -363,8 +418,13 @@
         <table>
           <thead>
             <tr>
-              <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
-            </tr>
+                <th class="mon">월</th>
+              <th class="tue">화</th>
+              <th class="wed">수</th>
+              <th class="thu">목</th>
+              <th class="fri">금</th>
+              <th class="sat">토</th>
+              <th class="sun">일</th></tr>
           </thead>
           <tbody id="calendar-body"></tbody>
         </table>
@@ -384,6 +444,18 @@
         <div id="completion-list"></div>
       </div>
     </div>
+    
+    <section style="margin-top:16px;">
+      <h3>휴 관리</h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <input type="text" id="vac-name" placeholder="예: 여름방학" style="flex:1 1 180px;">
+        <input type="date" id="vac-start">
+        <input type="date" id="vac-end">
+        <button class="btn-primary" onclick="addVacation()">추가</button>
+      </div>
+      <div id="vac-list" style="margin-top:10px;"></div>
+    </section>
+
 
     <!-- ===== 학생 관리 ===== -->
     <div id="student-management" style="display:none; margin-top:20px;">
@@ -679,14 +751,23 @@
     // ===========================================================
     // 달력 렌더링 (반복 과제 계산 포함)
     // ===========================================================
-    function renderCalendar() {
+   async function renderCalendar() {
       const tbody = qs("#calendar-body");
       tbody.innerHTML = "";
       calendarRefs = {};
       
       const year  = viewYear;
       const month = viewMonth;
-      
+
+     // === 공휴일 데이터 준비 ===
+     const holidaysMap = await ensureHolidays(year, 'KR'); // {"YYYY-MM-DD": "설날", ...}
+     const vacations = getVacations();                      // [{name,start,end},...]
+
+     const isVacation = (dateStr) => {
+       // dateStr: YYYY-MM-DD
+       return vacations.find(v => v.start <= dateStr && dateStr <= v.end)?.name || null;
+     };
+     
       const firstDay         = new Date(year, month, 1);
       const startDay         = firstDay.getDay();
       const adjustedStartDay = (startDay + 6) % 7;
@@ -736,10 +817,28 @@
       
       for (let day=1; day<=lastDate; day++){
         const dateStr = `${year}-${pad2(month+1)}-${pad2(day)}`;
+
+        const wd = new Date(year, month, day).getDay(); // 0=일, 6=토
+        const isSun = (wd === 0), isSat = (wd === 6);
+        
+        const holName = holidaysMap[dateStr] || null;
+        const vacName = isVacation(dateStr);
+        const badge = holName
+          ? `<span class="badge-holiday">${escapeHTML(holName)}</span>`
+          : (vacName ? `<span class="badge-vacation">${escapeHTML(vacName)}</span>` : '');
+        
+        const cls = [];
+        if (isSun) cls.push('sun');
+        if (isSat) cls.push('sat');
+        if (holName) cls.push('holiday');
+        if (vacName) cls.push('vacation');
+        
         const pills = (instancesMap[dateStr] || []).map((inst, idx) =>
           `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(inst.text)}</div>`
                                                        ).join("");
-        html += `<td><strong>${day}</strong>${pills}</td>`;
+        html += `<td><strong>${day}</strong>
+        ${pills}
+        </td>`;
         if ((adjustedStartDay + day) % 7 === 0) html += "</tr><tr>";
       }
       html += "</tr>";
@@ -1207,6 +1306,49 @@
       selectedOriginDate = null;
       selectedOriginKey = null;
     }
+
+
+    function getVacations(){ return getJSON('vacations', []); }
+    function setVacations(v){ setJSON('vacations', v); }
+    
+    function addVacation(){
+      const name  = qs('#vac-name').value.trim();
+      const start = qs('#vac-start').value;
+      const end   = qs('#vac-end').value;
+      if (!name || !start || !end) { alert('이름/시작/종료 날짜를 모두 입력하세요.'); return; }
+      if (start > end) { alert('시작이 종료보다 뒤입니다.'); return; }
+      
+      const list = getVacations();
+      list.push({ name, start, end });
+      setVacations(list);
+      
+      qs('#vac-name').value=''; qs('#vac-start').value=''; qs('#vac-end').value='';
+      renderVacationList();
+      renderCalendar();
+    }
+    
+    function deleteVacation(idx){
+      const list = getVacations();
+      list.splice(idx,1);
+      setVacations(list);
+      renderVacationList();
+      renderCalendar();
+    }
+    
+    function renderVacationList(){
+      const list = getVacations();
+      const box = qs('#vac-list');
+      if (!list.length){ box.innerHTML = '<div style="color:#666;">등록된 방학이 없습니다.</div>'; return; }
+      box.innerHTML = list.map((v,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+      <div style="flex:1 1 auto;">🏖 ${escapeHTML(v.name)} — ${v.start} ~ ${v.end}</div>
+      <button onclick="deleteVacation(${i})">삭제</button>
+      </div>
+      `).join('');
+    }
+
+window.addEventListener('load', renderVacationList);
+
   </script>
 </body>
 </html>
