@@ -317,7 +317,7 @@
       <!-- 과제 입력 영역 -->
       <section>
         <label>📅 날짜:</label>
-        <input type="date" id="task-date" />
+        <input type="text" id="task-date" inputmode="none" autocomplete="off" />
 
         <div class="task-list" id="task-list">
           <div class="task-input">
@@ -600,9 +600,11 @@
     flatpickr("#task-date", {
       dateFormat: "Y-m-d",
       defaultDate: new Date(),
-      locale: { firstDayOfWeek: 1 }, // 1 = Monday
       disableMobile: true            // 모바일에서도 기본 달력 대신 flatpickr 사용
-        });
+      locale: {                               // ko 로캘 기반 + 월요일 시작
+      ...flatpickr.l10ns.ko, firstDayOfWeek: 1
+    }
+    });
 
     // ===========================================================
     // 과제 저장 (신규/편집 모드 공용)
