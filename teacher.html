@@ -429,6 +429,17 @@
           <tbody id="calendar-body"></tbody>
         </table>
       </section>
+      
+      <section style="margin-top:16px;">
+        <h3>휴일 관리</h3>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <input type="text" id="vac-name" placeholder="예: 여름방학" style="flex:1 1 180px;">
+          <input type="date" id="vac-start">
+          <input type="date" id="vac-end">
+          <button class="btn-primary" onclick="addVacation()">추가</button>
+        </div>
+        <div id="vac-list" style="margin-top:10px;"></div>
+      </section>
 
       <!-- 과제 선택 안내 + 액션 버튼 -->
       <div id="task-action-selected"></div>
@@ -444,17 +455,6 @@
         <div id="completion-list"></div>
       </div>
     </div>
-    
-    <section style="margin-top:16px;">
-      <h3>휴 관리</h3>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <input type="text" id="vac-name" placeholder="예: 여름방학" style="flex:1 1 180px;">
-        <input type="date" id="vac-start">
-        <input type="date" id="vac-end">
-        <button class="btn-primary" onclick="addVacation()">추가</button>
-      </div>
-      <div id="vac-list" style="margin-top:10px;"></div>
-    </section>
 
 
     <!-- ===== 학생 관리 ===== -->
@@ -836,9 +836,11 @@
         const pills = (instancesMap[dateStr] || []).map((inst, idx) =>
           `<div class="task-pill" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(inst.text)}</div>`
                                                        ).join("");
-        html += `<td><strong>${day}</strong>
-        ${pills}
-        </td>`;
+             html += `<td class="${cls.join(' ')}">
+             <strong class="day-num">${day}</strong>
+             ${badge}
+             ${pills}
+             </td>`;
         if ((adjustedStartDay + day) % 7 === 0) html += "</tr><tr>";
       }
       html += "</tr>";
