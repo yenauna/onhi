@@ -232,7 +232,7 @@
       board.innerHTML = '';
 
       const mode = localStorage.getItem('boardMode') || 'view'; // 'view' | 'edit'
-      document.getElementById('mode-pill').textContent = (mode==='edit'?'편집 전용':'보기 전용');
+      document.getElementById('mode-pill').textContent = (mode==='edit'?'편집 가능':'보기 전용');
 
       const students = sortStudents(loadStudents());
       const assigns  = loadAllAssignments();
