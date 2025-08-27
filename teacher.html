@@ -665,6 +665,7 @@
     // 초기화: 첫 화면은 '오늘 할 일'
     // ===========================================================
     window.onload = function () {
+      purgeLegacyDoneKeysForAllStudents();
       showStudentStatus();
     };
 
@@ -746,7 +747,7 @@
     function isDone(studentName, dateStr, taskText) {
       const store = getDoneTasks(studentName) || {};
       const doneKey = makeDoneKey(dateStr, taskText);
-      return store[doneKey] === true || store[taskText] === true;
+      return store[doneKey] === true;
     }
     function setDone(studentName, dateStr, taskText, done) {
       const store = getDoneTasks(studentName) || {};
@@ -1189,16 +1190,6 @@
           if (!assigned) return;
           
           assign.tasks.forEach(task => {
-
-            //레거시 키('과제명'만 저장된 것)를 표준 키로 이주
-            const store = getDoneTasks(stu.name) || {};
-            const legacy = store[task];            // '과제명'만으로 체크된 예전 키
-            const fullKey = `${assign.date}@@${task}`;
-            if (legacy && store[fullKey] !== true) {
-              store[fullKey] = true;
-              delete store[task];
-              setDoneTasks(stu.name, store);
-            }
             
             const done = isDone(stu.name, assign.date, task);
 
@@ -1408,6 +1399,23 @@
       selectedOriginDate = null;
       selectedOriginKey = null;
     }
+
+    // 레거시 완료키( '@@' 가 없는 키 ) 일괄 삭제
+    function purgeLegacyDoneKeysForAllStudents() {
+      const students = (loadStudentsCached?.() || []).map(s => s.name);
+      students.forEach(name => {
+        const store = getDoneTasks(name) || {};
+        let changed = false;
+        Object.keys(store).forEach(k => {
+          if (!k.includes('@@')) { // 날짜 없는 옛 키
+            delete store[k];
+            changed = true;
+          }
+        });
+        if (changed) setDoneTasks(name, store);
+      });
+    }
+
 
 
     function getVacations(){ return getJSON('vacations', []); }
