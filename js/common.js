@@ -33,6 +33,28 @@
     return res;
   };
 
+  // === 공휴일 로딩 & 캐시 ===
+  async function ensureHolidays(year, country = 'KR') {
+    const cacheKey = `holidays:${country}:${year}`;
+    const cached = getJSON(cacheKey, null);
+    if (cached) return cached; // { "YYYY-MM-DD": "설날" ... }
+    
+    // CORS 허용되는 퍼블릭 API 예시 (Nager.Date)
+    const url = `https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`;
+    const res = await fetch(url);
+    if (!res.ok) return {}; // 실패 시 빈 객체
+    const list = await res.json();
+    // YYYY-MM-DD => 이름 맵으로 변환
+    const map = {};
+    list.forEach(h => {
+      // h.date 형식: "2025-09-15"
+      map[h.date] = h.localName || h.name;
+    });
+    setJSON(cacheKey, map);
+    return map;
+  }
+
+
   // 전역으로 노출
   Object.assign(w, {
     qs, qsa, pad2, dayNames, escapeHTML,
@@ -72,3 +94,26 @@ window.addEventListener('load', ()=>{
   const mb = document.getElementById('modeBtn');
   if (mb) mb.addEventListener('click', toggleBoardMode);
 });
+
+async function ensureHolidays(year, country='KR'){
+  const key = `holidays-${country}-${year}`;
+  let map = getJSON(key, null);
+  if (map) return map;
+
+  const url = `https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`;
+  try{
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('holiday fetch failed');
+    const arr = await res.json(); // [{ date: '2025-01-01', localName: '신정', ... }, ...]
+    map = {};
+    (arr || []).forEach(h => {
+      // 날짜 형식은 YYYY-MM-DD 로 그대로 들어옵니다.
+      map[h.date] = h.localName || h.name;
+    });
+    setJSON(key, map);
+  }catch(e){
+    console.warn('ensureHolidays error:', e);
+    map = {}; // 실패해도 빈 맵 반환
+  }
+  return map;
+}
