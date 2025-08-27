@@ -59,7 +59,8 @@
   Object.assign(w, {
     qs, qsa, pad2, dayNames, escapeHTML,
     getJSON, setJSON, normalizeDate,
-    loadStudentsCached, invalidateStudentsCache, loadAllTeacherTasks
+    loadStudentsCached, invalidateStudentsCache, loadAllTeacherTasks,
+    ensureHolidays,
   });
 })(window);
 
@@ -94,26 +95,3 @@ window.addEventListener('load', ()=>{
   const mb = document.getElementById('modeBtn');
   if (mb) mb.addEventListener('click', toggleBoardMode);
 });
-
-async function ensureHolidays(year, country='KR'){
-  const key = `holidays-${country}-${year}`;
-  let map = getJSON(key, null);
-  if (map) return map;
-
-  const url = `https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`;
-  try{
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('holiday fetch failed');
-    const arr = await res.json(); // [{ date: '2025-01-01', localName: '신정', ... }, ...]
-    map = {};
-    (arr || []).forEach(h => {
-      // 날짜 형식은 YYYY-MM-DD 로 그대로 들어옵니다.
-      map[h.date] = h.localName || h.name;
-    });
-    setJSON(key, map);
-  }catch(e){
-    console.warn('ensureHolidays error:', e);
-    map = {}; // 실패해도 빈 맵 반환
-  }
-  return map;
-}
