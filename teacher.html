@@ -328,7 +328,7 @@
     }
 
     /* 요일 가운데 정렬 + 높이 줄이기 */
-    .calendar thead th { text-align:center; height: 36px; padding:6px 0; }
+    . th { text-align:center; height: 36px; padding:6px 0; }
     /* 토/일 & 공휴일/방학 표시용 */
     .calendar td .day-num { font-weight:600; }
     .calendar td.sun  .day-num,
@@ -349,8 +349,42 @@
       box-shadow:none;           /* 그림자 제거 */
     }
     /* (선택) 토/일 요일 머리글도 빨간색 */
-    .calendar thead th:nth-child(6),
+    . th:nth-child(6),
     .calendar thead th:nth-child(7) { color:#d74b4b; }
+    
+    /* ===== 학생 추가 영역 일렬 정렬 & 통일 ===== */
+    :root { --ctrl-h: 36px; }
+    
+    .add-student-row {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:10px;
+      flex-wrap:nowrap;
+    }
+    
+    .add-student-row input {
+      height:var(--ctrl-h);
+      padding:6px 10px;
+      border:2px solid #dcdfe4;
+      border-radius:12px;
+      font:inherit;
+      background:#fff;
+      box-sizing:border-box;
+    }
+    
+    /* 각 입력칸 폭 */
+    #new-student-id { width:72px; text-align:center; }
+    #new-student-name { flex:1 1 200px; min-width:140px; }
+    #new-student-password { width:160px; }
+    
+    /* 추가 버튼 통일 */
+    .add-student-row button {
+      height:var(--ctrl-h);
+      border-radius:12px;
+      padding:0 16px;
+    }
+
 
     
     
@@ -480,11 +514,11 @@
     <div id="student-management" style="display:none; margin-top:20px;">
 
       <!-- 학생 추가 폼 -->
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-        <input type="text" id="new-student-id" placeholder="번호" style="flex:0 0 110px;" />
-        <input type="text" id="new-student-name" placeholder="이름" style="flex:1 1 160px;" />
-        <input type="password" id="new-student-password" placeholder="비밀번호" style="flex:0 0 140px;" />
-        <button class="btn-primary" onclick="addStudent()">추가</button>
+      <div class="add-student-row">
+        <input type="text" id="new-student-id" placeholder="번호">
+        <input type="text" id="new-student-name" placeholder="이름">
+        <input type="password" id="new-student-password" placeholder="비밀번호">
+        <button type="button" class="btn-primary" onclick="addStudent()">추가</button>
       </div>
 
       <!-- 전체 비밀번호 보기 토글 -->
