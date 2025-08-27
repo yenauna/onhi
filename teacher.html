@@ -601,9 +601,7 @@
       dateFormat: "Y-m-d",
       defaultDate: new Date(),
       disableMobile: true            // 모바일에서도 기본 달력 대신 flatpickr 사용
-      locale: {                               // ko 로캘 기반 + 월요일 시작
-      ...flatpickr.l10ns.ko, firstDayOfWeek: 1
-    }
+      locale: {...flatpickr.l10ns.ko, firstDayOfWeek: 1}        // ko 로캘 기반 + 월요일 시작
     });
 
     // ===========================================================
