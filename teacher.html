@@ -385,6 +385,45 @@
       padding:0 16px;
     }
 
+    /* 접근성 숨김 라벨(아이콘만 쓰는 곳) */
+.sr { position: absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+
+/* 두 줄 폼 레이아웃 */
+.task-form { display:flex; flex-direction:column; gap:12px; }
+
+/* 각 줄 공통 */
+.task-row {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;           /* 좁은 화면에서 자동 줄바꿈 */
+}
+
+/* 1줄: 날짜는 짧게, 할일 입력은 길게 */
+.task-row.row-1 #task-date { flex:0 0 180px; height:40px; }
+.task-row.row-1 .task-list.inline { flex:1 1 auto; min-width:260px; }
+
+/* task-list 내부 입력행은 세로로 쌓임 */
+.task-list.inline { display:flex; flex-direction:column; gap:8px; }
+.task-input { display:flex; gap:8px; }
+.task-input input { flex:1 1 auto; height:40px; }
+.task-input button { height:40px; padding:0 12px; }
+
+/* 2줄: select 크기 통일 */
+.task-row.row-2 select { height:40px; min-width:160px; }
+
+/* 버튼 통일 */
+.task-row button { height:40px; padding:0 14px; border-radius:14px; border:1px solid var(--card-line); }
+.btn-secondary { background:#f3f4f6; }
+.btn-primary   { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 12px 28px var(--btn-shadow); }
+
+/* 모바일에서 1열로 자연스럽게 떨어지도록 */
+@media (max-width: 560px){
+  .task-row.row-1 #task-date { flex:0 0 140px; }
+  .task-row.row-2 { gap:10px; }
+}
+
+
 
     
     
@@ -423,40 +462,48 @@
     <div id="task-management" style="display:none; margin-top: 8px;">
       
       <!-- 과제 입력 영역 -->
-      <section>
-        <label>📅 날짜:</label>
-        <input type="text" id="task-date" inputmode="none" autocomplete="off" />
-
-        <div class="task-list" id="task-list">
-          <div class="task-input">
-            <input type="text" placeholder="할 일 입력" />
-            <button onclick="removeTask(this)">⊖</button>
+      <section class="task-form">
+        <!-- 1줄: 날짜 + 할 일 입력(길게) + 할 일 추가 버튼 -->
+        <div class="task-row row-1">
+          <label for="task-date" class="sr">📅 날짜</label>
+          <input type="text" id="task-date" inputmode="none" autocomplete="off" />
+          
+          <div id="task-list" class="task-list inline">
+            <div class="task-input">
+              <input type="text" placeholder="할 일 입력" />
+              <button type="button" onclick="removeTask(this)">⊖</button>
+            </div>
           </div>
+          
+          <button type="button" class="btn-secondary" onclick="addTask()">+ 할 일 추가</button>
         </div>
         
-        <button class="btn-primary" onclick="addTask()">+ 할 일 추가</button>
-
-        <label style="display:block; margin-top:10px;">🔁 반복 설정:</label>
-        <select id="repeat">
-          <option value="none">없음</option>
-          <option value="daily">매일</option>
-          <option value="mon">매주 월요일</option>
-          <option value="tue">매주 화요일</option>
-          <option value="wed">매주 수요일</option>
-          <option value="thu">매주 목요일</option>
-          <option value="fri">매주 금요일</option>
-        </select>
-
-        <label style="display:block; margin-top:10px;">👥 대상 선택:</label>
-        <select id="target">
-          <option value="all">전체 학생</option>
-          <option value="selected">특정 학생 지정</option>
-        </select>
-
-        <div id="student-checkboxes" class="student-checkboxes" style="display: none;"></div>
-
-        <button class="btn-primary" style="margin-top:10px;" onclick="saveAssignment()">💾 저장하기</button>
+        <!-- 2줄: 반복 설정 + 대상 선택 + 저장 -->
+        <div class="task-row row-2">
+          <label for="repeat">🔁 반복 설정</label>
+          <select id="repeat">
+            <option value="none">없음</option>
+            <option value="daily">매일</option>
+            <option value="mon">매주 월요일</option>
+            <option value="tue">매주 화요일</option>
+            <option value="wed">매주 수요일</option>
+            <option value="thu">매주 목요일</option>
+            <option value="fri">매주 금요일</option>
+          </select>
+          
+          <label for="target">👥 대상 선택</label>
+          <select id="target">
+            <option value="all">전체 학생</option>
+            <option value="selected">특정 학생 지정</option>
+          </select>
+          
+          <button type="button" class="btn-primary" onclick="saveAssignment()">💾 저장하기</button>
+        </div>
+        
+        <!-- 특정 학생 지정 체크박스 영역 (행 아래) -->
+        <div id="student-checkboxes" class="student-checkboxes" style="display:none;"></div>
       </section>
+
 
       <!-- 달력 -->
       <section class="calendar" style="margin-top:20px;">
