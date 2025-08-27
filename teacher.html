@@ -326,8 +326,16 @@
     .calendar td.vacation .day-num { color:#d74b4b; } /* 공휴일/방학 빨강 */
    
     .badge-holiday, .badge-vacation{
-      display:inline-block; margin-left:6px; font-size:12px;
-      padding:2px 6px; border-radius:8px; background:#ffe6e6; color:#b61d1d;
+      display:inline-block;
+      margin-left:6px;
+      font-size:12px;
+      padding:0;                 /* 여백 제거 */
+      border-radius:0;           /* 둥근 모서리 제거 */
+      background:transparent;    /* 배경 제거 */
+      color:#d33;                /* 글자만 빨간색 */
+      font-weight:600;           /* 조금 굵게(선택) */
+      border:none;               /* 혹시 모를 테두리 제거 */
+      box-shadow:none;           /* 그림자 제거 */
     }
     /* (선택) 토/일 요일 머리글도 빨간색 */
     .calendar thead th:nth-child(6),
