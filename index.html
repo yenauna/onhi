@@ -325,35 +325,7 @@ function isSessionValid(){
 })();
 
 
-
-/* ===== 카드 클릭 시 패널 열기(이벤트 델리게이션) ===== */
-/* index.html의 학생 카드 구조:
-   <div class="card"><div class="title">51 홍길동</div> ... </div>
-   이름은 title 텍스트의 "번호 이름" 중 이름만 추출
-*/
-(function attachCardLogin(){
-  const grid = document.getElementById('board') || document.querySelector('#student-status-list');
-  if (!grid) return;
-
-  grid.addEventListener('click', (e)=>{
-    const card = e.target.closest('.card');
-    if (!card || !grid.contains(card)) return;
-
-    const title = card.querySelector('.title')?.textContent?.trim() || '';
-    const name  = title.split(/\s+/).slice(1).join(' ');
-    if (!name) return;
-
-    openLoginPanel(name);
-  });
-})();
     
-// 상단바 '학생' 클릭 시 팝업 열기 (이동 X)
-  document.getElementById('btn-student-login')?.addEventListener('click', (e)=>{
-    e.preventDefault();
-    openLoginPanel();       // 이미 만들어둔 함수 사용 (선택 학생 없이 열기)
-  });
-
-
     
 // 카드 하이라이트: 선택된 학생 카드만 selected 클래스
 function highlightSelectedCard(name){
