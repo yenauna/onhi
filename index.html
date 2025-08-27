@@ -367,6 +367,24 @@ function confirmStudentLogin(){
     input?.focus();
   }
 }
+    // 상단 '학생' 버튼: 선택된 카드가 있으면 그 학생으로 모달 열기
+    // 없으면 보드로 스크롤만 해서 "카드를 먼저 눌러달라"는 제스처.
+    document.getElementById('btn-student-login')?.addEventListener('click', () => {
+      const selected = document.querySelector('.grid .card.selected');
+      if (selected) {
+        openLoginPanel(selected.dataset.student);
+        return;
+      }
+      // 선택된 카드가 없으면 보드로 안내
+      const board = document.getElementById('board');
+      board?.scrollIntoView({ behavior:'smooth', block:'start' });
+      // 살짝 강조(0.8초)
+      document.querySelectorAll('.grid .card').forEach(c => {
+        c.style.transition = 'box-shadow .2s';
+        c.style.boxShadow = '0 0 0 3px rgba(46,125,87,.35)';
+        setTimeout(() => { c.style.boxShadow = ''; }, 800);
+      });
+    });
 
     
     
