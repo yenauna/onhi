@@ -77,7 +77,7 @@ function applyBoardModeToButton(){
   if (!btn) return;
   const mode = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
   const isEdit = mode === 'edit';
-  btn.textContent = isEdit ? '편집전용' : '보기전용';
+  btn.textContent = isEdit ? '편집가능' : '보기전용';
   btn.setAttribute('aria-pressed', String(isEdit));
   btn.classList.toggle('is-edit', isEdit);
 }
