@@ -643,21 +643,27 @@
         return;
       }
 
+      
+      // === 기존 데이터 병합 ===
       const key = "teacherTasks-" + date;
       const existingRaw = localStorage.getItem(key);
       let existing = null;
       if (existingRaw) { try { existing = JSON.parse(existingRaw); } catch { existing = null; } }
 
+      // 과제는 합치되, 학생 목록은 선택 모드에 따라 다르게 처리
       let mergedTasks = [];
       let mergedStudents = [];
       if (existing) {
         mergedTasks = Array.from(new Set(existing.tasks.concat(newTasks)));
-        mergedStudents = Array.from(new Set(existing.students.concat(students)));
-      } else {
-        mergedTasks = newTasks;
-        mergedStudents = students;
-      }
-
+       if (target === "all") {
+         // 전체로 저장하는 경우: 학생 목록은 무조건 ["전체"]로 덮어쓰기
+         mergedStudents = ["전체"];
+       } else {
+         // 특정 학생 지정: 기존 목록에서 "전체"는 제거하고 선택한 학생과 합치기
+         const base = (existing.students || []).filter(s => s !== "전체");
+         mergedStudents = (target === "all") ? ["전체"] : students;
+       }
+        
       const data = { tasks: mergedTasks, repeat, students: mergedStudents };
       localStorage.setItem(key, JSON.stringify(data));
       alert("저장되었습니다!");
