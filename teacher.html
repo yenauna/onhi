@@ -728,7 +728,6 @@
     // ===========================================================
     window.onload = function () {
       if (typeof migrateToUIDOnce === 'function') migrateToUIDOnce();
-      purgeLegacyDoneKeysForAllStudents();
       showStudentStatus();
     };
 
@@ -1591,21 +1590,66 @@ function deleteTaskClicked() {
       selectedUid = null;
     }
 
-    // 레거시 완료키( '@@' 가 없는 키 ) 일괄 삭제
+    // 레거시 완료키만 정리 (UID는 절대 삭제하지 않음)
     function purgeLegacyDoneKeysForAllStudents() {
       const students = (loadStudentsCached?.() || []).map(s => s.name);
+      const UID_RE = /^t_[0-9a-z]+_[0-9a-z]+$/i; // genUID() 패턴
+
       students.forEach(name => {
         const store = getDoneTasks(name) || {};
         let changed = false;
+
         Object.keys(store).forEach(k => {
-          if (!k.includes('@@')) { // 날짜 없는 옛 키
+          const isUID = UID_RE.test(k);
+          const isLegacy = k.includes('@@');              // 예: "YYYY-MM-DD@@과제명"
+          const looksPlainText = !isUID && !k.includes('@@'); // 예: "과제명" 단독 키
+          
+          if (isLegacy || looksPlainText) {               // 레거시만 지움
             delete store[k];
             changed = true;
           }
         });
+
         if (changed) setDoneTasks(name, store);
       });
     }
+
+
+    // 학생별 doneTasks의 "YYYY-MM-DD@@과제명" -> UID 로 이전
+function migrateLegacyDoneToUIDOnce() {
+  const FLAG = 'migratedDoneToUID';
+  if (localStorage.getItem(FLAG) === 'yes') return;
+
+  const all = (typeof getTasks === 'function') ? getTasks() : [];
+  if (!Array.isArray(all) || !all.length) { localStorage.setItem(FLAG, 'yes'); return; }
+
+  // 빠른 매칭용 맵: "date@@text" -> uid
+  const byDateText = new Map();
+  all.forEach(t => byDateText.set(`${t.date}@@${t.text}`, t.id));
+
+  const students = (loadStudentsCached?.() || []).map(s => s.name);
+  students.forEach(name => {
+    const store = getDoneTasks(name) || {};
+    let changed = false;
+
+    Object.entries(store).forEach(([k, v]) => {
+      if (v === true && k.includes('@@')) {
+        const uid = byDateText.get(k);
+        if (uid) {
+          store[uid] = true;  // UID로 이전
+          delete store[k];
+          changed = true;
+        }
+      }
+    });
+
+    if (changed) setDoneTasks(name, store);
+  });
+
+  localStorage.setItem(FLAG, 'yes');
+}
+
+    
 
 
 
@@ -1725,6 +1769,7 @@ function deleteTaskClicked() {
       // 필요 시 여기에서 teacherTasks-* 를 읽어 변환(push {id,date,text,repeat,students,...}))
       setJSON('_migrated_v2', true);
     }
+    if (typeof migrateLegacyDoneToUIDOnce === 'function') migrateLegacyDoneToUIDOnce();
 
 
     
