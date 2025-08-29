@@ -57,13 +57,19 @@
     // === UID/V2 저장소 유틸 ===
   // 개별 과제에 고유 ID를 부여하고, 모든 과제를 하나의 배열 키로 저장
   function genUID() {
-    return 't_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const ts  = Date.now().toString(36);
+    const rnd = Math.random().toString(36).slice(2, 10);
+    return `t_${ts}_${rnd}`;
   }
 
   // V2 저장 키: teacherTasksV2
   // 구조: [{ id, date:'YYYY-MM-DD', text, repeat:'none'|'daily'|'mon'..'fri', students:['전체']|['이름',...]}]
-  function getTasks() { return getJSON('teacherTasksV2', []); }
-  function setTasks(arr) { setJSON('teacherTasksV2', arr); }
+  function getTasks(){
+    return getJSON('tasksV2', []); // [{ id, date, text, repeat, students, type, desc, repeatStart, repeatEnd }]
+  }
+  function setTasks(arr){
+    setJSON('tasksV2', Array.isArray(arr) ? arr : []);
+  }
 
   // (구버전 → V2) 1회 마이그레이션
   // - 기존 teacherTasks-YYYY-MM-DD 키들에서 과제들을 잘라 UID 부여 후 V2 배열로 옮김
