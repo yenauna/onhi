@@ -195,6 +195,19 @@
     .task-pill.pending{ background:#f6c1c1; border-color:#e9b3b3; }
     .task-pill.done{ background:#fff; border-color:#dfe3e6; }
 
+    /* 일정(교사 캘린더): 배경 없음, 검은 글씨 */
+    .event-text{
+      background:transparent;
+      border:none;
+      padding:0;
+      margin-top:6px;
+      font:inherit;
+      color:#111;          /* 검은 글씨 */
+      text-decoration:underline;
+      cursor:pointer;
+    }
+    .event-text:hover{ opacity:.8; }
+
     
     /* ================================
        달력 스타일
@@ -1058,22 +1071,31 @@
     if (vacName) cls.push('vacation');
 
     const pills = (instancesMap[dateStr] || []).map((inst, idx) => {
-  // 완료율 계산을 위해 원본 태스크 조회
   const t = tasks.find(x => x.id === inst.id);
+  if (!t) return '';
 
-  // 대상 학생 목록
+  // 일정: 배경 없이 검은 글씨 링크 느낌으로
+  if (t.type === 'event') {
+    return `<button class="event-text" type="button" onclick="selectTask('${dateStr}', ${idx})">
+              ${escapeHTML(inst.text)}
+            </button>`;
+  }
+
+  // (과제/도전은 기존 로직 유지)
   let assignedNames = getStudentsSorted().map(s=>s.name);
-  if (t && !t.students.includes('전체')) {
+  if (!t.students.includes('전체')) {
     const set = new Set(t.students);
     assignedNames = assignedNames.filter(n => set.has(n));
   }
-
-  // 한 명이라도 미완료가 있으면 pending
   const anyIncomplete = assignedNames.some(name => !isDone(name, inst.id));
-  const cls = anyIncomplete ? 'task-pill pending' : 'task-pill done';
+  const cls =
+    t.type === 'challenge'
+      ? (anyIncomplete ? 'task-pill challenge-pill pending' : 'task-pill challenge-pill done')
+      : (anyIncomplete ? 'task-pill pending' : 'task-pill done');
 
   return `<div class="${cls}" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(inst.text)}</div>`;
 }).join("");
+
 
 
     html += `<td class="${cls.join(' ')}">
@@ -1225,46 +1247,63 @@ function deleteTaskClicked() {
     // 달력: 과제 선택 시 상태 갱신
     // ===========================================================
     function selectTask(dateStr, idx) {
-  selectedDate = dateStr;
-  selectedUid = null;
+      selectedDate = dateStr;
+      selectedUid = null;
 
-  const uids = calendarRefs[dateStr] || [];
-  const uid  = uids[idx];
+      const uids = calendarRefs[dateStr] || [];
+      const uid  = uids[idx];
+      
+      const $btns     = document.getElementById('task-action-buttons');
+      const $selected = document.getElementById('task-action-selected');
+      const $compBox  = document.getElementById('task-completion');
 
-  const $btns     = document.getElementById('task-action-buttons');
-  const $selected = document.getElementById('task-action-selected');
-  const $compBox  = document.getElementById('task-completion');
+      if (!uid) {
+        if ($btns)     $btns.style.display = 'none';
+        if ($compBox)  $compBox.style.display = 'none';
+        if ($selected) $selected.textContent = "";
+        return;
+      }
 
-  if (!uid) {
-    if ($btns)     $btns.style.display = 'none';
-    if ($compBox)  $compBox.style.display = 'none';
-    if ($selected) $selected.textContent = "";
-    return;
+      const all = (typeof getTasks === 'function') ? getTasks() : [];
+      const task = all.find(t => t.id === uid);
+      if (!task) {
+        if ($btns)     $btns.style.display = 'none';
+        if ($compBox)  $compBox.style.display = 'none';
+        if ($selected) $selected.textContent = "";
+        return;
+      }
+      selectedUid = uid;
+
+if ($selected) $selected.textContent = `선택: ${dateStr}`;  // 제목 영역은 날짜만
+
+// 일정은 설명만 보여주기
+if (task.type === 'event') {
+  if ($compBox) {
+    $compBox.style.display = 'block';
+    // 설명만 출력
+    const box = document.getElementById('completion-list');
+    if (box) {
+      const desc = task.desc?.trim() ? escapeHTML(task.desc.trim()) : '설명 없음';
+      box.innerHTML = `
+        <h4 style="margin:0 0 8px;">📣 ${escapeHTML(task.text)}</h4>
+        <div style="color:#444; line-height:1.6;">${desc.replace(/\n/g,'<br>')}</div>
+      `;
+    }
   }
-
-  const all = (typeof getTasks === 'function') ? getTasks() : [];
-  const task = all.find(t => t.id === uid);
-  if (!task) {
-    if ($btns)     $btns.style.display = 'none';
-    if ($compBox)  $compBox.style.display = 'none';
-    if ($selected) $selected.textContent = "";
-    return;
-  }
-
-  selectedUid = uid;
-
-  if ($selected) $selected.textContent = `선택: ${dateStr} — ${task.text}`;
-
-  if (typeof renderTaskCompletion === 'function') {
-    renderTaskCompletion(uid);
-  }
-  if ($compBox) $compBox.style.display = 'block';
-  if ($btns) {
-    $btns.style.display = 'flex';
-    const parent = $compBox?.parentNode;
-    if (parent && $compBox) parent.insertBefore($btns, $compBox.nextSibling);
-  }
+  if ($btns) $btns.style.display = 'flex';
+  return;
 }
+
+// (과제/도전 기존 로직)
+if (typeof renderTaskCompletion === 'function') renderTaskCompletion(uid);
+if ($compBox) $compBox.style.display = 'block';
+if ($btns) {
+  $btns.style.display = 'flex';
+  const parent = $compBox?.parentNode;
+  if (parent && $compBox) parent.insertBefore($btns, $compBox.nextSibling);
+}
+
+    }
 
 
     // ===========================================================
