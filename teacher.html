@@ -874,73 +874,83 @@
     // 과제 저장 (신규/편집 모드 공용)
     // ===========================================================
     function saveAssignment() {
-      const baseDate = document.getElementById("task-date").value;
-      if (!date) { alert("과제 날짜를 선택하세요."); return; }
+  // 기본 값들 읽기
+  const type    = document.getElementById("task-type")?.value || "assignment"; // event | assignment | challenge
+  const repeat  = document.getElementById("repeat").value;                     // none | daily | mon..fri
+  const target  = document.getElementById("target").value;                     // all | selected
+  const desc    = (document.getElementById("task-desc")?.value || "").trim();
 
-      const type    = document.getElementById("task-type")?.value || 'assignment';
-      const repeat  = document.getElementById("repeat").value;
-      const target  = document.getElementById("target").value;
-      const desc    = (document.getElementById('task-desc')?.value || '').trim();
+  // 할 일들 수집
+  const newTasks = Array
+    .from(document.querySelectorAll("#task-list input"))
+    .map(i => i.value.trim())
+    .filter(Boolean);
+  if (newTasks.length === 0) { alert("과제를 하나 이상 입력하세요."); return; }
 
-      const newTasks = Array
-        .from(document.querySelectorAll("#task-list input"))
-        .map(i => i.value.trim())
-        .filter(t => t !== "");
-      if (newTasks.length === 0) { alert("과제를 하나 이상 입력하세요."); return; }
+  // 대상 학생 계산 (일정=전체 고정)
+  let students = [];
+  if (type === "event") {
+    students = ["전체"];
+  } else if (target === "selected") {
+    students = Array.from(document.querySelectorAll("#student-selector .student-card.is-selected"))
+      .map(el => el.dataset.name);
+    if (students.length === 0) { alert("학생을 하나 이상 선택하세요."); return; }
+  } else {
+    students = ["전체"];
+  }
 
-      // 대상 학생 계산
-      let students = [];
-      if (type === 'event') {
-        students = ["전체"];
-      } else if (target === "selected") {
-        students = Array.from(document.querySelectorAll('#student-selector .student-card.is-selected'))
-          .map(el => el.dataset.name);
-        if (students.length === 0) { alert("학생을 하나 이상 선택하세요."); return; }
-      } else {
-        students = ["전체"];
-   }
-  
-      // 날짜/반복/범위
-      let saveDate = baseDate || ""; // 기본 단일 날짜
-      let repeatStart = "", repeatEnd = "";
-      if (repeat !== "none"){
-        repeatStart = document.getElementById('task-start')?.value || "";
-        repeatEnd   = document.getElementById('task-end')?.value || "";
-        if (!repeatStart){ alert("반복 시작일을 선택하세요."); return; }
-        // 저장상 '원본키' 용도로 시작일을 date에 둠
-        saveDate = repeatStart;
-      }
+  // 날짜/반복
+  const baseDateInput = document.getElementById("task-date");
+  const baseDate = baseDateInput ? baseDateInput.value : "";
 
-      // 타입별 대상(위에서 계산한 students), 설명 desc, 타입 type 포함해 저장
-      const all = getTasks();
-      newTasks.forEach(text => {
-        all.push({
-          id: genUID(),
-          type,               // 'event' | 'assignment' | 'challenge'
-          date: saveDate,     // 단일/반복 시작일
-          text,
-          desc,               // (선택) 설명
-          repeat,             // 'none' | 'daily' | 'mon'...
-          repeatStart: repeatStart || null,
-          repeatEnd:   repeatEnd   || null,
-          students: students.slice()
-        });
-      });
-      setTasks(all);
+  let saveDate = "";              // 저장용 대표 날짜
+  let repeatStart = "", repeatEnd = "";
 
+  if (repeat !== "none") {
+    repeatStart = document.getElementById("task-start")?.value || "";
+    repeatEnd   = document.getElementById("task-end")?.value || "";
+    if (!repeatStart) { alert("반복 시작일을 선택하세요."); return; }
+    saveDate = repeatStart;       // 반복의 대표 날짜는 '시작일'
+  } else if (type !== "challenge") {
+    // 반복 없음 + 도전 아님(=일정/과제) → 날짜 필수
+    if (!baseDate) { alert("과제 날짜를 선택하세요."); return; }
+    saveDate = baseDate;
+  } else {
+    // challenge: 날짜 없이 저장
+    saveDate = "";
+  }
 
+  // 저장
+  const all = (typeof getTasks === "function") ? getTasks() : [];
+  newTasks.forEach(text => {
+    all.push({
+      id: (typeof genUID === "function") ? genUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2)),
+      type,                 // event | assignment | challenge
+      date: saveDate,       // 반복이면 시작일, 도전이면 빈 문자열
+      text,
+      desc,                 // 선택 설명
+      repeat,               // none | daily | mon..fri
+      repeatStart: repeatStart || null,
+      repeatEnd:   repeatEnd   || null,
+      students: students.slice()
+    });
+  });
+  (typeof setTasks === "function") ? setTasks(all) : localStorage.setItem("tasksV2", JSON.stringify(all));
 
-      alert("저장되었습니다!");
-      clearTaskForm();
-      renderCalendar();
-      renderStudentStatus();
+  // 폼 리셋: 입력값/설명/학생 선택/반복범위
+  document.querySelectorAll("#task-list input[type='text']").forEach(i => i.value = "");
+  const ta = document.getElementById("task-desc"); if (ta) ta.value = "";
+  document.querySelectorAll("#student-selector .student-card.is-selected").forEach(el => el.classList.remove("is-selected"));
+  if (repeat !== "none") {
+    const s = document.getElementById("task-start"); if (s) s.value = "";
+    const e = document.getElementById("task-end");   if (e) e.value = "";
+  }
 
-      function clearTaskForm(){
-        document.querySelectorAll('#task-list input[type="text"]').forEach(i=> i.value = "");
-        const ta = document.getElementById('task-desc');
-        if (ta) ta.value = "";
-      }
-    }
+  alert("저장되었습니다!");
+  renderCalendar?.();
+  renderStudentStatus?.();
+}
+
 
 
     // ===========================================================
@@ -1415,32 +1425,45 @@ function deleteTaskClicked() {
 
 
     // '오늘 할 일' 학생 칩 클릭 델리게이션
-     window.addEventListener('load', () => {
-       const container = document.getElementById('student-status-list');
-       if (!container) return;
-      
-      // rAF 기반 재렌더 스로틀러 (중복 호출 억제)
-      let raf = null;
-      const schedule = () => {
-        if (raf) return;
-        raf = requestAnimationFrame(() => { raf = null; renderStudentStatus(); });
-      }
-      
-        container.addEventListener('click', (e) => {
-          const chip = e.target.closest('.student-chip');
-          if (!chip || !container.contains(chip)) return;
-          
-          const student = chip.dataset.student;
-          const uid     = chip.dataset.uid;
-          const nowIsDone = !chip.classList.contains('missed');
-          
-          // ✅ UID 토글
-          setDone(student, uid, !nowIsDone);
-          chip.classList.toggle('missed', nowIsDone);
-          
-          schedule(); // 렌더 요청 (여러 번 눌러도 1프레임에 1회만)
-        }, false);
-    })();
+    // ✅ '오늘 할 일' 칩 클릭 + 초기 동기화
+window.addEventListener('load', () => {
+  const container = document.getElementById('student-status-list');
+  if (!container) return;
+
+  // rAF 기반 재렌더 스로틀러
+  let raf = null;
+  const schedule = () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => { raf = null; renderStudentStatus(); });
+  };
+
+  // ✅ 초기 진입 시 한 번 UI 상태 맞추기 (완료/미완료 복원)
+  schedule();
+
+  // 클릭 토글 → 완료/미완료 저장 + 재렌더
+  container.addEventListener('click', (e) => {
+    const chip = e.target.closest('.student-chip');
+    if (!chip || !container.contains(chip)) return;
+
+    const student  = chip.dataset.student;
+    const uid      = chip.dataset.uid;
+    const nowIsDone = !chip.classList.contains('missed');
+
+    setDone(student, uid, !nowIsDone);           // ✅ UID 기준 저장
+    chip.classList.toggle('missed', nowIsDone);  // 즉시 반영
+    schedule();                                   // 큐에 재렌더
+  }, false);
+
+  // (선택) 다른 탭/창에서 변경되면 갱신
+  window.addEventListener('storage', (e) => {
+    if (!e.key) return;
+    if (e.key.startsWith('doneTasks-') || e.key === 'tasksV2') schedule();
+  });
+
+  // (선택) 같은 탭 내 다른 코드에서 변경 시 재렌더를 원하면 아래 커스텀 이벤트를 발행하고 듣기
+  window.addEventListener('tasks:updated', schedule);
+  window.addEventListener('students:updated', schedule);
+});
 
 
     // ===========================================================
