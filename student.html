@@ -218,107 +218,143 @@
     const day = dayNames[d.getDay()];
     return `${month}월 ${date}일 (${day})`;
   }
-  
-  // 공통 헬퍼 사용
-  function getDoneTasks(student) { return getJSON("doneTasks-" + student, {}); }
-  function setDoneTasks(student, doneTasks) { setJSON("doneTasks-" + student, doneTasks); }
-  function makeTaskKey(dateStr, taskText){ return `${dateStr}@@${taskText}`; }
-  
-  function getAllAssignments() {
-    // 공통: teacherTasks-* 전부 한 번에 로드
-    const originals = loadAllTeacherTasks();
-    // 학생 화면에서 필요한 필드(date, tasks)만 매핑
-    return originals.map(({ dateKey, data }) => ({
-      date: dateKey,
-      tasks: data?.tasks || []
-    }));
+
+
+  /* -------- V2 저장소 -------- */
+  // teacher가 teacherTasksV2 키로 저장 중이면 그걸 우선, 없으면 tasksV2를 읽음
+  function getTasks(){ return getJSON('teacherTasksV2', []) || getJSON('tasksV2', []); }
+
+  // UID 기반 완료 저장소
+  function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
+  function setDoneStore(name, obj){ setJSON('doneTasks-'+name, obj || {}); }
+
+  // UID 기반 완료 체크/저장
+  function isDone(name, uid){
+    const s = getDoneStore(name);
+    return s[uid] === true;
+  }
+  function setDone(name, uid, done){
+    const s = getDoneStore(name);
+    if (done) s[uid] = true; else delete s[uid];
+    setDoneStore(name, s);
   }
 
+
+
+const pad2 = (n)=> String(n).padStart(2,'0');
+
+function buildInstancesUpTo(dateLimit /* Date */){
+  const tasks = getTasks();  // [{id,type,date,text,repeat,repeatStart,repeatEnd,students}]
+  const limit0 = normalizeDate(dateLimit);
+  const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+  const out = [];
+
+  const push = (t, dObj) => {
+    const y=dObj.getFullYear(), m=dObj.getMonth()+1, dd=dObj.getDate();
+    out.push({
+      uid: t.id,
+      text: t.text,
+      date: `${y}-${pad2(m)}-${pad2(dd)}`,
+      dateObj: new Date(dObj),
+      students: t.students || ['전체']
+    });
+  };
+
+  tasks.forEach(t=>{
+    if (t.type === 'event' || t.type === 'challenge') return;
+
+    const base = normalizeDate(t.repeatStart || t.date);
+    const end  = t.repeatEnd ? normalizeDate(t.repeatEnd) : limit0;
+    const rpt  = t.repeat || 'none';
+
+    if (rpt === 'daily'){
+      for (let cur=new Date(base); cur<=limit0 && cur<=end; cur.setDate(cur.getDate()+1)){
+        push(t, cur);
+      }
+    } else if (dayMap[rpt] != null){
+      const targetDow = dayMap[rpt];
+      const cur = new Date(base);
+      while (cur.getDay() !== targetDow) cur.setDate(cur.getDate()+1);
+      for (; cur<=limit0 && cur<=end; cur.setDate(cur.getDate()+7)){
+        push(t, cur);
+      }
+    } else {
+      if (!isNaN(base) && base <= limit0) push(t, base);
+    }
+  });
+
+  out.sort((a,b)=> b.dateObj - a.dateObj); // 최근일 우선
+  return out;
+}
+
+
+
+
+  
+  
+  // 공통 헬퍼 사용  
   function renderTasks() {
-    todoContainer.innerHTML = "";
-    const doneTasks = getDoneTasks(currentStudent);
-    const assignments = getAllAssignments();
+  todoContainer.innerHTML = "";
 
-    const today0 = normalizeDate(new Date());
+  const today0 = normalizeDate(new Date());
+  const currDate0 = normalizeDate(currentDate);
+  todayDate.textContent = displayDate(currentDate);
 
-    const currDateStr = formatDate(currentDate);
+  const instances = buildInstancesUpTo(currentDate); // currentDate까지의 인스턴스
+  const allTasks  = getTasks();                      // 대상 필터용
 
-    todayDate.textContent = displayDate(currentDate);
+  instances.forEach(inst=>{
+    const t = allTasks.find(x=> x.id === inst.uid);
+    if (!t) return;
 
-    assignments
-      .filter(a => {
-        const taskDate = normalizeDate(a.date);
-        const currDate0 = normalizeDate(currentDate);
-        return taskDate <= currDate0;
-      })
-      .forEach(({date, tasks}) => {
-        const taskDate = normalizeDate(date);
-        const isPast = taskDate < today0;
+    // 대상 학생 필터
+    const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
+    if (!assigned) return;
 
-        tasks.forEach(taskName => {
-          const doneKey = makeTaskKey(date, taskName); // date는 forEach 상단에 있는 변수
-          const done = (doneTasks[doneKey] === true) || (doneTasks[taskName] === true);
+    const done = isDone(currentStudent, inst.uid);
+    const isPast = inst.dateObj < today0;
 
-           // 레거시 키 마이그레이션
-          if (doneTasks[taskName] === true && doneTasks[doneKey] !== true) {
-          doneTasks[doneKey] = true;
-          delete doneTasks[taskName];
-          setDoneTasks(currentStudent, doneTasks);
-          }
+    // 과거 + 완료는 숨김
+    if (done && isPast) return;
 
+    const box = document.createElement('div');
+    box.className = "task-box" + (done ? " done" : "");
 
-          if (done && isPast) {
-            return;
-          }
+    // 날짜 라벨
+    const isToday = inst.dateObj.getTime() === currDate0.getTime();
+    const dayNames = ['일','월','화','수','목','금','토'];
+    const labelText = isToday
+      ? '오늘'
+      : `${inst.dateObj.getMonth()+1}월 ${inst.dateObj.getDate()}일 (${dayNames[inst.dateObj.getDay()]})`;
 
-        const box = document.createElement("div");
-        box.className = "task-box" + (done ? " done" : "");
- 
-        // 날짜 계산
-        const currDate0 = new Date(currentDate); currDate0.setHours(0,0,0,0);
-        const isToday = taskDate.getTime() === currDate0.getTime();
+    box.innerHTML = `
+      <span class="task-name">${escapeHTML(inst.text)}</span>
+      <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
+    `;
 
-        // 날짜 라벨: 오늘이면 '오늘', 아니면 '8월 24일 (일)' 형식
-        const dayNames = ['일','월','화','수','목','금','토'];
-        const labelText = isToday
-          ? '오늘'
-          : `${taskDate.getMonth()+1}월 ${taskDate.getDate()}일 (${dayNames[taskDate.getDay()]})`;
+    // 시각 효과
+    if (done) {
+      box.style.backgroundColor = "transparent";
+      box.style.color = "#9aa6b2";
+    } else if (isPast) {
+      box.style.backgroundColor = "#f05555";
+      box.style.color = "#fff";
+      box.classList.add('past');
+    } else {
+      box.style.backgroundColor = "#f6c1c1";
+      box.style.color = "#000";
+    }
 
-        // 내부 레이아웃 (이름 + 날짜 뱃지)
-        box.innerHTML = `
-          <span class="task-name">${escapeHTML(taskName)}</span>
-          <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
-        `;
+    // 클릭 토글 (UID 저장)
+    box.onclick = () => {
+      setDone(currentStudent, inst.uid, !done);
+      renderTasks();
+    };
 
-        // 상태별 배경색 (기존 로직 유지)
-        if (done) {
-          box.style.backgroundColor = "transparent";
-          box.style.color = "#999";
-        } else if (isPast) {
-          box.style.backgroundColor = "#f05555";
-          box.style.color = "#fff";
-          box.classList.add('past'); // ← 과거 미완료 스타일 보조
-        } else {
-          box.style.backgroundColor = "#f6c1c1";
-          box.style.color = "#000";
-        }
+    todoContainer.appendChild(box);
+  });
+}
 
-        // 클릭 토글
-       box.onclick = () => {
-         const k = makeTaskKey(date, taskName);
-         if (doneTasks[taskName] === true && doneTasks[k] !== true) {
-           delete doneTasks[taskName];
-         }
-         doneTasks[k] = !done;
-         setDoneTasks(currentStudent, doneTasks);
-         renderTasks();
-       };
-
-        todoContainer.appendChild(box);
-
-        });
-      });
-  }
 
   prevDayBtn.onclick = () => {
     currentDate.setDate(currentDate.getDate() - 1);
