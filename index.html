@@ -352,34 +352,34 @@ function buildInstancesFromTasks(){
 
         let any = false;
 
-instances.forEach(inst=>{
-  const isTarget = inst.students.includes('전체') || inst.students.includes(stu.name);
-  if (!isTarget) return;
+        instances.forEach(inst=>{
+          const isTarget = inst.students.includes('전체') || inst.students.includes(stu.name);
+          if (!isTarget) return;
+          
+          const done   = isDone(stu.name, inst.uid);   // ✅ UID로 체크
+          const isPast = inst.dateObj < today;
+          if (done) return; // 완료는 숨김
 
-  const done   = isDone(stu.name, inst.uid);   // ✅ UID로 체크
-  const isPast = inst.dateObj < today;
-  if (done) return; // 완료는 숨김
-
-  any = true;
-  const chip = document.createElement('div');
-  chip.className = 'chip ' + (isPast ? 'missed-past' : 'missed-today');
-  chip.dataset.student = stu.name;
-  chip.dataset.uid = inst.uid;                 // ✅ UID 보관
-  chip.innerHTML = `
-    <span>${escapeHTML(inst.text)}</span>
-    <span class="date">${inst.date}</span>
-  `;
-
-  if (mode === 'edit') {
-    chip.style.cursor='pointer';
-    chip.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      setDone(stu.name, inst.uid, true);       // ✅ UID로 저장
-      chip.remove();
-    });
-  }
-  card.appendChild(chip);
-});
+          any = true;
+          const chip = document.createElement('div');
+          chip.className = 'chip ' + (isPast ? 'missed-past' : 'missed-today');
+          chip.dataset.student = stu.name;
+          chip.dataset.uid = inst.uid;                 // UID 보관
+          chip.innerHTML = `
+          <span>${escapeHTML(inst.text)}</span>
+          <span class="date">${inst.date}</span>
+          `;
+          
+          if (mode === 'edit') {
+            chip.style.cursor='pointer';
+            chip.addEventListener('click', (e)=>{
+              e.stopPropagation();
+              setDone(stu.name, inst.uid, true);       // UID로 저장
+              chip.remove();
+            });
+          }
+          card.appendChild(chip);
+        });
 
 
         if (!any){
