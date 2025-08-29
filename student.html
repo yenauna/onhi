@@ -166,6 +166,16 @@
       #today-date{ font-size: 24px; }
       header{ padding:6px 8px; }
     }
+    
+    /* 일정 버튼(학생 화면) */
+    .event-link{
+      all:unset;
+      cursor:pointer;
+      color:#111;
+      text-decoration:underline;
+    }
+    .event-link:hover{ opacity:.8; }
+    
   </style>
 </head>
 <body>
@@ -294,8 +304,11 @@ function buildInstancesUpTo(dateLimit /* Date */){
   
   // 공통 헬퍼 사용  
   function renderTasks() {
-  todoContainer.innerHTML = "";
-    function renderTasks
+    todoContainer.innerHTML = "";
+
+    // ➊ 오늘 일정 먼저 표시
+    renderEventsForDay();
+
 
   const today0 = normalizeDate(new Date());
   const currDate0 = normalizeDate(currentDate);
@@ -453,15 +466,6 @@ function buildInstancesUpTo(dateLimit /* Date */){
     localStorage.removeItem('currentStudent');
     location.href = "index.html";
   };
-
-/* 일정 버튼(학생 화면) */
-.event-link{
-  all:unset;
-  cursor:pointer;
-  color:#111;
-  text-decoration:underline;
-}
-.event-link:hover{ opacity:.8; }
 
 
 
