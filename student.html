@@ -295,6 +295,7 @@ function buildInstancesUpTo(dateLimit /* Date */){
   // 공통 헬퍼 사용  
   function renderTasks() {
   todoContainer.innerHTML = "";
+    function renderTasks
 
   const today0 = normalizeDate(new Date());
   const currDate0 = normalizeDate(currentDate);
@@ -319,6 +320,77 @@ function buildInstancesUpTo(dateLimit /* Date */){
 
     const box = document.createElement('div');
     box.className = "task-box" + (done ? " done" : "");
+
+    
+
+    function occursOn(t, dateObj){
+  const d0 = new Date(dateObj); d0.setHours(0,0,0,0);
+  const y=d0.getFullYear(), m=d0.getMonth()+1, dd=d0.getDate();
+  const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+
+  const s = t.repeatStart || t.date || "";
+  const e = t.repeatEnd   || "";
+
+  const inRange = (ds) => {
+    if (s && ds < s) return false;
+    if (e && ds > e) return false;
+    return true;
+  };
+
+  const rpt = t.repeat || 'none';
+  if (rpt === 'daily') return inRange(dateStr);
+
+  const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+  if (dayMap[rpt] != null) {
+    if (!inRange(dateStr)) return false;
+    return d0.getDay() === dayMap[rpt];
+  }
+
+  if (!t.date) return false;
+  const base = new Date(t.date); base.setHours(0,0,0,0);
+  return base.getTime() === d0.getTime();
+}
+
+
+    function renderEventsForDay(){
+  const all = getTasks(); // common.js의 V2
+  const list = all
+    .filter(t => t.type === 'event' && occursOn(t, currentDate))
+    .filter(t => (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent));
+
+  if (!list.length) return false;
+
+  // 섹션 타이틀
+  const h = document.createElement('h3');
+  h.textContent = '📣 오늘의 일정';
+  h.style.cssText = 'text-align:left;margin:6px 0 4px;';
+  todoContainer.appendChild(h);
+
+  // 글씨만(배경 없음) 링크 형태
+  const ul = document.createElement('ul');
+  ul.style.cssText = 'list-style:none;padding:0;margin:0 0 8px 0;';
+  list.forEach(t=>{
+    const li = document.createElement('li');
+    li.style.cssText = 'text-align:left;margin:4px 0;';
+    li.innerHTML = `<button type="button" class="event-link">${escapeHTML(t.text)}</button>`;
+    li.querySelector('button').onclick = () => {
+      const msg = (t.desc && t.desc.trim()) ? t.desc.trim() : '설명 없음';
+      alert(`📣 ${t.text}\n\n${msg}`);
+    };
+    ul.appendChild(li);
+  });
+  todoContainer.appendChild(ul);
+
+  // 과제와 구분선
+  const hr = document.createElement('hr');
+  hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
+  todoContainer.appendChild(hr);
+
+  return true;
+}
+
+
+    
 
     // 날짜 라벨
     const isToday = inst.dateObj.getTime() === currDate0.getTime();
@@ -381,6 +453,19 @@ function buildInstancesUpTo(dateLimit /* Date */){
     localStorage.removeItem('currentStudent');
     location.href = "index.html";
   };
+
+/* 일정 버튼(학생 화면) */
+.event-link{
+  all:unset;
+  cursor:pointer;
+  color:#111;
+  text-decoration:underline;
+}
+.event-link:hover{ opacity:.8; }
+
+
+
+  
 </script>
 </body>
 </html>
