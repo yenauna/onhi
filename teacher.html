@@ -958,6 +958,7 @@
     // ===========================================================
     async function renderCalendar() {
       const tbody = qs("#calendar-body");
+      if (!tbody) return;
       tbody.innerHTML = "";
       calendarRefs = {};
   
@@ -965,9 +966,19 @@
       const month = viewMonth;
 
       // 공휴일/방학
-      const holidaysMap = await ensureHolidays(year, 'KR');
-      const vacations   = getVacations();
-      const isVacation = (dateStr) => (vacations.find(v => v.start <= dateStr && dateStr <= v.end)?.name || null);  
+      let holidaysMap = {};
+      try {
+        const hm = await ensureHolidays(year, 'KR');
+        holidaysMap = (hm && typeof hm === 'object') ? hm : {};
+      } catch (e) {
+        console.warn('[calendar] holiday fetch failed:', e);
+        holidaysMap = {};
+      }
+      const vacations   = (typeof getVacations === 'function' ? getVacations() : []) || [];
+      const isVacation = (dateStr) => {
+        const v = vacations.find(v => v.start <= dateStr && dateStr <= v.end);
+        return v ? v.name : null;
+      };
       const firstDay         = new Date(year, month, 1);
       const startDay         = firstDay.getDay();
       const adjustedStartDay = (startDay + 6) % 7;   // 월=0 기준
