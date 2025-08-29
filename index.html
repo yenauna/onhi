@@ -188,30 +188,74 @@
     })();
     
     // =============== 공통 스토리지 헬퍼 ===============
-    function loadStudents() {
-      return getJSON("students", []);
-    }
-    function _toNum(v){ const n = parseInt(String(v),10); return isNaN(n)?0:n; }
-    function sortStudents(arr){
-      return (arr||[]).slice().sort((a,b)=>{
-        const an=_toNum(a.id), bn=_toNum(b.id);
-        const ag = an>50?1:0, bg = bn>50?1:0; if(ag!==bg) return ag-bg; return an-bn;
-      });
-    }
-    function getDoneStore(name){
-      return getJSON("doneTasks-" + name, {});
-    }
-    function makeDoneKey(dateStr, taskText){ return `${dateStr}@@${taskText}`; }
-    function isDone(name,dateStr,taskText){
-      const s=getDoneStore(name); const k=makeDoneKey(dateStr,taskText);
-      return s[k]===true || s[taskText]===true; // 레거시 허용
-    }
-    function setDone(name, dateStr, taskText, done){
-      const k = `${dateStr}@@${taskText}`;
-      const store = getDoneStore(name);
-      if (done) store[k] = true; else delete store[k];
-      setJSON("doneTasks-" + name, store);
-    }
+    // === 완료표시 저장소 공통 ===
+function getDoneStore(name){ return getJSON("doneTasks-" + name, {}) || {}; }
+function setDoneStore(name, obj){ setJSON("doneTasks-" + name, obj || {}); }
+
+// === ✅ 신규: UID 기반 ===
+function isDoneUID(name, uid){
+  const s = getDoneStore(name);
+  return s[uid] === true;
+}
+function setDoneUID(name, uid, done){
+  const s = getDoneStore(name);
+  if (done) s[uid] = true; else delete s[uid];
+  setDoneStore(name, s);
+}
+
+// === (옵션) 레거시 호환: date@@text 키 ===
+function makeDoneKey(dateStr, taskText){ return `${dateStr}@@${taskText}`; }
+function isDoneLegacy(name, dateStr, taskText){
+  const s = getDoneStore(name);
+  return s[makeDoneKey(dateStr, taskText)] === true || s[taskText] === true; // 아주 옛 키도 허용
+}
+function setDoneLegacy(name, dateStr, taskText, done){
+  const s = getDoneStore(name);
+  const k = makeDoneKey(dateStr, taskText);
+  if (done) s[k] = true; else delete s[k];
+  setDoneStore(name, s);
+}
+
+// === 안전한 호환 래퍼 (예전 코드가 isDone/setDone을 불러도 동작) ===
+// isDone(name, uid)  -> UID 모드
+// isDone(name, date, text) -> 레거시 모드
+function isDone(name, a, b){
+  return (b === undefined) ? isDoneUID(name, a) : isDoneLegacy(name, a, b);
+}
+// setDone(name, uid, done)  -> UID 모드
+// setDone(name, date, text, done) -> 레거시 모드
+function setDone(name, a, b, d){
+  if (typeof d === 'boolean') return setDoneLegacy(name, a, b, d);
+  return setDoneUID(name, a, b);
+}
+
+
+    // ===== 새 구조(tasksV2) 로더 (+ 구버전 teacherTasks-* 백업 호환) =====
+function getTasks(){ return getJSON('tasksV2', []) || []; }
+function setTasks(arr){ setJSON('tasksV2', arr || []); }
+
+// (선택) 구버전 → 새 구조 1회 마이그레이션 (이미 이전했으면 그냥 통과)
+(function migrateOnce(){
+  if ((getTasks()||[]).length) return; // 이미 새 구조 있음
+  const old = (window.loadAllTeacherTasks ? loadAllTeacherTasks() : []).map(({data,dateKey})=>{
+    const repeat = data?.repeat || 'none';
+    const students = data?.students || ['전체'];
+    const tasks = data?.tasks || [];
+    return tasks.map(t=>({
+      id: (Date.now()+Math.random()+""),
+      type: 'assignment',
+      date: dateKey,
+      text: t,
+      desc: '',
+      repeat,
+      repeatStart: repeat==='none'? null : dateKey,
+      repeatEnd: null,
+      students
+    }));
+  }).flat();
+  if (old.length) setTasks(old);
+})();
+
 
     // =============== 과제 로드 ===============
     function loadAllAssignments(){
