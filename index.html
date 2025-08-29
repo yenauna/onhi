@@ -258,17 +258,55 @@ function setTasks(arr){ setJSON('tasksV2', arr || []); }
 
 
     // =============== 과제 로드 ===============
-    function loadAllAssignments(){
-      // 공통: teacherTasks-* 전부 읽기
-      const originals = loadAllTeacherTasks();
-      // 전체확인에서 쓰는 필드만 추려서 반환
-      return originals.map(({ key, dateKey, data }) => ({
-        key,
-        date: dateKey,
-        students: data?.students || [],
-        tasks: data?.tasks || []
-      }));
+    // === 과제 인스턴스(오늘까지) 생성: tasksV2 기반 ===
+function buildInstancesFromTasks(){
+  const tasks = getTasks(); // [{id,type,date,text,repeat,repeatStart,repeatEnd,students}]
+  const today = normalizeDate(new Date());
+  const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+  const out = [];
+
+  const push = (t, dObj) => {
+    const y=dObj.getFullYear(), m=dObj.getMonth()+1, dd=dObj.getDate();
+    out.push({
+      uid: t.id,
+      text: t.text,
+      date: `${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`,
+      dateObj: new Date(dObj),
+      students: t.students || ['전체']
+    });
+  };
+
+  tasks.forEach(t=>{
+    if (t.type === 'event') return; // 일정은 완료/미완료 개념 없음 → 메인 보드 제외
+    if (t.type === 'challenge') return; // 도전도 날짜 인스턴스 아님 → 보드 제외(원하면 규칙 정해 별도 처리)
+
+    const base = normalizeDate(t.repeatStart || t.date);
+    const end  = t.repeatEnd ? normalizeDate(t.repeatEnd) : today; // 끝 없으면 오늘까지만
+    const rpt  = t.repeat || 'none';
+
+    if (rpt === 'daily'){
+      for (let cur=new Date(base); cur<=today && cur<=end; cur.setDate(cur.getDate()+1)){
+        push(t, cur);
+      }
+    } else if (dayMap[rpt] != null){
+      const targetDow = dayMap[rpt];
+      // base 이후 첫 타깃 요일까지 이동
+      const cur = new Date(base);
+      while (cur.getDay() !== targetDow) cur.setDate(cur.getDate()+1);
+      for (; cur<=today && cur<=end; cur.setDate(cur.getDate()+7)){
+        push(t, cur);
+      }
+    } else {
+      // 반복 없음: 기준 날짜 1건(오늘 이전/같은 경우만)
+      if (!isNaN(base) && base <= today) push(t, base);
     }
+  });
+
+  // 최신순 정렬
+  out.sort((a,b)=> b.dateObj - a.dateObj);
+  return out;
+}
+
 
     // =============== 보드 렌더 ===============
     function renderBoard(){
@@ -279,7 +317,7 @@ function setTasks(arr){ setJSON('tasksV2', arr || []); }
       document.getElementById('mode-pill').textContent = (mode==='edit'?'편집 가능':'보기 전용');
 
       const students = sortStudents(loadStudents());
-      const assigns  = loadAllAssignments();
+      const instances = buildInstancesFromTasks();
 
       // 오늘과 과거만(미래 제외)
       const today = normalizeDate(new Date());
@@ -311,40 +349,35 @@ function setTasks(arr){ setJSON('tasksV2', arr || []); }
 
         let any = false;
 
-        filtered.forEach(assign=>{
-          const isTarget = (assign.students||[]).includes('전체') || (assign.students||[]).includes(stu.name);
-          if(!isTarget) return;
+instances.forEach(inst=>{
+  const isTarget = inst.students.includes('전체') || inst.students.includes(stu.name);
+  if (!isTarget) return;
 
-          (assign.tasks||[]).forEach(task=>{
-            const done = isDone(stu.name, assign.date, task);
-            const isPast = assign.dateObj < today;
+  const done   = isDone(stu.name, inst.uid);   // ✅ UID로 체크
+  const isPast = inst.dateObj < today;
+  if (done) return; // 완료는 숨김
 
-            // 완료 과제는 숨김(오늘 완료 포함)
-            if (done) return;
+  any = true;
+  const chip = document.createElement('div');
+  chip.className = 'chip ' + (isPast ? 'missed-past' : 'missed-today');
+  chip.dataset.student = stu.name;
+  chip.dataset.uid = inst.uid;                 // ✅ UID 보관
+  chip.innerHTML = `
+    <span>${escapeHTML(inst.text)}</span>
+    <span class="date">${inst.date}</span>
+  `;
 
-            any = true;
-            const chip = document.createElement('div');
-            chip.className = 'chip ' + (isPast ? 'missed-past' : 'missed-today');
-            chip.dataset.student = stu.name;
-            chip.dataset.date = assign.date;
-            chip.dataset.task = task;
-            chip.innerHTML = `
-              <span>${escapeHTML(task)}</span>
-              <span class="date">${assign.formatted}</span>
-            `;
+  if (mode === 'edit') {
+    chip.style.cursor='pointer';
+    chip.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      setDone(stu.name, inst.uid, true);       // ✅ UID로 저장
+      chip.remove();
+    });
+  }
+  card.appendChild(chip);
+});
 
-            // 편집모드일 때만 클릭 토글 허용
-            if (mode === 'edit') {
-              chip.style.cursor='pointer';
-              chip.addEventListener('click', (e)=>{
-                e.stopPropagation(); // 이벤트 객체 받아서 사용
-                setDone(stu.name, assign.date, task, true);
-                chip.remove();
-              });
-            }
-            card.appendChild(chip);
-          });
-        });
 
         if (!any){
           // 미완료 없으면 비워두되, 자리 유지 위해 안내 1줄
