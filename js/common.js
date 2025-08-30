@@ -135,7 +135,94 @@
     localStorage.setItem('teacherTasksMigrated', 'yes');
   }
 
+  // 오늘 기준 해당 날짜에 t가 발생하는지
+function occursOn(t, dateObj){
+  const d0 = new Date(dateObj); d0.setHours(0,0,0,0);
+  const y=d0.getFullYear(), m=d0.getMonth()+1, dd=d0.getDate();
+  const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
 
+  const s = t.repeatStart || t.date || "";
+  const e = t.repeatEnd   || "";
+
+  const inRange = (ds) => {
+    if (s && ds < s) return false;
+    if (e && ds > e) return false;
+    return true;
+  };
+
+  const rpt = t.repeat || 'none';
+  if (rpt === 'daily') return inRange(dateStr);
+
+  const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+  if (dayMap[rpt] != null) {
+    if (!inRange(dateStr)) return false;
+    return d0.getDay() === dayMap[rpt];
+  }
+
+  if (!t.date) return false;
+  const base = new Date(t.date); base.setHours(0,0,0,0);
+  return base.getTime() === d0.getTime();
+}
+
+// 공통 일정 스트립 렌더
+// - containerId: 붙일 엘리먼트 id
+// - options.editable: teacher(오늘 할 일)에서만 true
+// - options.studentName: 학생 화면에서 필터가 필요하면 넘김(없으면 전체)
+function renderEventsStrip(containerId, options={}){
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  const tasks = (typeof getTasks === 'function') ? getTasks() : [];
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // 오늘 발생하는 'event'만
+  let events = tasks.filter(t => t.type === 'event' && occursOn(t, today));
+
+  // 학생 화면이라면 대상 필터 (일정이 '전체'만이라면 이 단계는 보통 그대로 통과)
+  if (options.studentName){
+    events = events.filter(t => (t.students||['전체']).includes('전체') ||
+                                (t.students||[]).includes(options.studentName));
+  }
+
+  events.forEach(t=>{
+    const card = document.createElement('div');
+    card.className = 'event-card';
+    card.innerHTML = `
+      <div class="event-icon">✨</div>
+      <div class="event-body">
+        <div class="event-title">${escapeHTML(t.text||'(제목 없음)')}</div>
+        <div class="event-desc">${escapeHTML((t.desc||'').trim() || '설명 없음')}</div>
+      </div>
+    `;
+    card.onclick = ()=>{
+      if (options.editable){               // teacher: 간단 수정
+        const all = getTasks();
+        const idx = all.findIndex(x => x.id === t.id);
+        if (idx < 0) return;
+        const newText = prompt('일정 제목을 수정하세요:', all[idx].text||'');
+        if (newText === null) return;
+        const newDesc = prompt('일정 설명을 수정하세요:', all[idx].desc||'');
+        all[idx] = { ...all[idx], text:newText.trim(), desc:(newDesc||'').trim(), type:'event' };
+        setTasks(all);
+        renderEventsStrip(containerId, options);
+        // 달력/현황 갱신 훅이 있다면 호출
+        if (typeof renderCalendar==='function') renderCalendar();
+        if (typeof renderStudentStatus==='function') renderStudentStatus();
+      } else {                              // index, student: 보기만
+        alert(`📣 ${t.text}\n\n${(t.desc||'설명 없음')}`);
+      }
+    };
+    wrap.appendChild(card);
+  });
+
+  // 오늘 일정이 없으면 비워둠
+  // (필요하면 안내 문구 추가 가능)
+}
+
+
+
+  
   // 전역으로 노출
   Object.assign(w, {
     qs, qsa, pad2, dayNames, escapeHTML,
@@ -143,6 +230,7 @@
     loadStudentsCached, invalidateStudentsCache, loadAllTeacherTasks,
     ensureHolidays,
     genUID, getTasks, setTasks, migrateToUIDOnce,
+    occursOn, renderEventsStrip,
   });
 })(window);
 
