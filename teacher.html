@@ -179,20 +179,6 @@
                font-size:12px; cursor:pointer; display:inline-block; border:1px solid rgba(0,0,0,.06); }
     .task-pill.pending{ background:#f6c1c1; border-color:#e9b3b3; }
     .task-pill.done{ background:#fff; border-color:#dfe3e6; }
-
-    /* 일정(교사 캘린더): 배경 없음, 검은 글씨 */
-    .event-text{
-      background:transparent;
-      border:none;
-      padding:0;
-      margin-top:6px;
-      font:inherit;
-      color:#111;          /* 검은 글씨 */
-      text-decoration:underline;
-      cursor:pointer;
-    }
-    .event-text:hover{ opacity:.8; }
-
     
     /* ================================
        달력 스타일
@@ -1339,7 +1325,7 @@ if ($btns) {
   grid.style.userSelect = "none";
 
   students.forEach(stu => {
-    const done = isDone(stu.name, uid);  // ✅ UID로 체크
+    const done = isDone(stu.name, uid);  // UID로 체크
     const chip = document.createElement('div');
     chip.className = "student-chip" + (done ? "" : " missed");
     chip.dataset.student = stu.name;
@@ -1373,44 +1359,9 @@ if ($btns) {
       const page = qs("#student-status-page");
       const container = qs("#student-status-list");
       container.innerHTML = "";
-
-      const showEvents = localStorage.getItem('showEvents') !== 'no';
-      
-      page.querySelector('#event-section')?.remove();
    
       const all = (typeof getTasks === 'function') ? getTasks() : [];
       const today = normalizeDate(new Date());
-
-
-
-      if (showEvents) {
-        const events = all.filter(t => t.type === 'event' && occursOn(t, today));
-        if (events.length) {
-          const sec = document.createElement('section');
-          sec.id = 'event-section';
-          const h = document.createElement('h3');
-          h.textContent = '📣 오늘의 일정';
-          h.style.cssText = 'text-align:left;margin:6px 0 4px;';
-          sec.appendChild(h);
-          const ul = document.createElement('ul');
-          ul.style.cssText = 'list-style:none;padding:0;margin:0 0 8px 0;';
-          events.forEach(t=>{
-            const li = document.createElement('li');
-            li.style.cssText = 'text-align:left;margin:4px 0;';
-            li.innerHTML = `<button type="button" class="event-text">${escapeHTML(t.text)}</button>`;
-            li.querySelector('button').onclick = () => {
-              const msg = (t.desc && t.desc.trim()) ? t.desc.trim() : '설명 없음';
-              alert(`📣 ${t.text}\n\n${msg}`);
-            };
-            ul.appendChild(li);
-          });
-          sec.appendChild(ul);
-          const hr = document.createElement('hr');
-          hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
-          sec.appendChild(hr);
-          page.insertBefore(sec, container);
-        }
-      }
       
       const students = getStudentsSorted();
 
@@ -1522,7 +1473,7 @@ if ($btns) {
 
 
     // '오늘 할 일' 학생 칩 클릭 델리게이션
-    // ✅ '오늘 할 일' 칩 클릭 + 초기 동기화
+    // '오늘 할 일' 칩 클릭 + 초기 동기화
 window.addEventListener('load', () => {
   const container = document.getElementById('student-status-list');
   if (!container) return;
@@ -1534,7 +1485,7 @@ window.addEventListener('load', () => {
     raf = requestAnimationFrame(() => { raf = null; renderStudentStatus(); });
   };
 
-  // ✅ 초기 진입 시 한 번 UI 상태 맞추기 (완료/미완료 복원)
+  // 초기 진입 시 한 번 UI 상태 맞추기 (완료/미완료 복원)
   schedule();
 
   // 클릭 토글 → 완료/미완료 저장 + 재렌더
@@ -1546,7 +1497,7 @@ window.addEventListener('load', () => {
     const uid      = chip.dataset.uid;
     const nowIsDone = !chip.classList.contains('missed');
 
-    setDone(student, uid, !nowIsDone);           // ✅ UID 기준 저장
+    setDone(student, uid, !nowIsDone);           // UID 기준 저장
     chip.classList.toggle('missed', nowIsDone);  // 즉시 반영
     schedule();                                   // 큐에 재렌더
   }, false);
@@ -1895,24 +1846,25 @@ function migrateLegacyDoneToUIDOnce() {
       const show = pref !== 'no';
       btn.textContent = show ? '일정숨김' : '일정표시';
       btn.setAttribute('aria-pressed', String(show));
-      const sec = document.getElementById('event-section');
-      if (sec) sec.style.display = show ? '' : 'none';
+      const strip = document.getElementById('events-strip-teacher');
+      if (strip) strip.style.display = show ? '' : 'none';
     }
     function toggleShowEvents(){
       const show = localStorage.getItem('showEvents') !== 'no';
       localStorage.setItem('showEvents', show ? 'no' : 'yes');
+      renderEventsStrip('events-strip-teacher', { editable: true });
       renderStudentStatus();
       applyShowEventsBtn();
     }
       applyShowEventsBtn();
     document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
     window.addEventListener('storage', (e)=>{
-      if (e.key === 'showEvents') {
-        renderStudentStatus();
-        applyShowEventsBtn();
-      }
-    });
-
+        if (e.key === 'showEvents') {
+          renderEventsStrip('events-strip-teacher', { editable: true });
+          renderStudentStatus();
+          applyShowEventsBtn();
+        }
+      });
 
     
     window.addEventListener('load', renderVacationList);
