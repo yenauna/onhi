@@ -17,21 +17,6 @@
   <script src="js/common.js" defer></script>
 
   <style>
-    :root{
-      --bg-base:#eaf4ef;
-      --bg-yellow:#f6e4b5;
-      --bg-mint:#cfeee0;
-
-      --card:#fbf3da;
-      --card-line:#efe6cd;
-
-      --text:#1f2a33;
-      --muted:#6f7d8c;
-
-      --brand:#2e7d57;
-      --btn-shadow:rgba(46,125,87,.26);
-    }
-
     *{ box-sizing:border-box }
     html, body { min-height:100% }
 
@@ -403,7 +388,7 @@
     .calendar thead th:nth-child(7) { color:#d74b4b; }
     
     /* ===== 학생 추가 영역 일렬 정렬 & 통일 ===== */
-    :root { --ctrl-h: 36px; }
+    .teacher-page { --ctrl-h: 36px; }
     
     .add-student-row {
       display:flex;
@@ -479,7 +464,7 @@
     
   </style>
 </head>
-<body data-role="teacher">
+<body data-role="teacher" class="teacher-page">
   <!-- 상단 풀바(칩 버튼형) -->
   <header class="topbar">
     <div class="logo-area">
