@@ -39,9 +39,6 @@
       margin:0; font-family:'Jua',sans-serif; font-weight:400; letter-spacing:-.2px;
       font-size:28px;
     }
-    
-    .events{ margin-bottom:14px; }
-    .events-title{ font-weight:600; margin-bottom:8px; }
 
     /* 학생 카드 그리드 */
     .grid{
@@ -100,7 +97,6 @@
   </header>
 
   <main class="container">
-    <div class="events" id="events"></div>
     <div id="events-strip" class="event-grid"></div>
     <div class="grid" id="board"></div>
   </main>
@@ -267,38 +263,12 @@ function buildInstancesFromTasks(){
   return out;
 }
 
-    function renderEvents(){
-      const wrap = document.getElementById('events');
-      if (!wrap) return;
-      wrap.innerHTML='';
-      let pref = localStorage.getItem('showEvents');
-      if (pref !== 'yes' && pref !== 'no'){ pref='yes'; localStorage.setItem('showEvents', pref); }
-      const show = pref !== 'no';
-      if (!show){ wrap.style.display='none'; return; }
-      const events = (getTasks()||[]).filter(t=>t.type==='event');
-      if (!events.length){ wrap.style.display='none'; return; }
-      events.sort((a,b)=> a.date.localeCompare(b.date));
-      wrap.style.display='block';
-      const title=document.createElement('div');
-      title.className='events-title';
-      title.textContent='일정';
-      wrap.appendChild(title);
-      events.forEach(ev=>{
-        const chip=document.createElement('div');
-        chip.className='chip';
-        chip.innerHTML=`<span>${escapeHTML(ev.text)}</span><span class="date">${ev.date}</span>`;
-        wrap.appendChild(chip);
-      });
-    }
-
-
     // =============== 보드 렌더 ===============
     function renderBoard(){
       const board = document.getElementById('board');
       board.innerHTML = '';
       renderEventsStrip('events-strip'); // 오늘 일정 먼저
 
-      renderEvents();
       const mode = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
 
       const students = sortStudents(loadStudents());
@@ -379,6 +349,8 @@ function buildInstancesFromTasks(){
       const show = pref !== 'no';
       btn.textContent = show ? '일정숨김' : '일정표시';
       btn.setAttribute('aria-pressed', String(show));
+      const strip = document.getElementById('events-strip');
+      if (strip) strip.style.display = show ? '' : 'none';
     }
     function toggleShowEvents(){
       const show = localStorage.getItem('showEvents') !== 'no';
