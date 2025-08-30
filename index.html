@@ -182,6 +182,10 @@
         };
       }
     })();
+
+    // 로그인 선택 모드 상태
+    let loginPickMode = false;
+
     
     // =============== 공통 스토리지 헬퍼 ===============
     // === 완료표시 저장소 공통 ===
@@ -364,6 +368,13 @@ function buildInstancesFromTasks(){
 
         // 카드 클릭하면 로그인 패널 열리도록 연결
         card.dataset.student = stu.name;          // 선택된 학생 전달용
+        card.addEventListener('click', () => {
+          if (!loginPickMode) return;
+          document.querySelectorAll('.grid .card.selected')
+            .forEach(el => el.classList.remove('selected'));
+          card.classList.add('selected');
+          openLoginPanel(stu.name);
+        });
         
         const title = document.createElement('div');
         title.className='title';
@@ -414,33 +425,6 @@ function buildInstancesFromTasks(){
       });
     }
 
-    // ===== 카드 클릭은 "로그인 선택 모드"일 때만 동작 =====
-    (function attachPickHandler(){
-      const grid = document.getElementById('board');
-      if (!grid) return;
-      
-      grid.addEventListener('click', (e) => {
-        if (!loginPickMode) return;                    // ← 모드 OFF면 무시
-        if (localStorage.getItem('boardMode') !== 'edit') return; // 보기전용일 때는 무시
-        // 보기전용/편집 모드와 상관없이 로그인 선택 모드에서는 카드 클릭을 허용
-        
-        const card = e.target.closest('.card');
-        if (!card || !grid.contains(card)) return;
-        
-        // 선택 표시 갱신
-          document.querySelectorAll('.grid .card.selected')
-            .forEach(el => el.classList.remove('selected'));
-        card.classList.add('selected');
-        
-        // 학생 이름 추출 (data-student 또는 타이틀 텍스트)
-        const name = card.dataset.student ||
-          (card.querySelector('.title')?.textContent?.trim().split(/\s+/).slice(1).join(' ') || '');
-        if (!name) return;
-        
-        // 비밀번호 입력창 열기
-        openLoginPanel(name);
-      });
-    })();
 
     function applyShowEventsBtn(){
       const btn = document.getElementById('eventsBtn');
@@ -489,15 +473,6 @@ function isSessionValid(){
 })();
 
 
-    
-    
-// 카드 하이라이트: 선택된 학생 카드만 selected 클래스
-function highlightSelectedCard(name){
-  document.querySelectorAll('.grid .card').forEach(el=>{
-    el.classList.toggle('selected', el.dataset.student === name);
-  });
-}
-
 // 모달 열기/닫기/확인
 let _loginSelected = null;
 function openLoginPanel(studentName){
@@ -533,7 +508,6 @@ function confirmStudentLogin(){
 }
 
     // ===== 학생 버튼 토글: 로그인 선택 모드 =====
-    let loginPickMode = false;
     
     const btnStudent = document.getElementById('btn-student-login');
     btnStudent?.addEventListener('click', () => {
