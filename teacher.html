@@ -491,6 +491,7 @@
       <button id="tab-student" onclick="showStudentManagement()">학생 관리</button>
     </nav>
     <div class="right-tools">
+      <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false"></button>
       <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
     </div>
   </header>
@@ -1929,6 +1930,26 @@ function migrateLegacyDoneToUIDOnce() {
       setJSON('_migrated_v2', true);
     }
     if (typeof migrateLegacyDoneToUIDOnce === 'function') migrateLegacyDoneToUIDOnce();
+
+     function applyShowEventsBtn(){
+      const btn = document.getElementById('eventsBtn');
+      if (!btn) return;
+      let pref = localStorage.getItem('showEvents');
+      if (pref !== 'yes' && pref !== 'no'){ pref='yes'; localStorage.setItem('showEvents', pref); }
+      const show = pref !== 'no';
+      btn.textContent = show ? '일정숨김' : '일정표시';
+      btn.setAttribute('aria-pressed', String(show));
+    }
+    function toggleShowEvents(){
+      const show = localStorage.getItem('showEvents') !== 'no';
+      localStorage.setItem('showEvents', show ? 'no' : 'yes');
+      applyShowEventsBtn();
+    }
+    window.addEventListener('load', () => {
+      applyShowEventsBtn();
+      document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
+    });
+    window.addEventListener('storage', (e)=>{ if (e.key === 'showEvents') applyShowEventsBtn(); });
 
 
     
