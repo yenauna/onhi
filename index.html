@@ -369,6 +369,11 @@ function buildInstancesFromTasks(){
       renderCalendar?.();             // teacher의 달력
       renderTasks?.();                // student의 목록
       document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
+      document.getElementById('studentPwInput')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          confirmStudentLogin();
+        }
+      });
     });
 
     window.addEventListener('storage', (e) => {
