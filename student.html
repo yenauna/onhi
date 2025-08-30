@@ -232,8 +232,9 @@
 
   /* -------- V2 저장소 -------- */
   // teacher가 teacherTasksV2 키로 저장 중이면 그걸 우선, 없으면 tasksV2를 읽음
-  function getTasks(){ return getJSON('teacherTasksV2', []) || getJSON('tasksV2', []); }
-
+    function getTasks(){
+    return getJSON('teacherTasksV2', null) || getJSON('tasksV2', []);
+  }
   // UID 기반 완료 저장소
   function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
   function setDoneStore(name, obj){ setJSON('doneTasks-'+name, obj || {}); }
