@@ -460,6 +460,7 @@ function buildInstancesUpTo(dateLimit /* Date */){
   };
 
   window.onload = () => {
+    if (typeof migrateToUIDOnce === 'function') migrateToUIDOnce();
     const savedStudent = localStorage.getItem('currentStudent');
     if (savedStudent) {
       currentStudent = savedStudent;
