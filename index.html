@@ -447,9 +447,11 @@ function buildInstancesFromTasks(){
 
 
      // 페이지가 하단에서 스크립트를 로드하므로 즉시 초기화 가능
-    applyShowEventsBtn();
-    renderBoard();
-    document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
+    document.addEventListener('DOMContentLoaded', () => {
+      applyShowEventsBtn?.();
+    renderBoard?.();
+      document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
+    });
 
     window.addEventListener('storage', (e) => {
       if (e.key === 'tasksV2' || e.key === 'showEvents' || e.key === 'boardMode') renderBoard();
