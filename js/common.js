@@ -168,6 +168,7 @@ function toggleBoardMode(){
   const next = cur === 'edit' ? 'view' : 'edit';
   localStorage.setItem('boardMode', next);
   applyBoardModeToButton();
+  if (typeof window.renderBoard === 'function') window.renderBoard();
 }
 
 /* 초기화 */
