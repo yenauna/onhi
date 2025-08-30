@@ -85,6 +85,9 @@
       color:#566574;
     }
 
+    .events{ margin-bottom:14px; }
+    .events-title{ font-weight:600; margin-bottom:8px; }
+
     /* 학생 카드 그리드 */
     .grid{
       display:grid;
@@ -146,6 +149,7 @@
     <div class="header-row">
       <span class="mode-pill" id="mode-pill">보기 전용</span>
     </div>
+    <div class="events" id="events"></div>
     <div class="grid" id="board"></div>
   </main>
 
@@ -323,12 +327,37 @@ function buildInstancesFromTasks(){
   return out;
 }
 
+    function renderEvents(){
+      const wrap = document.getElementById('events');
+      if (!wrap) return;
+      wrap.innerHTML='';
+      let pref = localStorage.getItem('showEvents');
+      if (pref !== 'yes' && pref !== 'no'){ pref='yes'; localStorage.setItem('showEvents', pref); }
+      const show = pref !== 'no';
+      if (!show){ wrap.style.display='none'; return; }
+      const events = (getTasks()||[]).filter(t=>t.type==='event');
+      if (!events.length){ wrap.style.display='none'; return; }
+      events.sort((a,b)=> a.date.localeCompare(b.date));
+      wrap.style.display='block';
+      const title=document.createElement('div');
+      title.className='events-title';
+      title.textContent='일정';
+      wrap.appendChild(title);
+      events.forEach(ev=>{
+        const chip=document.createElement('div');
+        chip.className='chip';
+        chip.innerHTML=`<span>${escapeHTML(ev.text)}</span><span class="date">${ev.date}</span>`;
+        wrap.appendChild(chip);
+      });
+    }
+
 
     // =============== 보드 렌더 ===============
     function renderBoard(){
       const board = document.getElementById('board');
       board.innerHTML = '';
 
+      renderEvents();
       const mode = localStorage.getItem('boardMode') || 'view'; // 'view' | 'edit'
       document.getElementById('mode-pill').textContent = (mode==='edit'?'편집 가능':'보기 전용');
 
@@ -424,6 +453,9 @@ function buildInstancesFromTasks(){
 
     
     window.addEventListener('load', renderBoard);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'tasksV2' || e.key === 'showEvents') renderBoard();
+    });
 
     /* ===== 세션 유틸 ===== */
 function clearSession(){
