@@ -136,7 +136,7 @@
     </nav>
     <div class="right-tools">
       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false"></button>
-      <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
+      <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false" disabled></button>
     </div>
   </header>
 
@@ -421,6 +421,7 @@ function buildInstancesFromTasks(){
       
       grid.addEventListener('click', (e) => {
         if (!loginPickMode) return;                    // ← 모드 OFF면 무시
+        if (localStorage.getItem('boardMode') !== 'edit') return; // 보기전용일 때는 무시
         
         const card = e.target.closest('.card');
         if (!card || !grid.contains(card)) return;
