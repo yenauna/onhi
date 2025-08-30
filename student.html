@@ -434,13 +434,13 @@ function buildInstancesUpTo(dateLimit /* Date */){
         renderTasks();
       };
 
-
-         todoContainer.appendChild(box);
+      todoContainer.appendChild(box);
     });
-  }
+  
 
-  // ➋ 오늘 일정 표시 (교사 설정 동기화)
+    // ➋ 오늘 일정 표시 (교사 설정 동기화)
     renderEventsForDay();
+  }
 
   prevDayBtn.onclick = () => {
     currentDate.setDate(currentDate.getDate() - 1);
