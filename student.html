@@ -110,7 +110,7 @@
      user-select: none;
      box-shadow: 0 2px 0 rgba(0,0,0,.02) inset, 0 4px 10px rgba(0,0,0,.05);
     }
-    .task-name{ flex:1; min-width:0; text-align:left; 
+    .task-name{ flex:1; min-width:0; text-align:left;
      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } /* 긴 제목 말줄임 */
 
 
@@ -122,6 +122,27 @@
      color:#666;
      white-space:nowrap;
      border:1px solid rgba(0,0,0,.05);
+    }
+
+    /* 일정 카드 */
+    .events-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .event-box{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 12px;
+      border:2px solid #dcdfe4;
+      border-radius:16px;
+      font-size:14px;
+      background:#fff;
+      box-shadow:0 2px 0 rgba(0,0,0,.02) inset, 0 4px 10px rgba(0,0,0,.05);
+      white-space:nowrap;
+      cursor:pointer;
     }
     
     .task-box.done{
@@ -166,15 +187,7 @@
       #today-date{ font-size: 24px; }
       header{ padding:6px 8px; }
     }
-    
-    /* 일정 버튼(학생 화면) */
-    .event-link{
-      all:unset;
-      cursor:pointer;
-      color:#111;
-      text-decoration:underline;
-    }
-    .event-link:hover{ opacity:.8; }
+  
     
   </style>
 </head>
@@ -343,42 +356,41 @@ function buildInstancesUpTo(dateLimit /* Date */){
 
       if (!list.length) return false;
 
-      // 과제와 구분선 (과제가 이미 있으면)
-      if (todoContainer.children.length > 0) {
-        const hr = document.createElement('hr');
-        hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
-        todoContainer.appendChild(hr);
-      }
 
 
       // 섹션 타이틀
       const h = document.createElement('h3');
       h.textContent = '📣 오늘의 일정';
-      h.style.cssText = 'text-align:left;margin:6px 0 4px;';
+      h.style.cssText = 'text-align:left;margin:6px 0 8px;';
       todoContainer.appendChild(h);
 
-      // 글씨만(배경 없음) 링크 형태
-      const ul = document.createElement('ul');
-      ul.style.cssText = 'list-style:none;padding:0;margin:0 0 8px 0;';
-      list.forEach(t=>{
-        const li = document.createElement('li');
-        li.style.cssText = 'text-align:left;margin:4px 0;';
-        li.innerHTML = `<button type="button" class="event-link">${escapeHTML(t.text)}</button>`;
-        li.querySelector('button').onclick = () => {
+
+      const row = document.createElement('div');
+      row.className = 'events-row';
+      list.forEach(t => {
+        const box = document.createElement('div');
+        box.className = 'event-box';
+        box.textContent = t.text;
+        box.onclick = () => {
           const msg = (t.desc && t.desc.trim()) ? t.desc.trim() : '설명 없음';
           alert(`📣 ${t.text}\n\n${msg}`);
         };
-        ul.appendChild(li);
+        row.appendChild(box);
       });
-      todoContainer.appendChild(ul);
+      todoContainer.appendChild(row);
 
+      const hr = document.createElement('hr');
+      hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
+      todoContainer.appendChild(hr);
     
       return true;
     }
 
+    todayDate.textContent = displayDate(currentDate);
+    renderEventsForDay();
+    
     const today0 = normalizeDate(new Date());
     const currDate0 = normalizeDate(currentDate);
-    todayDate.textContent = displayDate(currentDate);
 
     const instances = buildInstancesUpTo(currentDate); // currentDate까지의 인스턴스
     const allTasks  = getTasks();                      // 대상 필터용
@@ -437,11 +449,6 @@ function buildInstancesUpTo(dateLimit /* Date */){
       todoContainer.appendChild(box);
     });
   
-
-    // ➋ 오늘 일정 표시 (교사 설정 동기화)
-    renderEventsForDay();
-  }
-
   prevDayBtn.onclick = () => {
     currentDate.setDate(currentDate.getDate() - 1);
     renderTasks();
