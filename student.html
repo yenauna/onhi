@@ -347,8 +347,6 @@ function buildInstancesUpTo(dateLimit /* Date */){
     }
 
     function renderEventsForDay() {
-      const show = localStorage.getItem('showEvents');
-      if (show === '0' || show === 'false' || show === 'no') return false;
       const all = getTasks(); // common.js의 V2
       const list = all
         .filter(t => t.type === 'event' && occursOn(t, currentDate))
