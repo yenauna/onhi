@@ -162,6 +162,8 @@ function applyBoardModeToButton(){
   btn.textContent = isEdit ? '편집가능' : '보기전용';
   btn.setAttribute('aria-pressed', String(isEdit));
   btn.classList.toggle('is-edit', isEdit);
+   // index 페이지에서는 버튼을 비활성화해 단순 표시만 한다
+  btn.disabled = document.body.dataset.role !== 'teacher';
 }
 function toggleBoardMode(){
   const cur = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
@@ -176,5 +178,6 @@ window.addEventListener('load', ()=>{
   if (!localStorage.getItem('boardMode')) localStorage.setItem('boardMode','view');
   applyBoardModeToButton();
   const mb = document.getElementById('modeBtn');
-  if (mb) mb.addEventListener('click', toggleBoardMode);
+   // 교사 페이지에서만 모드 전환 허용
+  if (mb && document.body.dataset.role === 'teacher') mb.addEventListener('click', toggleBoardMode);
 });
