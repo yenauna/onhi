@@ -448,8 +448,11 @@ function buildInstancesFromTasks(){
 
      // 페이지가 하단에서 스크립트를 로드하므로 즉시 초기화 가능
     document.addEventListener('DOMContentLoaded', () => {
-      applyShowEventsBtn?.();
-    renderBoard?.();
+      applyShowEventsBtn?.();         // 페이지에 있으면 실행
+      renderBoard?.();                // index/teacher의 보드 렌더
+      renderStudentStatus?.();        // teacher의 ‘오늘 할 일’ 뷰
+      renderCalendar?.();             // teacher의 달력
+      renderTasks?.();                // student의 목록
       document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
     });
 
