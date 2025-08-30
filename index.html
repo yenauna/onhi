@@ -257,22 +257,6 @@ function setTasks(arr){ setJSON('tasksV2', arr || []); }
   if (old.length) setTasks(old);
 })();
 
-    
-    function loadStudents() {
-      return getJSON("students", []);
-    }
-    function _toNum(v){ const n = parseInt(String(v),10); return isNaN(n)?0:n; }
-    function sortStudents(arr){
-      return (arr||[]).slice().sort((a,b)=>{
-        const an=_toNum(a.id), bn=_toNum(b.id);
-        const ag = an>50?1:0, bg = bn>50?1:0;
-        if (ag!==bg) return ag-bg;
-        return an-bn;
-      });
-    }
-    function labelOf(stu){ return `${stu.id} ${stu.name}`; } // (옵션) 필요하면 사용
-
-
 
     // =============== 과제 로드 ===============
     // === 과제 인스턴스(오늘까지) 생성: tasksV2 기반 ===
