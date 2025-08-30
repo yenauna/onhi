@@ -6,6 +6,10 @@
   --accent:#4caf7d;
 }
 
+/* 공통 상단바 여백 */
+body{
+  padding-top:96px;
+}
 
 /* 공통 레이아웃 컨테이너(각 페이지 카드 바깥) */
 .container{
