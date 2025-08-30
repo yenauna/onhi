@@ -9,6 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css" />
 
+   <script src="js/common.js" defer></script>
+  
   <style>
     :root{
       /* 배경 */
@@ -218,47 +220,25 @@
     /* =========================================
        학생 목록 로드 (localStorage.students 지원)
        ========================================= */
-    function loadStudents() {
-      try {
-        const raw = localStorage.getItem("students");
-        let students = [];
+    function populateStudents() {
+      const students = sortStudents(loadStudents());
+      const sel = document.getElementById("student-select-login");
+      sel.innerHTML = '<option value="">-- 선택하세요 --</option>';
 
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          // 배열/객체 모두 대응
-          students = Array.isArray(parsed)
-            ? parsed
-            : Array.isArray(parsed.students)
-              ? parsed.students
-              : [];
-        }
-
-        // 정렬 및 렌더링
-        students.sort((a, b) => Number(a.id) - Number(b.id));
-        const sel = document.getElementById("student-select-login");
-        sel.innerHTML = '<option value="">-- 선택하세요 --</option>';
-
-        if (students.length === 0) {
-          const opt = document.createElement("option");
-          opt.value = "";
-          opt.textContent = "등록된 학생이 없습니다 (선생님이 등록 가능)";
-          opt.disabled = true;
-          sel.appendChild(opt);
-          return;
-        }
-
-        students.forEach(stu => {
-          const opt = document.createElement("option");
-          opt.value = stu.name;
-          opt.textContent = `${Number(stu.id)} ${stu.name}`;
-          sel.appendChild(opt);
-        });
-      } catch (e) {
-        console.error(e);
-        const sel = document.getElementById("student-select-login");
-        sel.innerHTML =
-          '<option value="">(데이터 형식 오류) 선생님이 학생을 다시 저장해야 함</option>';
+      if (students.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "등록된 학생이 없습니다 (선생님이 등록 가능)";
+        opt.disabled = true;
+        sel.appendChild(opt);
+        return;
       }
+      students.forEach(stu => {
+        const opt = document.createElement("option");
+        opt.value = stu.name;
+        opt.textContent = `${Number(stu.id)} ${stu.name}`;
+        sel.appendChild(opt);
+      });
     }
 
     /* =========================================
@@ -330,7 +310,7 @@
     });
 
     // 초기화
-    window.addEventListener("load", loadStudents);
+    window.addEventListener("load", populateStudents);
   </script>
 </body>
 </html>
