@@ -1384,7 +1384,7 @@ if ($btns) {
     const uid     = chip.dataset.uid;
 
     const nowIsDone = !chip.classList.contains('missed');
-    setDone(student, uid, !nowIsDone);     // ✅ UID로 토글
+    setDone(student, uid, !nowIsDone);     // UID로 토글
     chip.classList.toggle('missed', nowIsDone);
 
     renderStudentStatus?.();
