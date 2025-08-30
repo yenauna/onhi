@@ -103,34 +103,6 @@
      border:1px solid rgba(0,0,0,.05);
     }
 
-    /* 일정 카드 */
-    .events-row{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-bottom:12px;
-    }
-    .event-box{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:8px 12px;
-      border:2px solid #dcdfe4;
-      border-radius:16px;
-      font-size:14px;
-      background:#fff;
-      box-shadow:0 2px 0 rgba(0,0,0,.02) inset, 0 4px 10px rgba(0,0,0,.05);
-      white-space:nowrap;
-      cursor:pointer;
-    }
-    
-    .task-box.done{
-      background: transparent !important;
-      color: #9aa6b2 !important;
-      border-color: #dcdfe4 !important;
-      text-decoration: line-through;
-    }
-
     /* 과거 미완료(빨강 배경)에서도 읽기 좋은 색감 */
     .task-box.past:not(.done) .task-date{
      background: rgba(255,255,255,.9);
