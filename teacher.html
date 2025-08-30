@@ -502,12 +502,6 @@
   <div class="container">
     <!-- ===== 오늘 할 일(학생별 현황) ===== -->
     <div id="student-status-page" style="display:none; margin-top: 8px;">
-
-      <div id="teacher-settings" style="text-align:right;margin-bottom:8px;">
-        <label style="font-size:14px;cursor:pointer;">
-          <input type="checkbox" id="show-events-toggle"> 일정 표시
-        </label>
-      </div>
       <div
         id="student-status-list"
         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"
@@ -1406,16 +1400,8 @@ if ($btns) {
       const container = qs("#student-status-list");
       container.innerHTML = "";
 
-      const toggle = qs("#show-events-toggle");
-      const showEvents = localStorage.getItem('showEvents') !== 'false';
-      if (toggle) {
-        toggle.checked = showEvents;
-        toggle.onchange = () => {
-          localStorage.setItem('showEvents', toggle.checked ? 'true' : 'false');
-          renderStudentStatus();
-        };
-      }
-
+      const showEvents = localStorage.getItem('showEvents') !== 'no';
+      
       page.querySelector('#event-section')?.remove();
    
       const all = (typeof getTasks === 'function') ? getTasks() : [];
@@ -1944,12 +1930,18 @@ function migrateLegacyDoneToUIDOnce() {
       const show = localStorage.getItem('showEvents') !== 'no';
       localStorage.setItem('showEvents', show ? 'no' : 'yes');
       applyShowEventsBtn();
+      renderStudentStatus();
     }
     window.addEventListener('load', () => {
       applyShowEventsBtn();
       document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
     });
-    window.addEventListener('storage', (e)=>{ if (e.key === 'showEvents') applyShowEventsBtn(); });
+    window.addEventListener('storage', (e)=>{
+      if (e.key === 'showEvents') {
+        applyShowEventsBtn();
+        renderStudentStatus();
+      }
+    });
 
 
     
