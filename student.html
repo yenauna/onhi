@@ -202,7 +202,7 @@
 </header>
 
 <div id="task-box" style="display:none;">
-  <div id="task-box" style="display:none;">
+
   <!-- ▼▼ 오늘 일정 스트립: 여기 추가 -->
   <div id="events-strip" class="event-grid"></div>
 
@@ -211,7 +211,6 @@
     <button id="next-day">다음날 ▶</button>
   </div>
     
-  <div id="events-strip" class="event-grid"></div>
   <h2 id="today-date"></h2>
     
   <div id="todo-container"></div>
@@ -327,7 +326,6 @@ function buildInstancesUpTo(dateLimit /* Date */){
   function renderTasks() {
     renderEventsStrip('events-strip', { studentName: currentStudent }); // 오늘 일정 먼저
     todoContainer.innerHTML = "";
-
     todayDate.textContent = displayDate(currentDate);
     
     const today0 = normalizeDate(new Date());
