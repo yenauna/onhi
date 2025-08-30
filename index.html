@@ -136,7 +136,6 @@
     </nav>
     <div class="right-tools">
       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false"></button>
-      <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
     </div>
   </header>
 
@@ -350,7 +349,7 @@ function buildInstancesFromTasks(){
       board.innerHTML = '';
 
       renderEvents();
-      const mode = localStorage.getItem('boardMode') || 'view'; // 'view' | 'edit'
+      const mode = 'view'; // force view-only
 
       const students = sortStudents(loadStudents());
       const instances = buildInstancesFromTasks();
@@ -462,8 +461,6 @@ function buildInstancesFromTasks(){
         applyShowEventsBtn();
         renderBoard();
         document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
-        document.getElementById('modeBtn')?.addEventListener('click', () => setTimeout(renderBoard, 0));
-      });
     window.addEventListener('storage', (e) => {
       if (e.key === 'tasksV2' || e.key === 'showEvents') renderBoard();
       if (e.key === 'showEvents') applyShowEventsBtn();
