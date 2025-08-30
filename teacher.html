@@ -502,6 +502,7 @@
   <div class="container">
     <!-- ===== 오늘 할 일(학생별 현황) ===== -->
     <div id="student-status-page" style="display:none; margin-top: 8px;">
+      <div id="events-strip-teacher" class="event-grid"></div>
       <div
         id="student-status-list"
         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"
@@ -792,6 +793,7 @@
     // 화면 전환: 탭 버튼 핸들러
     // ===========================================================
     function showStudentStatus() {
+      renderEventsStrip('events-strip-teacher', { editable: true }); // 선생님 화면: 수정 가능
       setActiveTab('status');
       document.getElementById("student-status-page").style.display = "block";
       document.getElementById("task-management").style.display = "none";
@@ -1105,27 +1107,25 @@
   const t = tasks.find(x => x.id === inst.id);
   if (!t) return '';
 
-  // 일정: 배경 없이 검은 글씨 링크 느낌으로
+  // ▼ 일정: 검은 글씨, 배경 없음, 클릭 시 설명만
   if (t.type === 'event') {
-    return `<button class="event-text" type="button" onclick="selectTask('${dateStr}', ${idx})">
-              ${escapeHTML(inst.text)}
-            </button>`;
+    const title = escapeHTML(t.text || '(제목 없음)');
+    const desc  = escapeHTML((t.desc||'').trim() || '설명 없음');
+    return `<div class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</div>`;
   }
 
-  // (과제/도전은 기존 로직 유지)
+  // ▼ 과제: 기존 로직 유지
   let assignedNames = getStudentsSorted().map(s=>s.name);
-  if (!t.students.includes('전체')) {
+  if (t && !t.students.includes('전체')) {
     const set = new Set(t.students);
     assignedNames = assignedNames.filter(n => set.has(n));
   }
   const anyIncomplete = assignedNames.some(name => !isDone(name, inst.id));
-  const cls =
-    t.type === 'challenge'
-      ? (anyIncomplete ? 'task-pill challenge-pill pending' : 'task-pill challenge-pill done')
-      : (anyIncomplete ? 'task-pill pending' : 'task-pill done');
+  const cls = anyIncomplete ? 'task-pill pending' : 'task-pill done';
 
-  return `<div class="${cls}" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(inst.text)}</div>`;
+  return `<div class="${cls}" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(t.text)}</div>`;
 }).join("");
+
 
 
 
