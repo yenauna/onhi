@@ -1917,7 +1917,7 @@ function migrateLegacyDoneToUIDOnce() {
     }
     if (typeof migrateLegacyDoneToUIDOnce === 'function') migrateLegacyDoneToUIDOnce();
 
-     function applyShowEventsBtn(){
+    function applyShowEventsBtn(){
       const btn = document.getElementById('eventsBtn');
       if (!btn) return;
       let pref = localStorage.getItem('showEvents');
@@ -1925,19 +1925,21 @@ function migrateLegacyDoneToUIDOnce() {
       const show = pref !== 'no';
       btn.textContent = show ? '일정숨김' : '일정표시';
       btn.setAttribute('aria-pressed', String(show));
+      const sec = document.getElementById('event-section');
+      if (sec) sec.style.display = show ? '' : 'none';
     }
     function toggleShowEvents(){
       const show = localStorage.getItem('showEvents') !== 'no';
       localStorage.setItem('showEvents', show ? 'no' : 'yes');
-      applyShowEventsBtn();
       renderStudentStatus();
+      applyShowEventsBtn();
     }
       applyShowEventsBtn();
-    document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);    
+    document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
     window.addEventListener('storage', (e)=>{
       if (e.key === 'showEvents') {
-        applyShowEventsBtn();
         renderStudentStatus();
+        applyShowEventsBtn();
       }
     });
 
