@@ -502,6 +502,11 @@
     <!-- ===== 오늘 할 일(학생별 현황) ===== -->
     <div id="student-status-page" style="display:none; margin-top: 8px;">
 
+      <div id="teacher-settings" style="text-align:right;margin-bottom:8px;">
+        <label style="font-size:14px;cursor:pointer;">
+          <input type="checkbox" id="show-events-toggle"> 일정 표시
+        </label>
+      </div>
       <div
         id="student-status-list"
         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"
@@ -735,6 +740,37 @@
     }
     function getStudentsSorted() { return sortStudents(loadStudents()); }
     function labelOf(stu) { return `${stu.id} ${stu.name}`; }
+
+     // ===========================================================
+    // 일정: 특정 날짜에 발생 여부
+    // ===========================================================
+    function occursOn(t, dateObj) {
+      const d0 = new Date(dateObj); d0.setHours(0,0,0,0);
+      const y = d0.getFullYear(), m = d0.getMonth()+1, dd = d0.getDate();
+      const dateStr = `${y}-${pad2(m)}-${pad2(dd)}`;
+
+      const s = t.repeatStart || t.date || "";
+      const e = t.repeatEnd   || "";
+
+      const inRange = (ds) => {
+        if (s && ds < s) return false;
+        if (e && ds > e) return false;
+        return true;
+      };
+
+      const rpt = t.repeat || 'none';
+      if (rpt === 'daily') return inRange(dateStr);
+
+      const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+      if (dayMap[rpt] != null) {
+        if (!inRange(dateStr)) return false;
+        return d0.getDay() === dayMap[rpt];
+      }
+      if (!t.date) return false;
+      const base = new Date(t.date); base.setHours(0,0,0,0);
+      return base.getTime() === d0.getTime();
+    }
+
 
     // ===========================================================
     // 초기화: 첫 화면은 '오늘 할 일'
@@ -1365,112 +1401,162 @@ if ($btns) {
     // '오늘 할 일' 화면 렌더링 (학생별 카드)
     // ===========================================================
     function renderStudentStatus() {
-  const container = qs("#student-status-list");
-  container.innerHTML = "";
+      const page = qs("#student-status-page");
+      const container = qs("#student-status-list");
+      container.innerHTML = "";
 
-  const students = getStudentsSorted();
-  const all = (typeof getTasks === 'function') ? getTasks() : [];
-  const today = normalizeDate(new Date());
+      const toggle = qs("#show-events-toggle");
+      const showEvents = localStorage.getItem('showEvents') !== 'false';
+      if (toggle) {
+        toggle.checked = showEvents;
+        toggle.onchange = () => {
+          localStorage.setItem('showEvents', toggle.checked ? 'true' : 'false');
+          renderStudentStatus();
+        };
+      }
 
-  // 과제 → 표시용 인스턴스(날짜별)로 풀기
-  const instances = [];
-  const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+      page.querySelector('#event-section')?.remove();
+   
+      const all = (typeof getTasks === 'function') ? getTasks() : [];
+      const today = normalizeDate(new Date());
+
+
+
+      if (showEvents) {
+        const events = all.filter(t => t.type === 'event' && occursOn(t, today));
+        if (events.length) {
+          const sec = document.createElement('section');
+          sec.id = 'event-section';
+          const h = document.createElement('h3');
+          h.textContent = '📣 오늘의 일정';
+          h.style.cssText = 'text-align:left;margin:6px 0 4px;';
+          sec.appendChild(h);
+          const ul = document.createElement('ul');
+          ul.style.cssText = 'list-style:none;padding:0;margin:0 0 8px 0;';
+          events.forEach(t=>{
+            const li = document.createElement('li');
+            li.style.cssText = 'text-align:left;margin:4px 0;';
+            li.innerHTML = `<button type="button" class="event-text">${escapeHTML(t.text)}</button>`;
+            li.querySelector('button').onclick = () => {
+              const msg = (t.desc && t.desc.trim()) ? t.desc.trim() : '설명 없음';
+              alert(`📣 ${t.text}\n\n${msg}`);
+            };
+            ul.appendChild(li);
+          });
+          sec.appendChild(ul);
+          const hr = document.createElement('hr');
+          hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
+          sec.appendChild(hr);
+          page.insertBefore(sec, container);
+        }
+      }
+      
+      const students = getStudentsSorted();
+
+      
+      // 과제 → 표시용 인스턴스(날짜별)로 풀기
+      const instances = [];
+      const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
 
   // 이번 달 뿐 아니라 "오늘 이전"도 필요하므로, 범위를 조금 넉넉히(전월~오늘) 처리
   // 간단히: 각 과제는 '반복' 형태에 맞춰 오늘까지의 표시 날짜를 만들어 푸시
-  all.forEach(t => {
-  const base = normalizeDate(t.date);
-  const rpt = t.repeat || 'none';
+      all.forEach(t => {
+        if (t.type === 'event') return;
+        const base = normalizeDate(t.date);
+        const rpt = t.repeat || 'none';
 
-  // 범위값 읽기
-  const s = t.repeatStart || t.date || "";  // 시작 기준(없으면 date)
-  const e = t.repeatEnd   || "";            // 종료(옵션)
+        
+        // 범위값 읽기
+        const s = t.repeatStart || t.date || "";  // 시작 기준(없으면 date)
+        const e = t.repeatEnd   || "";            // 종료(옵션)
+        
+        // 범위체크 헬퍼 (문자열 YYYY-MM-DD 비교)
+        const inRange = (dateStr) => {
+          if (s && dateStr < s) return false;
+          if (e && dateStr > e) return false;
+          return true;
+        };
+        
+        const pushIfInRange = (d) => {
+          const ds = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+          if (!inRange(ds)) return; // ★추가
+          instances.push({
+            uid: t.id,
+            text: t.text,
+            date: ds,
+            dateObj: new Date(d),
+            students: t.students
+          });
+        };
 
-  // 범위체크 헬퍼 (문자열 YYYY-MM-DD 비교)
-  const inRange = (dateStr) => {
-    if (s && dateStr < s) return false;
-    if (e && dateStr > e) return false;
-    return true;
-  };
+        if (rpt === 'daily') {
 
-  const pushIfInRange = (d) => {
-    const ds = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-    if (!inRange(ds)) return; // ★추가
-    instances.push({
-      uid: t.id,
-      text: t.text,
-      date: ds,
-      dateObj: new Date(d),
-      students: t.students
-    });
-  };
-
-  if (rpt === 'daily') {
-    const cur = new Date(base);
-    while (cur <= today) {
-      pushIfInRange(cur);
-      cur.setDate(cur.getDate()+1);
+          const cur = new Date(base);
+          while (cur <= today) {
+            pushIfInRange(cur);
+            cur.setDate(cur.getDate()+1);
+          }
+        } else if ({mon:1,tue:2,wed:3,thu:4,fri:5}[rpt] != null) {
+          const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+          const cur = new Date(base);
+          while (cur.getDay() !== dayMap[rpt]) cur.setDate(cur.getDate()+1);
+          while (cur <= today) {
+            pushIfInRange(cur);
+            cur.setDate(cur.getDate()+7);
     }
-  } else if ({mon:1,tue:2,wed:3,thu:4,fri:5}[rpt] != null) {
-    const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
-    const cur = new Date(base);
-    while (cur.getDay() !== dayMap[rpt]) cur.setDate(cur.getDate()+1);
-    while (cur <= today) {
-      pushIfInRange(cur);
-      cur.setDate(cur.getDate()+7);
+        } else {
+          // 반복 없음: 기준일 1건만
+          if (!isNaN(base) && base <= today) pushIfInRange(base);
+        }
+      });
+
+      // 최신순 정렬
+      instances.sort((a,b)=> b.dateObj - a.dateObj);
+
+      const frag = document.createDocumentFragment();
+
+      students.forEach(stu => {
+        const card = document.createElement("div");
+        Object.assign(card.style, {
+          border:"1px solid #e6e8eb", padding:"12px", borderRadius:"16px",
+          background:"#fff", boxShadow:"0 4px 10px rgba(0,0,0,.04)", marginBottom:"10px"
+        });
+        card.innerHTML = `👦 ${labelOf(stu)}<div style="margin-top: 10px;"></div>`;
+        const listBox = card.lastElementChild;
+
+        instances.forEach(inst => {
+          const assigned = inst.students.includes("전체") || inst.students.includes(stu.name);
+          if (!assigned) return;
+
+
+          const done = isDone(stu.name, inst.uid);
+          const isPast = inst.dateObj < today;
+
+          if (done && isPast) return;  // 과거 & 완료면 숨김
+
+          let bg = "#f6c1c1", dateColor = "#666";
+          if (isPast && !done) { bg = "#c0392b"; dateColor = "#fff"; }
+          else if (!isPast && done) { bg = "white"; dateColor = "#666"; }
+
+          const chip = document.createElement("div");
+          chip.className = "student-chip" + (done ? "" : " missed");
+          chip.dataset.student = stu.name;
+          chip.dataset.uid = inst.uid;               // UID 저장
+          chip.style.cssText = `
+          border:1px solid #e6e8eb; background:${bg}; padding:8px; border-radius:12px;
+          margin:6px 0; display:flex; justify-content:space-between; align-items:center; cursor:pointer;`;
+          chip.innerHTML = `
+          <span>${escapeHTML(inst.text)}</span>
+          <span style="font-size:10px; color:${dateColor};">${inst.date}</span>
+          `;
+          listBox.appendChild(chip);
+        });
+
+        frag.appendChild(card);
+      });
+
+      container.appendChild(frag);
     }
-  } else {
-    // 반복 없음: 기준일 1건만
-    if (!isNaN(base) && base <= today) pushIfInRange(base);
-  }
-});
-
-
-  // 최신순 정렬
-  instances.sort((a,b)=> b.dateObj - a.dateObj);
-
-  const frag = document.createDocumentFragment();
-
-  students.forEach(stu => {
-    const card = document.createElement("div");
-    Object.assign(card.style, {
-      border:"1px solid #e6e8eb", padding:"12px", borderRadius:"16px",
-      background:"#fff", boxShadow:"0 4px 10px rgba(0,0,0,.04)", marginBottom:"10px"
-    });
-    card.innerHTML = `👦 ${labelOf(stu)}<div style="margin-top: 10px;"></div>`;
-    const listBox = card.lastElementChild;
-
-    instances.forEach(inst => {
-      const assigned = inst.students.includes("전체") || inst.students.includes(stu.name);
-      if (!assigned) return;
-
-      const done = isDone(stu.name, inst.uid);
-      const isPast = inst.dateObj < today;
-      if (done && isPast) return;  // 과거 & 완료면 숨김
-
-      let bg = "#f6c1c1", dateColor = "#666";
-      if (isPast && !done) { bg = "#c0392b"; dateColor = "#fff"; }
-      else if (!isPast && done) { bg = "white"; dateColor = "#666"; }
-
-      const chip = document.createElement("div");
-      chip.className = "student-chip" + (done ? "" : " missed");
-      chip.dataset.student = stu.name;
-      chip.dataset.uid = inst.uid;               // ✅ UID 저장
-      chip.style.cssText = `
-        border:1px solid #e6e8eb; background:${bg}; padding:8px; border-radius:12px;
-        margin:6px 0; display:flex; justify-content:space-between; align-items:center; cursor:pointer;`;
-      chip.innerHTML = `
-        <span>${escapeHTML(inst.text)}</span>
-        <span style="font-size:10px; color:${dateColor};">${inst.date}</span>
-      `;
-      listBox.appendChild(chip);
-    });
-
-    frag.appendChild(card);
-  });
-
-  container.appendChild(frag);
-}
 
 
 
