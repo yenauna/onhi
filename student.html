@@ -51,16 +51,6 @@
         radial-gradient(110px 45px at 92% 56%, #fff 60%, transparent 61%);
     }
     
-    /* 메인 컨테이너 카드 */
-    #task-box{
-      border: 1px solid var(--card-line);
-      background: var(--card);
-      padding: 28px 24px;
-      border-radius: 26px;
-      margin: 0 16px 40px;
-      box-shadow: 0 16px 40px rgba(0,0,0,.10);
-    }
-
     /* 날짜/제목 */
     #today-date{
       margin: 10px 0 18px;
@@ -190,7 +180,7 @@
    <div class="right-tools"></div>
 </header>
 
-<div id="task-box" style="display:none;">
+<main class="container" id="task-box" style="display:none;">
 
   <!-- ▼▼ 오늘 일정 스트립: 여기 추가 -->
   <div id="events-strip" class="event-grid"></div>
