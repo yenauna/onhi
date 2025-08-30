@@ -87,9 +87,16 @@
      user-select: none;
      box-shadow: 0 2px 0 rgba(0,0,0,.02) inset, 0 4px 10px rgba(0,0,0,.05);
     }
+    .task-box.pending{
+     background:#f6c1c1;
+     color:#000;
+    }
+    .task-box.past.pending{
+     background:#f05555;
+     color:#fff;
+    }
     .task-name{ flex:1; min-width:0; text-align:left;
      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } /* 긴 제목 말줄임 */
-
 
     .task-date{
      font-size:13px;
@@ -538,7 +545,7 @@ function buildInstancesUpTo(dateLimit /* Date */){
       if (done && isPast) return;
 
       const box = document.createElement('div');
-      box.className = "task-box" + (done ? " done" : "");
+      box.className = `task-box ${done ? 'done' : 'pending'}${(!done && isPast) ? ' past' : ''}`;
 
       // 날짜 라벨
       const isToday = inst.dateObj.getTime() === currDate0.getTime();
@@ -551,22 +558,6 @@ function buildInstancesUpTo(dateLimit /* Date */){
         <span class="task-name">${escapeHTML(inst.text)}</span>
         <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
       `;
-
-
-       // 시각 효과
-      if (done) {
-        box.style.backgroundColor = "transparent";
-        box.style.color = "#9aa6b2";
-      } else if (isPast) {
-        box.style.backgroundColor = "#f05555";
-        box.style.color = "#fff";
-        box.classList.add('past');
-      } else {
-        box.style.backgroundColor = "#f6c1c1";
-        box.style.color = "#000";
-      }
-
-      
 
       // 클릭 토글 (UID 저장)
       box.onclick = () => {
