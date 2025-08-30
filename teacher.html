@@ -491,7 +491,7 @@
       <button id="tab-student" onclick="showStudentManagement()">학생 관리</button>
     </nav>
     <div class="right-tools">
-      <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false"></button>
+       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false">일정숨김</button>
       <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
     </div>
   </header>
@@ -1932,10 +1932,8 @@ function migrateLegacyDoneToUIDOnce() {
       applyShowEventsBtn();
       renderStudentStatus();
     }
-    window.addEventListener('load', () => {
       applyShowEventsBtn();
-      document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
-    });
+    document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);    
     window.addEventListener('storage', (e)=>{
       if (e.key === 'showEvents') {
         applyShowEventsBtn();
