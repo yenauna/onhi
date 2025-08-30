@@ -722,18 +722,7 @@
     // ===========================================================
     // 유틸리티: 학생 정렬/라벨
     // ===========================================================
-    function _toNum(v) {
-      const n = parseInt(String(v), 10);
-      return isNaN(n) ? 0 : n;
-    }
-    function sortStudents(arr) {
-      return (arr || []).slice().sort((a, b) => {
-        const an = _toNum(a.id), bn = _toNum(b.id);
-        const ag = an > 50 ? 1 : 0, bg = bn > 50 ? 1 : 0;
-        if (ag !== bg) return ag - bg;
-        return an - bn;
-      });
-    }
+   
     function getStudentsSorted() { return sortStudents(loadStudents()); }
     function labelOf(stu) { return `${stu.id} ${stu.name}`; }
 
@@ -1592,10 +1581,6 @@ window.addEventListener('load', () => {
     // ===========================================================
     // 학생 데이터 로드/저장
     // ===========================================================
-    function loadStudents() {
-      return loadStudentsCached();
-    }
-    
     function saveStudents(students) {
       setJSON("students", students);
       invalidateStudentsCache();
