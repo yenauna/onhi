@@ -305,140 +305,135 @@ function buildInstancesUpTo(dateLimit /* Date */){
   // 공통 헬퍼 사용  
   function renderTasks() {
     todoContainer.innerHTML = "";
+    function occursOn(t, dateObj) {
+      const d0 = new Date(dateObj); d0.setHours(0,0,0,0);
+      const y=d0.getFullYear(), m=d0.getMonth()+1, dd=d0.getDate();
+      const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+
+      const s = t.repeatStart || t.date || "";
+      const e = t.repeatEnd   || "";
+
+      const inRange = (ds) => {
+        if (s && ds < s) return false;
+        if (e && ds > e) return false;
+        return true;
+      };
+
+      const rpt = t.repeat || 'none';
+      if (rpt === 'daily') return inRange(dateStr);
+
+      const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+      if (dayMap[rpt] != null) {
+        if (!inRange(dateStr)) return false;
+        return d0.getDay() === dayMap[rpt];
+      }
+      if (!t.date) return false;
+      const base = new Date(t.date); base.setHours(0,0,0,0);
+      return base.getTime() === d0.getTime();
+    }
+
+    function renderEventsForDay() {
+      const all = getTasks(); // common.js의 V2
+      const list = all
+        .filter(t => t.type === 'event' && occursOn(t, currentDate))
+        .filter(t => (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent));
+
+      if (!list.length) return false;
+
+      // 섹션 타이틀
+      const h = document.createElement('h3');
+      h.textContent = '📣 오늘의 일정';
+      h.style.cssText = 'text-align:left;margin:6px 0 4px;';
+      todoContainer.appendChild(h);
+
+      // 글씨만(배경 없음) 링크 형태
+      const ul = document.createElement('ul');
+      ul.style.cssText = 'list-style:none;padding:0;margin:0 0 8px 0;';
+      list.forEach(t=>{
+        const li = document.createElement('li');
+        li.style.cssText = 'text-align:left;margin:4px 0;';
+        li.innerHTML = `<button type="button" class="event-link">${escapeHTML(t.text)}</button>`;
+        li.querySelector('button').onclick = () => {
+          const msg = (t.desc && t.desc.trim()) ? t.desc.trim() : '설명 없음';
+          alert(`📣 ${t.text}\n\n${msg}`);
+        };
+        ul.appendChild(li);
+      });
+      todoContainer.appendChild(ul);
+
+      // 과제와 구분선
+      const hr = document.createElement('hr');
+      hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
+      todoContainer.appendChild(hr);
+
+      return true;
+    }
 
     // ➊ 오늘 일정 먼저 표시
     renderEventsForDay();
 
+    const today0 = normalizeDate(new Date());
+    const currDate0 = normalizeDate(currentDate);
+    todayDate.textContent = displayDate(currentDate);
 
-  const today0 = normalizeDate(new Date());
-  const currDate0 = normalizeDate(currentDate);
-  todayDate.textContent = displayDate(currentDate);
+    const instances = buildInstancesUpTo(currentDate); // currentDate까지의 인스턴스
+    const allTasks  = getTasks();                      // 대상 필터용
 
-  const instances = buildInstancesUpTo(currentDate); // currentDate까지의 인스턴스
-  const allTasks  = getTasks();                      // 대상 필터용
+    instances.forEach(inst=>{
+      const t = allTasks.find(x=> x.id === inst.uid);
+      if (!t) return;
 
-  instances.forEach(inst=>{
-    const t = allTasks.find(x=> x.id === inst.uid);
-    if (!t) return;
+      // 대상 학생 필터
+      const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
+      if (!assigned) return;
 
-    // 대상 학생 필터
-    const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
-    if (!assigned) return;
+      const done = isDone(currentStudent, inst.uid);
+      const isPast = inst.dateObj < today0;
 
-    const done = isDone(currentStudent, inst.uid);
-    const isPast = inst.dateObj < today0;
+      // 과거 + 완료는 숨김
+      if (done && isPast) return;
 
-    // 과거 + 완료는 숨김
-    if (done && isPast) return;
+      const box = document.createElement('div');
+      box.className = "task-box" + (done ? " done" : "");
 
-    const box = document.createElement('div');
-    box.className = "task-box" + (done ? " done" : "");
+      // 날짜 라벨
+      const isToday = inst.dateObj.getTime() === currDate0.getTime();
+      const dayNames = ['일','월','화','수','목','금','토'];
+      const labelText = isToday
+        ? '오늘'
+        : `${inst.dateObj.getMonth()+1}월 ${inst.dateObj.getDate()}일 (${dayNames[inst.dateObj.getDay()]})`;
 
-    
+       box.innerHTML = `
+        <span class="task-name">${escapeHTML(inst.text)}</span>
+        <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
+      `;
 
-    function occursOn(t, dateObj){
-  const d0 = new Date(dateObj); d0.setHours(0,0,0,0);
-  const y=d0.getFullYear(), m=d0.getMonth()+1, dd=d0.getDate();
-  const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
 
-  const s = t.repeatStart || t.date || "";
-  const e = t.repeatEnd   || "";
+       // 시각 효과
+      if (done) {
+        box.style.backgroundColor = "transparent";
+        box.style.color = "#9aa6b2";
+      } else if (isPast) {
+        box.style.backgroundColor = "#f05555";
+        box.style.color = "#fff";
+        box.classList.add('past');
+      } else {
+        box.style.backgroundColor = "#f6c1c1";
+        box.style.color = "#000";
+      }
 
-  const inRange = (ds) => {
-    if (s && ds < s) return false;
-    if (e && ds > e) return false;
-    return true;
-  };
+      
 
-  const rpt = t.repeat || 'none';
-  if (rpt === 'daily') return inRange(dateStr);
+      // 클릭 토글 (UID 저장)
+      box.onclick = () => {
+        setDone(currentStudent, inst.uid, !done);
+        renderTasks();
+      };
 
-  const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
-  if (dayMap[rpt] != null) {
-    if (!inRange(dateStr)) return false;
-    return d0.getDay() === dayMap[rpt];
+
+         todoContainer.appendChild(box);
+    });
   }
-
-  if (!t.date) return false;
-  const base = new Date(t.date); base.setHours(0,0,0,0);
-  return base.getTime() === d0.getTime();
-}
-
-
-    function renderEventsForDay(){
-  const all = getTasks(); // common.js의 V2
-  const list = all
-    .filter(t => t.type === 'event' && occursOn(t, currentDate))
-    .filter(t => (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent));
-
-  if (!list.length) return false;
-
-  // 섹션 타이틀
-  const h = document.createElement('h3');
-  h.textContent = '📣 오늘의 일정';
-  h.style.cssText = 'text-align:left;margin:6px 0 4px;';
-  todoContainer.appendChild(h);
-
-  // 글씨만(배경 없음) 링크 형태
-  const ul = document.createElement('ul');
-  ul.style.cssText = 'list-style:none;padding:0;margin:0 0 8px 0;';
-  list.forEach(t=>{
-    const li = document.createElement('li');
-    li.style.cssText = 'text-align:left;margin:4px 0;';
-    li.innerHTML = `<button type="button" class="event-link">${escapeHTML(t.text)}</button>`;
-    li.querySelector('button').onclick = () => {
-      const msg = (t.desc && t.desc.trim()) ? t.desc.trim() : '설명 없음';
-      alert(`📣 ${t.text}\n\n${msg}`);
-    };
-    ul.appendChild(li);
-  });
-  todoContainer.appendChild(ul);
-
-  // 과제와 구분선
-  const hr = document.createElement('hr');
-  hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
-  todoContainer.appendChild(hr);
-
-  return true;
-}
-
-
-    
-
-    // 날짜 라벨
-    const isToday = inst.dateObj.getTime() === currDate0.getTime();
-    const dayNames = ['일','월','화','수','목','금','토'];
-    const labelText = isToday
-      ? '오늘'
-      : `${inst.dateObj.getMonth()+1}월 ${inst.dateObj.getDate()}일 (${dayNames[inst.dateObj.getDay()]})`;
-
-    box.innerHTML = `
-      <span class="task-name">${escapeHTML(inst.text)}</span>
-      <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
-    `;
-
-    // 시각 효과
-    if (done) {
-      box.style.backgroundColor = "transparent";
-      box.style.color = "#9aa6b2";
-    } else if (isPast) {
-      box.style.backgroundColor = "#f05555";
-      box.style.color = "#fff";
-      box.classList.add('past');
-    } else {
-      box.style.backgroundColor = "#f6c1c1";
-      box.style.color = "#000";
-    }
-
-    // 클릭 토글 (UID 저장)
-    box.onclick = () => {
-      setDone(currentStudent, inst.uid, !done);
-      renderTasks();
-    };
-
-    todoContainer.appendChild(box);
-  });
-}
 
 
   prevDayBtn.onclick = () => {
