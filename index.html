@@ -136,6 +136,7 @@
     </nav>
     <div class="right-tools">
       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false"></button>
+      <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
     </div>
   </header>
 
@@ -349,7 +350,7 @@ function buildInstancesFromTasks(){
       board.innerHTML = '';
 
       renderEvents();
-      const mode = 'view'; // force view-only
+      const mode = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
 
       const students = sortStudents(loadStudents());
       const instances = buildInstancesFromTasks();
@@ -462,9 +463,10 @@ function buildInstancesFromTasks(){
     renderBoard();
     document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
 
-     window.addEventListener('storage', (e) => {
-      if (e.key === 'tasksV2' || e.key === 'showEvents') renderBoard();
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'tasksV2' || e.key === 'showEvents' || e.key === 'boardMode') renderBoard();
       if (e.key === 'showEvents') applyShowEventsBtn();
+      if (e.key === 'boardMode') applyBoardModeToButton?.();
     });
 
     /* ===== 세션 유틸 ===== */
