@@ -109,11 +109,76 @@
     }
  
    /* 오늘 표기 전용 강조(원하면 유지/삭제 가능) */
-   .task-date.is-today{
-    background:#2e7d57;
-    color:#fff;
-    border-color: transparent;
-   }
+    .task-date.is-today{
+      background:#2e7d57;
+      color:#fff;
+      border-color: transparent;
+    }
+
+    /* 달력 스타일 */
+    .calendar{ display:none; }
+    .calendar table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:14px;
+      background:#fff;
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .calendar th, .calendar td{
+      border:1px solid #ececec;
+      width:14.28%;
+      height:96px;
+      text-align:left;
+      vertical-align:top;
+      padding:8px;
+      font-size:14px;
+    }
+    .calendar thead th{
+      background:#f9fafb;
+      text-align:center;
+      height:36px;
+      padding:6px 0;
+      vertical-align:middle;
+    }
+    .calendar td > strong{ display:block; margin-bottom:6px; }
+    .calendar td.weekend > strong,
+    .calendar td.holiday > strong,
+    .calendar td.vacation > strong{ color:#d33; }
+    .calendar td.sun  .day-num,
+    .calendar td.sat  .day-num{ color:#d74b4b; }
+    .calendar td.holiday .day-num,
+    .calendar td.vacation .day-num{ color:#d74b4b; }
+    .calendar .task-pill{
+      background:#f6c1c1;
+      border-radius:10px;
+      padding:4px 8px;
+      margin-top:6px;
+      font-size:12px;
+      display:inline-block;
+      border:1px solid rgba(0,0,0,.06);
+    }
+    .calendar .task-pill.done{
+      background:#fff;
+      border-color:#dfe3e6;
+    }
+    .calendar .event-pill{
+      background:#fff;
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:10px;
+      padding:4px 8px;
+      margin-top:6px;
+      font-size:12px;
+      display:inline-block;
+      cursor:pointer;
+    }
+    .badge-holiday, .badge-vacation{
+      display:inline-block;
+      margin-left:6px;
+      font-size:12px;
+      color:#d33;
+      font-weight:600;
+    }
 
     /* 로그아웃 버튼 */
     button#logout-btn{
@@ -145,14 +210,17 @@
 
   <!-- 공통 상단바 -->
   <header class="topbar">
-  <div class="logo-area">
-    <a href="./"><img src="logo.png" alt="오늘 할 일 로고"></a>
-  </div>
-   <div class="right-tools"></div>
-</header>
+ <div class="logo-area">
+      <a href="./"><img src="logo.png" alt="오늘 할 일 로고"></a>
+    </div>
+    <nav class="menu-area" aria-label="주요 메뉴">
+      <button id="tab-todo" class="active" onclick="showTodo()">오늘 할 일</button>
+      <button id="tab-calendar" onclick="showCalendar()">달력</button>
+    </nav>
+    <div class="right-tools"></div>
+  </header>
 
-<main class="container" id="task-box" style="display:none;">
-
+<div class="container" id="task-box" style="display:none;">
   <!-- ▼▼ 오늘 일정 스트립: 여기 추가 -->
   <div id="events-strip" class="event-grid"></div>
 
@@ -167,6 +235,32 @@
   <button id="logout-btn">로그아웃</button>
 </div>
 
+  <div class="container" id="calendar-box" style="display:none;">
+  <section class="calendar" style="display:block;">
+    <div id="cal-controls" style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;">
+      <button type="button" onclick="changeMonth(-1)">◀</button>
+      <div id="cal-label" style="font-weight:600;min-width:120px;text-align:center;"></div>
+      <button type="button" onclick="changeMonth(1)">▶</button>
+      <button type="button" onclick="goToday()" style="margin-left:8px;">오늘</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th class="mon">월</th>
+          <th class="tue">화</th>
+          <th class="wed">수</th>
+          <th class="thu">목</th>
+          <th class="fri">금</th>
+          <th class="sat">토</th>
+          <th class="sun">일</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </section>
+</div>
+
+
 <script>
   let currentStudent = null;
   let currentDate = new Date();
@@ -177,6 +271,7 @@
   const logoutBtn = document.getElementById("logout-btn");
   const prevDayBtn = document.getElementById("prev-day");
   const nextDayBtn = document.getElementById("next-day");
+  const calendarBox = document.getElementById("calendar-box");
 
   function formatDate(d) {
     const yyyy = d.getFullYear();
@@ -217,6 +312,155 @@
 
 
 const pad2 = (n)=> String(n).padStart(2,'0');
+
+  let viewYear  = (new Date()).getFullYear();
+let viewMonth = (new Date()).getMonth();
+
+function getVacations(){ return getJSON('vacations', []); }
+
+function setActiveTab(key){
+  document.getElementById('tab-todo').classList.toggle('active', key === 'todo');
+  document.getElementById('tab-calendar').classList.toggle('active', key === 'calendar');
+}
+
+function showTodo(){
+  setActiveTab('todo');
+  taskBox.style.display = 'block';
+  calendarBox.style.display = 'none';
+  renderTasks();
+}
+
+function showCalendar(){
+  setActiveTab('calendar');
+  taskBox.style.display = 'none';
+  calendarBox.style.display = 'block';
+  renderCalendar();
+}
+
+function setCalLabel(){
+  const label = document.getElementById('cal-label');
+  if (label) label.textContent = `${viewYear}년 ${viewMonth+1}월`;
+}
+
+function changeMonth(delta){
+  viewMonth += delta;
+  if (viewMonth < 0){ viewMonth = 11; viewYear--; }
+  if (viewMonth > 11){ viewMonth = 0; viewYear++; }
+  renderCalendar();
+}
+
+function goToday(){
+  const t = new Date();
+  viewYear  = t.getFullYear();
+  viewMonth = t.getMonth();
+  renderCalendar();
+}
+
+async function renderCalendar(){
+  const tbody = document.getElementById('calendar-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const year = viewYear;
+  const month = viewMonth;
+
+  let holidaysMap = {};
+  try {
+    const hm = await ensureHolidays(year, 'KR');
+    holidaysMap = (hm && typeof hm === 'object') ? hm : {};
+  } catch(e){
+    holidaysMap = {};
+  }
+  const vacations = getVacations() || [];
+  const isVacation = (dateStr) => {
+    const v = vacations.find(v => v.start <= dateStr && dateStr <= v.end);
+    return v ? v.name : null;
+  };
+
+  const firstDay = new Date(year, month, 1);
+  const startDay = firstDay.getDay();
+  const adjustedStart = (startDay + 6) % 7;
+  const lastDate = new Date(year, month + 1, 0).getDate();
+
+  const tasks = getTasks();
+  const instancesMap = {};
+  const pushInst = (dateStr, t) => {
+    (instancesMap[dateStr] ??= []).push({ id: t.id, text: t.text, type: t.type, desc: t.desc || '' });
+  };
+  const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+
+  tasks.forEach(t => {
+    const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
+    if (!assigned) return;
+
+    const inRange = (dateStr) => {
+      const s = t.repeatStart || t.date || '';
+      const e = t.repeatEnd   || '';
+      if (s && dateStr < s) return false;
+      if (e && dateStr > e) return false;
+      return true;
+    };
+
+    const rpt = t.repeat || 'none';
+    if (rpt === 'daily'){
+      for (let d=1; d<=lastDate; d++){
+        const ds = `${year}-${pad2(month+1)}-${pad2(d)}`;
+        if (!inRange(ds)) continue;
+        pushInst(ds, t);
+      }
+    } else if (dayMap[rpt] != null) {
+      for (let d=1; d<=lastDate; d++){
+        const dateObj = new Date(year, month, d);
+        if (dateObj.getDay() === dayMap[rpt]){
+          const ds = `${year}-${pad2(month+1)}-${pad2(d)}`;
+          if (!inRange(ds)) continue;
+          pushInst(ds, t);
+        }
+      }
+    } else {
+      const d = new Date(t.date);
+      if (d.getFullYear() === year && d.getMonth() === month){
+        const ds = `${year}-${pad2(month+1)}-${pad2(d.getDate())}`;
+        pushInst(ds, t);
+      }
+    }
+  });
+
+  let html = '<tr>';
+  for (let i=0; i<adjustedStart; i++) html += '<td></td>';
+
+  for (let day=1; day<=lastDate; day++){
+    const dateStr = `${year}-${pad2(month+1)}-${pad2(day)}`;
+    const isSat = ((adjustedStart + day - 1) % 7 === 5);
+    const isSun = ((adjustedStart + day - 1) % 7 === 6);
+    const holName = holidaysMap[dateStr] || null;
+    const vacName = isVacation(dateStr);
+    const badge = holName
+      ? `<span class="badge-holiday">${escapeHTML(holName)}</span>`
+      : (vacName ? `<span class="badge-vacation">${escapeHTML(vacName)}</span>` : '');
+    const cls = [];
+    if (isSun) cls.push('sun');
+    if (isSat) cls.push('sat');
+    if (holName) cls.push('holiday');
+    if (vacName) cls.push('vacation');
+
+    const pills = (instancesMap[dateStr] || []).map(inst => {
+      if (inst.type === 'event'){
+        const title = escapeHTML(inst.text || '(제목 없음)');
+        const desc  = escapeHTML(inst.desc.trim() || '설명 없음');
+        return `<div class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</div>`;
+      }
+      const done = isDone(currentStudent, inst.id);
+      const cls = done ? 'task-pill done' : 'task-pill pending';
+      return `<div class="${cls}">${escapeHTML(inst.text)}</div>`;
+    }).join('');
+
+    html += `<td class="${cls.join(' ')}"><strong class="day-num">${day}</strong>${badge}${pills}</td>`;
+    if ((adjustedStart + day) % 7 === 0) html += '</tr><tr>';
+  }
+  html += '</tr>';
+  tbody.innerHTML = html;
+  setCalLabel();
+}
 
 function buildInstancesUpTo(dateLimit /* Date */){
   const tasks = getTasks();  // [{id,type,date,text,repeat,repeatStart,repeatEnd,students}]
@@ -349,8 +593,7 @@ function buildInstancesUpTo(dateLimit /* Date */){
     const savedStudent = localStorage.getItem('currentStudent');
     if (savedStudent) {
       currentStudent = savedStudent;
-      taskBox.style.display = "block";
-      renderTasks();
+      showTodo();
     } else {
       location.href = "index.html";
     }
