@@ -71,20 +71,11 @@
       padding:20px;
     }
 
-    .header-row{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px; margin-bottom:8px;
-    }
     h1{
       margin:0; font-family:'Jua',sans-serif; font-weight:400; letter-spacing:-.2px;
       font-size:28px;
     }
-    .mode-pill{
-      font-size:12px; padding:6px 10px; border-radius:999px;
-      border:1px solid var(--card-line); background:#fff;
-      color:#566574;
-    }
-
+    
     .events{ margin-bottom:14px; }
     .events-title{ font-weight:600; margin-bottom:8px; }
 
@@ -145,13 +136,11 @@
     </nav>
     <div class="right-tools">
       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false"></button>
+      <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
     </div>
   </header>
 
   <main class="container">
-    <div class="header-row">
-      <span class="mode-pill" id="mode-pill">보기 전용</span>
-    </div>
     <div class="events" id="events"></div>
     <div class="grid" id="board"></div>
   </main>
@@ -362,7 +351,6 @@ function buildInstancesFromTasks(){
 
       renderEvents();
       const mode = localStorage.getItem('boardMode') || 'view'; // 'view' | 'edit'
-      document.getElementById('mode-pill').textContent = (mode==='edit'?'편집 가능':'보기 전용');
 
       const students = sortStudents(loadStudents());
       const instances = buildInstancesFromTasks();
@@ -471,10 +459,11 @@ function buildInstancesFromTasks(){
 
 
     window.addEventListener('load', () => {
-      applyShowEventsBtn();
-      renderBoard();
-      document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
-    });
+        applyShowEventsBtn();
+        renderBoard();
+        document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
+        document.getElementById('modeBtn')?.addEventListener('click', () => setTimeout(renderBoard, 0));
+      });
     window.addEventListener('storage', (e) => {
       if (e.key === 'tasksV2' || e.key === 'showEvents') renderBoard();
       if (e.key === 'showEvents') applyShowEventsBtn();
