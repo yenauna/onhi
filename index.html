@@ -143,6 +143,9 @@
       <button type="button" id="btn-student-login">학생</button>
       <button type="button" onclick="location.href='teacher.html'">선생님</button>
     </nav>
+    <div class="right-tools">
+      <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false"></button>
+    </div>
   </header>
 
   <main class="container">
@@ -449,12 +452,32 @@ function buildInstancesFromTasks(){
       });
     })();
 
+    function applyShowEventsBtn(){
+      const btn = document.getElementById('eventsBtn');
+      if (!btn) return;
+      let pref = localStorage.getItem('showEvents');
+      if (pref !== 'yes' && pref !== 'no'){ pref='yes'; localStorage.setItem('showEvents', pref); }
+      const show = pref !== 'no';
+      btn.textContent = show ? '일정숨김' : '일정표시';
+      btn.setAttribute('aria-pressed', String(show));
+    }
+    function toggleShowEvents(){
+      const show = localStorage.getItem('showEvents') !== 'no';
+      localStorage.setItem('showEvents', show ? 'no' : 'yes');
+      applyShowEventsBtn();
+      renderBoard();
+    }
 
 
-    
-    window.addEventListener('load', renderBoard);
+
+    window.addEventListener('load', () => {
+      applyShowEventsBtn();
+      renderBoard();
+      document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
+    });
     window.addEventListener('storage', (e) => {
       if (e.key === 'tasksV2' || e.key === 'showEvents') renderBoard();
+      if (e.key === 'showEvents') applyShowEventsBtn();
     });
 
     /* ===== 세션 유틸 ===== */
