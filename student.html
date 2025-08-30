@@ -334,12 +334,22 @@ function buildInstancesUpTo(dateLimit /* Date */){
     }
 
     function renderEventsForDay() {
+      const show = localStorage.getItem('showEvents');
+      if (show === '0' || show === 'false' || show === 'no') return false;
       const all = getTasks(); // common.js의 V2
       const list = all
         .filter(t => t.type === 'event' && occursOn(t, currentDate))
         .filter(t => (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent));
 
       if (!list.length) return false;
+
+      // 과제와 구분선 (과제가 이미 있으면)
+      if (todoContainer.children.length > 0) {
+        const hr = document.createElement('hr');
+        hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
+        todoContainer.appendChild(hr);
+      }
+
 
       // 섹션 타이틀
       const h = document.createElement('h3');
@@ -362,16 +372,9 @@ function buildInstancesUpTo(dateLimit /* Date */){
       });
       todoContainer.appendChild(ul);
 
-      // 과제와 구분선
-      const hr = document.createElement('hr');
-      hr.style.cssText = 'border:none;border-top:1px solid #e2e5e9;margin:10px 0 12px;';
-      todoContainer.appendChild(hr);
-
+    
       return true;
     }
-
-    // ➊ 오늘 일정 먼저 표시
-    renderEventsForDay();
 
     const today0 = normalizeDate(new Date());
     const currDate0 = normalizeDate(currentDate);
@@ -436,6 +439,8 @@ function buildInstancesUpTo(dateLimit /* Date */){
     });
   }
 
+  // ➋ 오늘 일정 표시 (교사 설정 동기화)
+    renderEventsForDay();
 
   prevDayBtn.onclick = () => {
     currentDate.setDate(currentDate.getDate() - 1);
