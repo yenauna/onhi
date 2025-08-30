@@ -103,3 +103,9 @@ body{
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
+.task-box.done{
+  background: transparent !important;
+  color: #9aa6b2 !important;
+  border-color: #dcdfe4 !important;
+  text-decoration: line-through;
+}
