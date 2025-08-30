@@ -9,29 +9,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css" />
 
-   <script src="js/common.js" defer></script>
+  <link rel="stylesheet" href="css/common.css">
   
   <style>
-    :root{
-      /* 배경 */
-      --bg-base:#eaf4ef;
-      --bg-yellow:#f6e4b5;
-      --bg-mint:#cfeee0;
-
-      /* 카드 */
-      --card:#fbf3da;
-      --card-line:#efe6cd;
-
-      /* 텍스트 */
-      --text:#1f2a33;
-      --muted:#6f7d8c;
-      --error:#e11d48;
-
-      /* 인풋/버튼 */
+    .login-page{
+       --error:#e11d48;
       --input-bg:#ffffff;
       --input-line:#dcdfe4;
       --btn:#2e7d57;
-      --btn-shadow:rgba(46,125,87,.26);
     }
 
     * { box-sizing:border-box }
@@ -168,7 +153,7 @@
     .footer{ margin-top:14px; text-align:center; font-size:13px; color:var(--muted); }
   </style>
 </head>
-<body>
+<body class="login-page">
   <!-- 구름 배경 -->
   <div class="clouds" aria-hidden="true"></div>
 
