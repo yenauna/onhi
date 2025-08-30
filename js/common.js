@@ -20,6 +20,25 @@
   const loadStudentsCached = () => (_studentsCache ?? (_studentsCache = getJSON('students', [])));
   const invalidateStudentsCache = () => { _studentsCache = null; };
 
+   // students 로딩 (배열 또는 {students:[...]})
+  const loadStudents = () => {
+    const data = loadStudentsCached();
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.students)) return data.students;
+    return [];
+  };
+
+  // 학생 정렬(id 숫자, 50 초과는 뒤로)
+  function sortStudents(arr){
+    const toNum = v => { const n = parseInt(String(v),10); return isNaN(n)?0:n; };
+    return (arr||[]).slice().sort((a,b)=>{
+      const an=toNum(a.id), bn=toNum(b.id);
+      const ag=an>50?1:0, bg=bn>50?1:0;
+      if (ag!==bg) return ag-bg;
+      return an-bn;
+    });
+  }
+   
   // teacherTasks-* 전부 로드
   const loadAllTeacherTasks = () => {
     const res = [];
@@ -274,16 +293,12 @@ if (typeof renderEventsStrip !== 'function') {
     });
   };
 }
-
-
-
-
   
   // 전역으로 노출
   Object.assign(w, {
     qs, qsa, pad2, dayNames, escapeHTML,
     getJSON, setJSON, normalizeDate,
-    loadStudentsCached, invalidateStudentsCache, loadAllTeacherTasks,
+    loadStudentsCached, invalidateStudentsCache, loadStudents, sortStudents, loadAllTeacherTasks,
     ensureHolidays,
     genUID, getTasks, setTasks, migrateToUIDOnce,
     occursOn, renderEventsStrip,
