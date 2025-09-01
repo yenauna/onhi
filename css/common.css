@@ -129,6 +129,7 @@ body{
   border-color:#f5d992;
 }
 .student-chip.exempt{
-  background:#f5f7fa;
-  border-color:#e2e8f0;
+  background:#E5E7EB;
+  border-color:#D1D5DB;
+  color:#374151;
 }
