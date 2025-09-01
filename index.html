@@ -365,21 +365,20 @@ function buildInstancesFromTasks(){
     document.addEventListener('DOMContentLoaded', () => {
       applyShowEventsBtn?.();         // 페이지에 있으면 실행
       renderBoard?.();                // index/teacher의 보드 렌더
-      renderStudentStatus?.();        // teacher의 ‘오늘 할 일’ 뷰
-      renderCalendar?.();             // teacher의 달력
-      renderTasks?.();                // student의 목록
+      window.renderStudentStatus?.(); // teacher의 ‘오늘 할 일’ 뷰
+      window.renderCalendar?.();      // teacher의 달력
+      window.renderTasks?.();         // student의 목록
       document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
-      document.getElementById('studentPwInput')?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          confirmStudentLogin();
-        }
+     document.getElementById('studentLoginForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        confirmStudentLogin();
       });
     });
 
     window.addEventListener('storage', (e) => {
       if (e.key === 'tasksV2' || e.key === 'showEvents' || e.key === 'boardMode') renderBoard();
       if (e.key === 'showEvents') applyShowEventsBtn();
-      if (e.key === 'boardMode') applyBoardModeToButton?.();
+       if (e.key === 'boardMode') window.applyBoardModeToButton?.();
     });
 
     /* ===== 세션 유틸 ===== */
@@ -473,14 +472,15 @@ function confirmStudentLogin(){
     </div>
 
    <form id="studentLoginForm">
+      <form id="studentLoginForm">
       <input id="studentPwInput" type="password" placeholder="비밀번호"
              style="width:100%; height:44px; border:1px solid #dcdfe4; border-radius:12px; padding:0 12px; font:inherit;">
 
-     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px;">
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px;">
         <button type="submit" class="btn-primary">확인</button>
-     </div>
+      </div>     
 
-    <div id="loginError" style="display:none; color:#c62828; margin-top:8px; font-size:14px;">
+   <div id="loginError" style="display:none; color:#c62828; margin-top:8px; font-size:14px;">
         비밀번호가 올바르지 않습니다.
       </div>
     </form>
