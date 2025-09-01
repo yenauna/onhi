@@ -95,6 +95,11 @@
      background:#f05555;
      color:#fff;
     }
+    .task-box.postponed{
+     background:#fddf7f;
+     color:#000;
+     border-color:#f0c24c;
+    }
     .task-name{ flex:1; min-width:0; text-align:left;
      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } /* 긴 제목 말줄임 */
 
@@ -535,14 +540,25 @@ function buildInstancesUpTo(dateLimit /* Date */){
     }
   });
 
+   // 미룸 상태 인스턴스 추가
+  if (typeof getDoneStore === 'function' && currentStudent){
+    const stMap = getDoneStore(currentStudent) || {};
+    Object.entries(stMap).forEach(([uid, st]) => {
+      if (st && st.s === 'p' && st.du){
+        const duDate = normalizeDate(st.du);
+        if (duDate <= limit0 && !out.some(i => i.uid === uid && i.date === st.du)){
+          const baseInst = out.find(i => i.uid === uid);
+          if (baseInst){
+            out.push({ ...baseInst, date: st.du, dateObj: duDate });
+          }
+        }
+      }
+    });
+  }
+
   out.sort((a,b)=> b.dateObj - a.dateObj); // 최근일 우선
   return out;
-}
-
-
-
-
-  
+}  
   
   // 공통 헬퍼 사용  
   function renderTasks() {
@@ -575,22 +591,20 @@ function buildInstancesUpTo(dateLimit /* Date */){
 
       if (!isExempt && done && isPast) return;
 
-      // 미룸: 다른 날짜로 옮겨졌다면 원래 날짜 인스턴스는 숨김
-      if (statusCode === 'p' && postponedTo && postponedTo !== inst.date) return;
-
       // 카드 내용, 스타일
       const box = document.createElement('div');
-      box.className = "task-box" + (isExempt ? " exempt" : (done ? " done" : ""));
-
+      box.className = "task-box";
+      if (isExempt) box.classList.add('exempt');
+      if (done) box.classList.add('done');
+      if (statusCode === 'p') box.classList.add('postponed');
       
-
       // 날짜 라벨
       const isToday = inst.dateObj.getTime() === currDate0.getTime();
       const dayNames = ['일','월','화','수','목','금','토'];
       const labelText = isToday
-        ? '오늘'
-        : `${inst.dateObj.getMonth()+1}월 ${inst.dateObj.getDate()}일 (${dayNames[inst.dateObj.getDay()]})`;
-
+          ? '오늘'
+          : `${inst.dateObj.getMonth()+1}월 ${inst.dateObj.getDate()}일 (${dayNames[inst.dateObj.getDay()]})`;
+      
       // 면제 배지 및 아이콘
       const tagHTML = isExempt ? `<span class="tag tag-exempt">면제</span>` : '';
       const iconHTML = isExempt ? ' 🚫' : '';
@@ -601,17 +615,32 @@ function buildInstancesUpTo(dateLimit /* Date */){
       <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
       `;
 
+      // 미룸 표시
+      if (statusCode === 'p') {
+        const dateEl = box.querySelector('.task-date');
+        if (dateEl) {
+          const arrow = `<span class="postpone-arrow">→</span>`;
+          if (postponedTo && postponedTo !== inst.date){
+            const d = new Date(postponedTo);
+            const newLabel = `${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`;
+            dateEl.innerHTML += ` ${arrow} ${newLabel}`;
+          } else {
+            dateEl.innerHTML += ` ${arrow}`;
+          }
+        }
+      }
+
       // 시각 효과
       if (isExempt) {
         // CSS 클래스 .exempt가 이미 기본 톤을 정리함
       } else if (done) {
         box.style.backgroundColor = "transparent";
         box.style.color = "#9aa6b2";
-      } else if (isPast) {
+      } else if (isPast && statusCode !== 'p') {
         box.style.backgroundColor = "#f05555";
         box.style.color = "#fff";
         box.classList.add('past');
-      } else {
+      } else if (statusCode !== 'p') {
         box.style.backgroundColor = "#f6c1c1";
         box.style.color = "#000";
       }
@@ -625,6 +654,7 @@ function buildInstancesUpTo(dateLimit /* Date */){
           setDone(currentStudent, inst.uid, !done);
           renderTasks();
         };
+      }
 
       todoContainer.appendChild(box);
     });
