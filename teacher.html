@@ -1485,6 +1485,8 @@ if ($btns) {
     const statusCode = st?.s || '';
     const isExempt = statusCode === 'e';
     const done = statusCode === 'd';
+    const isPostponed = statusCode === 'p';
+    const isPostponed = statusCode === 'p';
     const chip = document.createElement('div');
     chip.className = "student-chip" + (isExempt ? " exempt" : (done ? "" : " missed"));
     chip.dataset.student = stu.name;
@@ -1635,6 +1637,7 @@ grid.addEventListener('dblclick', (e) => {
           const postponedTo = st?.du || null;
           const isExempt = statusCode === 'e';
           const done = statusCode === 'd';
+          const isPostponed = statusCode === 'p';
           const isPast = inst.dateObj < today;
 
           if (isPostponed && postponedTo && postponedTo !== inst.date) return;
