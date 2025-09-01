@@ -1365,19 +1365,52 @@ if ($btns) {
 
   container.appendChild(grid);
 
-  grid.onclick = (e) => {
-    const chip = e.target.closest('.student-chip');
-    if (!chip) return;
+  // [teacher.html] renderTaskCompletion(uid) 내부의 grid.onclick 교체
+grid.onclick = null; // 기존 델리게이션 제거(중복 방지)
+
+// 클릭/더블클릭 구분용 타이머
+let _tapTimer = null;
+const TAP_DELAY = 250; // 더블클릭 판정 시간(ms)
+
+grid.addEventListener('click', (e) => {
+  const chip = e.target.closest('.student-chip');
+  if (!chip) return;
+  // 더블클릭로 전환될 수 있으니, 일단 타이머에 토글 예약
+  if (_tapTimer) clearTimeout(_tapTimer);
+  _tapTimer = setTimeout(() => {
+    _tapTimer = null;
+
     const student = chip.dataset.student;
     const uid     = chip.dataset.uid;
+    const st = (typeof getStatusFor === 'function') ? getStatusFor(student, uid) : null;
+    const isDoneNow = !!(st && st.s === 'd');
 
-    // 간단 메뉴
+    // 단일 클릭 = 완료/미완료 토글(기존 동작 유지)
+    setDone(student, uid, !isDoneNow);
+
+    // UI 갱신
+    if (typeof renderTaskCompletion === 'function') renderTaskCompletion(uid);
+    if (typeof renderCalendar === 'function') renderCalendar();
+    if (typeof renderStudentStatus === 'function') renderStudentStatus();
+  }, TAP_DELAY);
+}, false);
+
+grid.addEventListener('dblclick', (e) => {
+  const chip = e.target.closest('.student-chip');
+  if (!chip) return;
+
+  // 클릭 예약 취소
+  if (_tapTimer) { clearTimeout(_tapTimer); _tapTimer = null; }
+
+  const student = chip.dataset.student;
+  const uid     = chip.dataset.uid;
+
+  // 더블클릭 = 확장 메뉴(미룸/면제)
   const choice = prompt(
     '상태를 선택하세요:\n' +
     '1=완료, 2=미완료, 3=미룸(결석), 4=면제\n' +
     '(미룸 선택 시 +며칠 미룰지 입력창이 이어집니다.)'
   );
-
   if (!choice) return;
 
   if (choice === '1') {
@@ -1387,32 +1420,22 @@ if ($btns) {
   } else if (choice === '3') {
     const add = prompt('+며칠 미룰까요? (정수 입력)');
     const n = parseInt(add, 10);
-    if (!isNaN(n) && n>0) {
-      // 현재 인스턴스 날짜를 기준으로 n일 후로 du 설정
-      // chip에 inst 날짜 값이 없으면 uid로 원래 date를 찾아도 되고,
-      // 간단히 오늘(dateStr)에서 n일 더하는 방식으로도 동작합니다.
-      const now = new Date(); now.setHours(0,0,0,0);
-      // 원래 인스턴스 날짜가 필요하면 renderTaskCompletion에 inst.date를 data-*로 같이 심어두세요.
-      now.setDate(now.getDate()+n);
-      const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0'), d = String(now.getDate()).padStart(2,'0');
-      setStatusFor(student, uid, { s:'p', du:`${y}-${m}-${d}` });
+    if (!isNaN(n) && n > 0) {
+      // 현재 날짜 기준 n일 뒤로 미룸 (원하면 인스턴스 날짜 기준으로 바꿔도 OK)
+      const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + n);
+      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+      setStatusFor(student, uid, { s:'p', du:`${y}-${m}-${dd}` });
     }
   } else if (choice === '4') {
     const reason = prompt('면제 사유(선택):') || '';
     setStatusFor(student, uid, { s:'e', du:null, note:reason });
   }
 
-  // UI 다시 그리기
-  renderTaskCompletion(uid);
+  // UI 갱신
+  if (typeof renderTaskCompletion === 'function') renderTaskCompletion(uid);
   if (typeof renderCalendar === 'function') renderCalendar();
   if (typeof renderStudentStatus === 'function') renderStudentStatus();
-
-    const nowIsDone = !chip.classList.contains('missed');
-    setDone(student, uid, !nowIsDone);     // UID로 토글
-    chip.classList.toggle('missed', nowIsDone);
-
-    renderStudentStatus?.();
-  };
+}, false);
 }
 
 
