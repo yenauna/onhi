@@ -1089,7 +1089,26 @@
     const set = new Set(t.students);
     assignedNames = assignedNames.filter(n => set.has(n));
   }
-  const anyIncomplete = assignedNames.some(name => !isDone(name, inst.id));
+  // [teacher.html] renderCalendar()의 pills 계산 부분 교체
+const anyIncomplete = assignedNames.some(name => {
+  const st = (typeof getStatusFor==='function') ? getStatusFor(name, inst.id) : null;
+
+  // 면제는 분모/체크에서 제외
+  if (st && st.s === 'e') return false;
+
+  // 미룸은 해당 학생에게 오늘 인스턴스가 사실상 '다른 날짜로 이동' → 오늘 미완료에서 제외
+  if (st && st.s === 'p') {
+    if (st.du && st.du !== dateStr) return false;
+    // 만약 du가 이 날짜와 같다면(=오늘로 재배정), 이때는 일반 과제로 취급
+  }
+
+  // 완료면 제외
+  if (st && st.s === 'd') return false;
+
+  // 상태기록 없음 → pending
+  return true;
+});
+      
   const cls = anyIncomplete ? 'task-pill pending' : 'task-pill done';
 
   return `<div class="${cls}" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(t.text)}</div>`;
