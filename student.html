@@ -475,35 +475,49 @@ async function renderCalendar(){
     const dateStr = `${year}-${pad2(month+1)}-${pad2(day)}`;
     const isSat = ((adjustedStart + day - 1) % 7 === 5);
     const isSun = ((adjustedStart + day - 1) % 7 === 6);
+    
     const holName = holidaysMap[dateStr] || null;
     const vacName = isVacation(dateStr);
     const badge = holName
       ? `<span class="badge-holiday">${escapeHTML(holName)}</span>`
       : (vacName ? `<span class="badge-vacation">${escapeHTML(vacName)}</span>` : '');
+    
     const cls = [];
     if (isSun) cls.push('sun');
     if (isSat) cls.push('sat');
     if (holName) cls.push('holiday');
     if (vacName) cls.push('vacation');
 
-    const pills = (instancesMap[dateStr] || []).map(inst => {
-      if (inst.type === 'event'){
+    // ✅ 날짜에 들어갈 아이템들(일정/과제) 만들기
+    const itemsHTML = (instancesMap[dateStr] || []).map(inst => {
+      if (inst.type === 'event') {
         const title = escapeHTML(inst.text || '(제목 없음)');
-        const desc  = escapeHTML(inst.desc.trim() || '설명 없음');
-        return `<div class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</div>`;
+        const desc  = escapeHTML((inst.desc || '').trim() || '설명 없음');
+        return `<button type="button" class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</button>`;
+      } else {
+        // 과제 pill (면제/완료/미완료)
+        let statusCode = '';
+        if (typeof getStatusFor === 'function') {
+          const st = getStatusFor(currentStudent, inst.id); // {s:'e'|'d'|'p'|'' ...}
+          statusCode = st?.s || '';
+        }
+        const isExempt = statusCode === 'e';
+        const done = !isExempt && (statusCode === 'd' || isDone(currentStudent, inst.id));
+        const pillCls = isExempt ? 'task-pill exempt' : (done ? 'task-pill done' : 'task-pill pending');
+        const icon    = isExempt ? ' 🚫' : '';
+        return `<div class="${pillCls}">${escapeHTML(inst.text)}${icon}</div>`;
       }
-     
     }).join('');
-    const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.id) : null;
-    const statusCode = st?.s || '';
-    const isExempt = statusCode === 'e';
-    const done = !isExempt && (statusCode === 'd' || isDone(currentStudent, inst.id));
-    const cls = isExempt ? 'task-pill exempt' : (done ? 'task-pill done' : 'task-pill pending');
-    const iconHTML = isExempt ? ' 🚫' : '';
-    return `<div class="${cls}">${escapeHTML(inst.text)}${iconHTML}</div>`;
-    html += `<td class="${cls.join(' ')}"><strong class="day-num">${day}</strong>${badge}${pills}</td>`;
+
+    html += `<td class="${cellCls.join(' ')}">
+      <strong class="day-num">${day}</strong>
+      ${badge}
+      ${itemsHTML}
+    </td>`;
+
     if ((adjustedStart + day) % 7 === 0) html += '</tr><tr>';
   }
+
   html += '</tr>';
   tbody.innerHTML = html;
   setCalLabel();
