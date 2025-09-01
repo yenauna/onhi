@@ -209,7 +209,33 @@
       #today-date{ font-size: 24px; }
       header{ padding:6px 8px; }
     }
-  
+
+    /* --- 면제 표시용 --- */
+.tag{
+  display:inline-block;
+  padding:2px 8px;
+  font-size:12px;
+  border-radius:999px;
+  border:1px solid #e2e5e9;
+  background:#fff;
+  color:#555;
+  margin-right:8px;
+}
+
+.tag-exempt{
+  background:#f0f3f5;
+  border-color:#d9dee3;
+  color:#586172;
+}
+
+/* 면제 카드는 붉은 경고 톤 대신 중립 톤 */
+.task-box.exempt{
+  background:#f7f9fb !important;
+  color:#444 !important;
+  border-color:#dce2e8 !important;
+  text-decoration:none !important;
+}
+
     
   </style>
 </head>
@@ -541,11 +567,22 @@ function buildInstancesUpTo(dateLimit /* Date */){
       const done = isDone(currentStudent, inst.uid);
       const isPast = inst.dateObj < today0;
 
-      // 과거 + 완료는 숨김
-      if (done && isPast) return;
+      // 과거 + 완료는 숨김 (단, 면제는 예외)
+      const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.uid) : null;
+      const statusCode = st?.s || '';          // ''| 'd'(완료) | 'p'(미룸) | 'e'(면제)
+      const postponedTo = st?.du || null;
+      const isExempt = statusCode === 'e';
 
+      if (!isExempt && done && isPast) return;
+
+      // 미룸: 다른 날짜로 옮겨졌다면 원래 날짜 인스턴스는 숨김
+      if (statusCode === 'p' && postponedTo && postponedTo !== inst.date) return;
+
+      // 카드 내용, 스타일
       const box = document.createElement('div');
-      box.className = `task-box ${done ? 'done' : 'pending'}${(!done && isPast) ? ' past' : ''}`;
+      box.className = "task-box" + (isExempt ? " exempt" : (done ? " done" : ""));
+
+      
 
       // 날짜 라벨
       const isToday = inst.dateObj.getTime() === currDate0.getTime();
@@ -559,11 +596,39 @@ function buildInstancesUpTo(dateLimit /* Date */){
         <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
       `;
 
+      // 면제 배지
+      const tagHTML = isExempt ? `<span class="tag tag-exempt">면제</span>` : '';
+
+      box.innerHTML = `
+      ${tagHTML}
+      <span class="task-name">${escapeHTML(inst.text)}</span>
+      <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
+      `;
+
+      // 시각 효과
+      if (isExempt) {
+        // CSS 클래스 .exempt가 이미 기본 톤을 정리함
+      } else if (done) {
+        box.style.backgroundColor = "transparent";
+        box.style.color = "#9aa6b2";
+      } else if (isPast) {
+        box.style.backgroundColor = "#f05555";
+        box.style.color = "#fff";
+        box.classList.add('past');
+      } else {
+        box.style.backgroundColor = "#f6c1c1";
+        box.style.color = "#000";
+      }
+
       // 클릭 토글 (UID 저장)
-      box.onclick = () => {
-        setDone(currentStudent, inst.uid, !done);
-        renderTasks();
-      };
+      if (isExempt) {
+        // 학생은 면제 상태를 변경할 수 없게 클릭 비활성화
+        box.style.cursor = "default";
+      } else {
+        box.onclick = () => {
+          setDone(currentStudent, inst.uid, !done);
+          renderTasks();
+        };
 
       todoContainer.appendChild(box);
     });
