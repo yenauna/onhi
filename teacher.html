@@ -588,7 +588,8 @@
           <input type="text" id="vac-name" placeholder="예: 여름방학" style="flex:1 1 180px;">
           <input type="date" id="vac-start">
           <input type="date" id="vac-end">
-          <button class="btn-primary" onclick="addVacation()">추가</button>
+          <button class="btn-primary" id="vac-add-btn" onclick="addVacation()">추가</button>
+          <button id="vac-cancel-btn" onclick="cancelEditVacation()" style="display:none;">취소</button>
         </div>
         <div id="vac-list" style="margin-top:10px;"></div>
       </section>
@@ -776,6 +777,8 @@
       renderCalendar();
       hideActionUI();
       renderStudentSelector();
+      renderVacationList();
+      cancelEditVacation();
       const calendarSection = document.querySelector("#task-management section.calendar");
       if (calendarSection) calendarSection.style.display = "block";
     }
@@ -1728,7 +1731,34 @@ function migrateLegacyDoneToUIDOnce() {
 
     function getVacations(){ return getJSON('vacations', []); }
     function setVacations(v){ setJSON('vacations', v); }
-    
+
+    let editingVacIndex = null;
+
+    function cancelEditVacation(){
+      editingVacIndex = null;
+      qs('#vac-name').value='';
+      qs('#vac-start').value='';
+      qs('#vac-end').value='';
+      const addBtn = qs('#vac-add-btn');
+      const cancelBtn = qs('#vac-cancel-btn');
+      if (addBtn) addBtn.textContent = '추가';
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+
+    function editVacation(idx){
+      const list = getVacations();
+      const v = list[idx];
+      if (!v) return;
+      editingVacIndex = idx;
+      qs('#vac-name').value = v.name;
+      qs('#vac-start').value = v.start;
+      qs('#vac-end').value = v.end;
+      const addBtn = qs('#vac-add-btn');
+      const cancelBtn = qs('#vac-cancel-btn');
+      if (addBtn) addBtn.textContent = '수정 완료';
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
+    }
+
     function addVacation(){
       const name  = qs('#vac-name').value.trim();
       const start = qs('#vac-start').value;
@@ -1737,10 +1767,14 @@ function migrateLegacyDoneToUIDOnce() {
       if (start > end) { alert('시작이 종료보다 뒤입니다.'); return; }
       
       const list = getVacations();
-      list.push({ name, start, end });
+      if (editingVacIndex != null) {
+        list[editingVacIndex] = { name, start, end };
+      } else {
+        list.push({ name, start, end });
+      }
       setVacations(list);
       
-      qs('#vac-name').value=''; qs('#vac-start').value=''; qs('#vac-end').value='';
+      cancelEditVacation();
       renderVacationList();
       renderCalendar();
     }
@@ -1749,6 +1783,11 @@ function migrateLegacyDoneToUIDOnce() {
       const list = getVacations();
       list.splice(idx,1);
       setVacations(list);
+       if (editingVacIndex === idx) {
+        cancelEditVacation();
+      } else if (editingVacIndex != null && editingVacIndex > idx) {
+        editingVacIndex--;
+      }
       renderVacationList();
       renderCalendar();
     }
@@ -1760,6 +1799,7 @@ function migrateLegacyDoneToUIDOnce() {
       box.innerHTML = list.map((v,i)=>`
       <div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
       <div style="flex:1 1 auto;">🏖 ${escapeHTML(v.name)} — ${v.start} ~ ${v.end}</div>
+      <button onclick="editVacation(${i})">수정</button>
       <button onclick="deleteVacation(${i})">삭제</button>
       </div>
       `).join('');
