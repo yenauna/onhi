@@ -1330,6 +1330,127 @@ if ($btns) {
 
     }
 
+    // -----------------------------------------------------------
+    // 상태 변경 모달 구성 및 유틸리티
+    // -----------------------------------------------------------
+    let _statusModal = null, _statusStudent = null, _statusUID = null;
+
+    function refreshStatusUI(uid){
+      if (typeof renderTaskCompletion === 'function') renderTaskCompletion(uid);
+      if (typeof renderCalendar === 'function') renderCalendar();
+      if (typeof renderStudentStatus === 'function') renderStudentStatus();
+    }
+
+    function closeStatusModal(){
+      if (_statusModal) _statusModal.style.display = 'none';
+      _statusStudent = null;
+      _statusUID = null;
+    }
+
+    function ensureStatusModal(){
+      if (_statusModal) return _statusModal;
+      const modal = document.createElement('div');
+      modal.id = 'statusModal';
+      modal.style.display = 'none';
+      modal.style.position = 'fixed';
+      modal.style.inset = '0';
+      modal.style.zIndex = '2000';
+      modal.innerHTML = `
+        <div class="modal-backdrop" style="position:absolute; inset:0; background:rgba(0,0,0,.35);"></div>
+        <div class="modal-card" style="
+          position:absolute; left:50%; top:20%; transform:translateX(-50%);
+          width:min(420px, 92vw); background:#fff; border-radius:16px;
+          box-shadow:0 20px 50px rgba(0,0,0,.18); padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="margin:0; font-size:18px;">상태 변경</h3>
+            <button type="button" id="statusModalClose" style="all:unset; cursor:pointer; font-size:20px;">×</button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            <button type="button" id="statusDoneBtn" class="btn-primary">완료</button>
+            <button type="button" id="statusUndoneBtn">미완료</button>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="margin-bottom:4px;">미룸</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button type="button" class="postponeBtn" data-add="1">+1</button>
+              <button type="button" class="postponeBtn" data-add="2">+2</button>
+              <button type="button" class="postponeBtn" data-add="3">+3</button>
+              <button type="button" class="postponeBtn" data-add="custom">직접입력</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input type="text" id="exemptReason" placeholder="면제 사유(선택)" style="flex:1; height:38px; border:1px solid #dcdfe4; border-radius:10px; padding:0 10px; font:inherit;">
+            <button type="button" id="statusExemptBtn">면제</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.querySelector('.modal-backdrop').addEventListener('click', closeStatusModal);
+      modal.querySelector('#statusModalClose').addEventListener('click', closeStatusModal);
+      modal.querySelector('#statusDoneBtn').addEventListener('click', () => {
+        if (!_statusStudent) return;
+        setDone(_statusStudent, _statusUID, true);
+        refreshStatusUI(_statusUID);
+        closeStatusModal();
+      });
+      modal.querySelector('#statusUndoneBtn').addEventListener('click', () => {
+        if (!_statusStudent) return;
+        setDone(_statusStudent, _statusUID, false);
+        refreshStatusUI(_statusUID);
+        closeStatusModal();
+      });
+      modal.querySelectorAll('.postponeBtn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!_statusStudent) return;
+          let add = btn.dataset.add;
+          let days = 0;
+          if (add === 'custom') {
+            const v = prompt('+며칠 미룰까요?');
+            days = parseInt(v, 10);
+          } else {
+            days = parseInt(add, 10);
+          }
+          if (!days || days <= 0) return;
+          const newDate = await calcBusinessDate(days);
+          setPostponed(_statusStudent, _statusUID, newDate);
+          refreshStatusUI(_statusUID);
+          closeStatusModal();
+        });
+      });
+      modal.querySelector('#statusExemptBtn').addEventListener('click', () => {
+        if (!_statusStudent) return;
+        const reason = modal.querySelector('#exemptReason').value;
+        setExempt(_statusStudent, _statusUID, reason);
+        refreshStatusUI(_statusUID);
+        closeStatusModal();
+      });
+      return (_statusModal = modal);
+    }
+
+    function openStatusModal(student, uid){
+      ensureStatusModal();
+      _statusStudent = student;
+      _statusUID = uid;
+      _statusModal.style.display = 'block';
+      _statusModal.querySelector('#exemptReason').value = '';
+    }
+
+    async function calcBusinessDate(addDays){
+      const start = new Date(); start.setHours(0,0,0,0);
+      const holidaysCache = {};
+      let d = new Date(start);
+      let count = 0;
+      while(count < addDays){
+        d.setDate(d.getDate() + 1);
+        const year = d.getFullYear();
+        if (!holidaysCache[year]) holidaysCache[year] = await ensureHolidays(year);
+        const dateStr = `${year}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+        const isHoliday = !!holidaysCache[year][dateStr];
+        if (isWeekend || isHoliday) continue;
+        count++;
+      }
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
 
     // ===========================================================
     // 과제별 학생 완료 여부 렌더링
@@ -1413,37 +1534,8 @@ grid.addEventListener('dblclick', (e) => {
 
   const student = chip.dataset.student;
   const uid     = chip.dataset.uid;
-
-  // 더블클릭 = 확장 메뉴(미룸/면제)
-  const choice = prompt(
-    '상태를 선택하세요:\n' +
-    '1=완료, 2=미완료, 3=미룸(결석), 4=면제\n' +
-    '(미룸 선택 시 +며칠 미룰지 입력창이 이어집니다.)'
-  );
-  if (!choice) return;
-
-  if (choice === '1') {
-    setStatusFor(student, uid, { s:'d', du:null, note:'' });
-  } else if (choice === '2') {
-    setStatusFor(student, uid, { s:'', du:null, note:'' });
-  } else if (choice === '3') {
-    const add = prompt('+며칠 미룰까요? (정수 입력)');
-    const n = parseInt(add, 10);
-    if (!isNaN(n) && n > 0) {
-      // 현재 날짜 기준 n일 뒤로 미룸 (원하면 인스턴스 날짜 기준으로 바꿔도 OK)
-      const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + n);
-      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-      setStatusFor(student, uid, { s:'p', du:`${y}-${m}-${dd}` });
-    }
-  } else if (choice === '4') {
-    const reason = prompt('면제 사유(선택):') || '';
-    setStatusFor(student, uid, { s:'e', du:null, note:reason });
-  }
-
-  // UI 갱신
-  if (typeof renderTaskCompletion === 'function') renderTaskCompletion(uid);
-  if (typeof renderCalendar === 'function') renderCalendar();
-  if (typeof renderStudentStatus === 'function') renderStudentStatus();
+  // 더블클릭 = 상태 변경 모달 열기
+  openStatusModal(student, uid);
 }, false);
 }
 
