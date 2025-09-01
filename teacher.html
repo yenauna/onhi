@@ -474,7 +474,8 @@
       <button id="tab-student" onclick="showStudentManagement()">학생 관리</button>
     </nav>
     <div class="right-tools">
-       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false">일정숨김</button>
+      <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false">일정숨김</button>
+      <button type="button" id="peToggleBtn" class="mode-btn" aria-pressed="false"></button>
       <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
     </div>
   </header>
@@ -1553,6 +1554,7 @@ grid.addEventListener('dblclick', (e) => {
       
       const students = getStudentsSorted();
 
+      const showPE = localStorage.getItem('showPostponedExempt') !== 'no';
       
       // 과제 → 표시용 인스턴스(날짜별)로 풀기
       const instances = [];
@@ -1635,8 +1637,10 @@ grid.addEventListener('dblclick', (e) => {
           const done = statusCode === 'd';
           const isPast = inst.dateObj < today;
 
-          if (statusCode === 'p' && postponedTo && postponedTo !== inst.date) return;
-          if (!isExempt && done && isPast) return;  // 과거 & 완료면 숨김
+          if (isPostponed && postponedTo && postponedTo !== inst.date) return;
+          if (!showPE && (isPostponed || isExempt)) return;
+          if (!isExempt && done && isPast) return;  // 과거 & 완료면 숨김(면제 제외)
+
 
           let bg = "#f6c1c1", dateColor = "#666";
           if (isExempt) { bg = "#E5E7EB"; dateColor = "#374151"; }
@@ -1644,12 +1648,18 @@ grid.addEventListener('dblclick', (e) => {
           else if (!isPast && done) { bg = "white"; dateColor = "#666"; }
 
           const chip = document.createElement("div");
-          chip.className = "student-chip" + (isExempt ? " exempt" : (done ? "" : " missed"));
+          let cls = "student-chip";
+          if (!done && !isPostponed && !isExempt) cls += " missed";
+          if (isPostponed) cls += " postponed";
+          if (isExempt) cls += " exempt";
+          chip.className = cls;
           chip.dataset.student = stu.name;
           chip.dataset.uid = inst.uid;               // UID 저장
-          chip.style.cssText = `
-          border:1px solid #e6e8eb; background:${bg}; padding:8px; border-radius:12px;
-          margin:6px 0; display:flex; justify-content:space-between; align-items:center; cursor:pointer;`;
+
+          let style = "padding:8px; border-radius:12px; margin:6px 0; display:flex; justify-content:space-between; align-items:center; cursor:pointer;";
+          if (!isPostponed && !isExempt) style = `border:1px solid #e6e8eb; background:${bg}; ` + style;
+          chip.style.cssText = style;
+
           chip.innerHTML = `
           <span>${escapeHTML(inst.text)}${isExempt ? ' 🚫' : ''}</span>
           <span style="font-size:10px; color:${dateColor};">${inst.date}</span>
@@ -2096,6 +2106,29 @@ function migrateLegacyDoneToUIDOnce() {
         }
       });
 
+    function applyPeBtn(){
+      const btn = document.getElementById('peToggleBtn');
+      if (!btn) return;
+      let pref = localStorage.getItem('showPostponedExempt');
+      if (pref !== 'yes' && pref !== 'no'){ pref='yes'; localStorage.setItem('showPostponedExempt', pref); }
+      const show = pref !== 'no';
+      btn.textContent = show ? '미룸·면제 숨기기' : '미룸·면제 보기';
+      btn.setAttribute('aria-pressed', String(show));
+    }
+    function toggleShowPe(){
+      const show = localStorage.getItem('showPostponedExempt') !== 'no';
+      localStorage.setItem('showPostponedExempt', show ? 'no' : 'yes');
+      renderStudentStatus();
+      applyPeBtn();
+    }
+    applyPeBtn();
+    document.getElementById('peToggleBtn')?.addEventListener('click', toggleShowPe);
+    window.addEventListener('storage', (e)=>{
+      if (e.key === 'showPostponedExempt') {
+        renderStudentStatus();
+        applyPeBtn();
+      }
+    });
     
     window.addEventListener('load', renderVacationList);
 
