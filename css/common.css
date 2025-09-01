@@ -111,6 +111,13 @@ body{
   text-decoration: line-through;
 }
 
+/* 미룸 상태 */
+.task-box.postponed{
+  background:#fddf7f;
+  border-color:#f0c24c;
+  color:#000;
+}
+
 /* 배지 */
 .tag{
   display:inline-block;
@@ -125,8 +132,9 @@ body{
 
 /* 상태별 칩 색 (기존 .missed 있음) */
 .student-chip.postponed{
-  background:#fff9e6; /* 옅은 노랑 */
-  border-color:#f5d992;
+  background:#fddf7f;
+  border-color:#f0c24c;
+  color:#604400;
 }
 .student-chip.exempt{
   background:#E5E7EB;
