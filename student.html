@@ -591,6 +591,8 @@ function buildInstancesUpTo(dateLimit /* Date */){
 
       if (!isExempt && done && isPast) return;
 
+      if (statusCode === 'p' && postponedTo && postponedTo !== inst.date) return;
+
       // 카드 내용, 스타일
       const box = document.createElement('div');
       box.className = "task-box";
