@@ -230,9 +230,9 @@
 
 /* 면제 카드는 붉은 경고 톤 대신 중립 톤 */
 .task-box.exempt{
-  background:#f7f9fb !important;
-  color:#444 !important;
-  border-color:#dce2e8 !important;
+  background:#E5E7EB !important;
+  color:#374151 !important;
+  border-color:#D1D5DB !important;
   text-decoration:none !important;
 }
 
@@ -591,17 +591,13 @@ function buildInstancesUpTo(dateLimit /* Date */){
         ? '오늘'
         : `${inst.dateObj.getMonth()+1}월 ${inst.dateObj.getDate()}일 (${dayNames[inst.dateObj.getDay()]})`;
 
-       box.innerHTML = `
-        <span class="task-name">${escapeHTML(inst.text)}</span>
-        <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
-      `;
-
-      // 면제 배지
+      // 면제 배지 및 아이콘
       const tagHTML = isExempt ? `<span class="tag tag-exempt">면제</span>` : '';
+      const iconHTML = isExempt ? ' 🚫' : '';
 
       box.innerHTML = `
       ${tagHTML}
-      <span class="task-name">${escapeHTML(inst.text)}</span>
+      <span class="task-name">${escapeHTML(inst.text)}${iconHTML}</span>
       <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
       `;
 
