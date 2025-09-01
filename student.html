@@ -174,6 +174,11 @@
       background:#fff;
       border-color:#dfe3e6;
     }
+    .calendar .task-pill.exempt{
+      background:#E5E7EB;
+      color:#374151;
+      border-color:#D1D5DB;
+    }
     .calendar .event-pill{
       background:none;
       border:none;
@@ -487,11 +492,15 @@ async function renderCalendar(){
         const desc  = escapeHTML(inst.desc.trim() || '설명 없음');
         return `<div class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</div>`;
       }
-      const done = isDone(currentStudent, inst.id);
-      const cls = done ? 'task-pill done' : 'task-pill pending';
-      return `<div class="${cls}">${escapeHTML(inst.text)}</div>`;
+     
     }).join('');
-
+    const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.id) : null;
+    const statusCode = st?.s || '';
+    const isExempt = statusCode === 'e';
+    const done = !isExempt && (statusCode === 'd' || isDone(currentStudent, inst.id));
+    const cls = isExempt ? 'task-pill exempt' : (done ? 'task-pill done' : 'task-pill pending');
+    const iconHTML = isExempt ? ' 🚫' : '';
+    return `<div class="${cls}">${escapeHTML(inst.text)}${iconHTML}</div>`;
     html += `<td class="${cls.join(' ')}"><strong class="day-num">${day}</strong>${badge}${pills}</td>`;
     if ((adjustedStart + day) % 7 === 0) html += '</tr><tr>';
   }
