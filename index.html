@@ -150,10 +150,19 @@ function setDoneStore(name, obj){ setJSON("doneTasks-" + name, obj || {}); }
 
 // === ✅ 신규: UID 기반 ===
 function isDoneUID(name, uid){
-  const s = getDoneStore(name);
-  return s[uid] === true;
+  const store = getDoneStore(name);
+  const v = store[uid];
+  if (v === true) return true; // legacy true
+  if (v && typeof v === 'object') {
+    return v.s === 'd' || v.s === 'e';
+  }
+  return false;
 }
 function setDoneUID(name, uid, done){
+  if (typeof setStatusFor === 'function') {
+    setStatusFor(name, uid, { s: done ? 'd' : '', du: null });
+    return;
+  }
   const s = getDoneStore(name);
   if (done) s[uid] = true; else delete s[uid];
   setDoneStore(name, s);
@@ -163,7 +172,13 @@ function setDoneUID(name, uid, done){
 function makeDoneKey(dateStr, taskText){ return `${dateStr}@@${taskText}`; }
 function isDoneLegacy(name, dateStr, taskText){
   const s = getDoneStore(name);
-  return s[makeDoneKey(dateStr, taskText)] === true || s[taskText] === true; // 아주 옛 키도 허용
+  const k = makeDoneKey(dateStr, taskText);
+  const v = s[k] ?? s[taskText];
+  if (v === true) return true;
+  if (v && typeof v === 'object') {
+    return v.s === 'd' || v.s === 'e';
+  }
+  return false;
 }
 function setDoneLegacy(name, dateStr, taskText, done){
   const s = getDoneStore(name);
