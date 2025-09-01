@@ -1353,13 +1353,16 @@ if ($btns) {
   grid.style.userSelect = "none";
 
   students.forEach(stu => {
-    const done = isDone(stu.name, uid);  // UID로 체크
+    const st = (typeof getStatusFor === 'function') ? getStatusFor(stu.name, uid) : null;
+    const statusCode = st?.s || '';
+    const isExempt = statusCode === 'e';
+    const done = statusCode === 'd';
     const chip = document.createElement('div');
-    chip.className = "student-chip" + (done ? "" : " missed");
+    chip.className = "student-chip" + (isExempt ? " exempt" : (done ? "" : " missed"));
     chip.dataset.student = stu.name;
     chip.dataset.uid = uid;
     chip.style.cursor = "pointer";
-    chip.textContent = `${stu.id} ${stu.name}`;
+    chip.textContent = `${stu.id} ${stu.name}${isExempt ? ' 🚫' : ''}`;
     grid.appendChild(chip);
   });
 
@@ -1374,7 +1377,7 @@ const TAP_DELAY = 250; // 더블클릭 판정 시간(ms)
 
 grid.addEventListener('click', (e) => {
   const chip = e.target.closest('.student-chip');
-  if (!chip) return;
+  if (!chip || chip.classList.contains('exempt')) return;
   // 더블클릭로 전환될 수 있으니, 일단 타이머에 토글 예약
   if (_tapTimer) clearTimeout(_tapTimer);
   _tapTimer = setTimeout(() => {
@@ -1527,25 +1530,30 @@ grid.addEventListener('dblclick', (e) => {
           const assigned = inst.students.includes("전체") || inst.students.includes(stu.name);
           if (!assigned) return;
 
-
-          const done = isDone(stu.name, inst.uid);
+          const st = (typeof getStatusFor === 'function') ? getStatusFor(stu.name, inst.uid) : null;
+          const statusCode = st?.s || '';
+          const postponedTo = st?.du || null;
+          const isExempt = statusCode === 'e';
+          const done = statusCode === 'd';
           const isPast = inst.dateObj < today;
 
-          if (done && isPast) return;  // 과거 & 완료면 숨김
+          if (statusCode === 'p' && postponedTo && postponedTo !== inst.date) return;
+          if (!isExempt && done && isPast) return;  // 과거 & 완료면 숨김
 
           let bg = "#f6c1c1", dateColor = "#666";
-          if (isPast && !done) { bg = "#c0392b"; dateColor = "#fff"; }
+          if (isExempt) { bg = "#E5E7EB"; dateColor = "#374151"; }
+          else if (isPast && !done) { bg = "#c0392b"; dateColor = "#fff"; }
           else if (!isPast && done) { bg = "white"; dateColor = "#666"; }
 
           const chip = document.createElement("div");
-          chip.className = "student-chip" + (done ? "" : " missed");
+          chip.className = "student-chip" + (isExempt ? " exempt" : (done ? "" : " missed"));
           chip.dataset.student = stu.name;
           chip.dataset.uid = inst.uid;               // UID 저장
           chip.style.cssText = `
           border:1px solid #e6e8eb; background:${bg}; padding:8px; border-radius:12px;
           margin:6px 0; display:flex; justify-content:space-between; align-items:center; cursor:pointer;`;
           chip.innerHTML = `
-          <span>${escapeHTML(inst.text)}</span>
+          <span>${escapeHTML(inst.text)}${isExempt ? ' 🚫' : ''}</span>
           <span style="font-size:10px; color:${dateColor};">${inst.date}</span>
           `;
           listBox.appendChild(chip);
@@ -1578,7 +1586,7 @@ window.addEventListener('load', () => {
   // 클릭 토글 → 완료/미완료 저장 + 재렌더
   container.addEventListener('click', (e) => {
     const chip = e.target.closest('.student-chip');
-    if (!chip || !container.contains(chip)) return;
+    if (!chip || !container.contains(chip) || chip.classList.contains('exempt')) return;
 
     const student  = chip.dataset.student;
     const uid      = chip.dataset.uid;
