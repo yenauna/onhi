@@ -1,3 +1,37 @@
+function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
+function setDoneStore(name, obj){ setJSON('doneTasks-'+name, obj || {}); }
+
+// 읽기: { s:"d"|"p"|"e"|"", du:"YYYY-MM-DD"|null, note:"" }  (없으면 null)
+function getStatusFor(name, uid){
+  const s = getDoneStore(name);
+  const v = s[uid];
+  if (v === true) return { s:'d', du:null, note:'' }; // 하위호환(true = done)
+  if (!v) return null;                                // pending
+  const st = { s:'', du:null, note:'' , ...v };
+  return st;
+}
+
+// 쓰기(부분 업데이트 허용)
+function setStatusFor(name, uid, patch){
+  const s = getDoneStore(name);
+  const cur = getStatusFor(name, uid) || { s:'', du:null, note:'' };
+  s[uid] = { ...cur, ...patch };
+  setDoneStore(name, s);
+}
+
+// 단축: 상태 설정
+function setDone(name, uid, done){
+  setStatusFor(name, uid, { s: done ? 'd' : '' , du: done ? null : null });
+}
+// 단축: 면제
+function setExempt(name, uid, note=''){
+  setStatusFor(name, uid, { s:'e', du:null, note: String(note||'') });
+}
+// 단축: 미룸
+function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
+  setStatusFor(name, uid, { s:'p', du: newDate || null });
+}
+
 /* ====== 공통 헬퍼들을 전역(window)에 노출 ====== */
 (function (w) {
   const qs  = (s, r = document) => r.querySelector(s);
