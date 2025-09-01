@@ -1,6 +1,3 @@
-function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
-function setDoneStore(name, obj){ setJSON('doneTasks-'+name, obj || {}); }
-
 // 읽기: { s:"d"|"p"|"e"|"", du:"YYYY-MM-DD"|null, note:"" }  (없으면 null)
 function getStatusFor(name, uid){
   const s = getDoneStore(name);
@@ -45,6 +42,9 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
 
   const getJSON = (k, fb = null) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
   const setJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+  
+  function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
+  function setDoneStore(name, obj){ setJSON('doneTasks-'+name, obj || {}); }
 
   // 날짜 00:00으로 정규화
   const normalizeDate = (d) => { const t = new Date(d); t.setHours(0,0,0,0); return t; };
@@ -271,61 +271,6 @@ function renderEventsStrip(containerId, options={}){
 
   // 오늘 일정이 없으면 비워둠
   // (필요하면 안내 문구 추가 가능)
-}
-
-
-  // 일정 발생 판단(폴백)
-if (typeof occursOn !== 'function') {
-  window.occursOn = function(t, dateObj){
-    const d0 = new Date(dateObj); d0.setHours(0,0,0,0);
-    const y=d0.getFullYear(), m=d0.getMonth()+1, dd=d0.getDate();
-    const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-    const s = t.repeatStart || t.date || "";
-    const e = t.repeatEnd   || "";
-    const inRange = (ds) => {
-      if (s && ds < s) return false;
-      if (e && ds > e) return false;
-      return true;
-    };
-    const rpt = t.repeat || 'none';
-    if (rpt === 'daily') return inRange(dateStr);
-    const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
-    if (dayMap[rpt] != null){
-      if (!inRange(dateStr)) return false;
-      return d0.getDay() === dayMap[rpt];
-    }
-    if (!t.date) return false;
-    const base = new Date(t.date); base.setHours(0,0,0,0);
-    return base.getTime() === d0.getTime();
-  };
-}
-
-// 일정 스트립 렌더(폴백)
-if (typeof renderEventsStrip !== 'function') {
-  window.renderEventsStrip = function(containerId, opts={}){
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    el.innerHTML = '';
-    const tasks = (typeof getTasks === 'function') ? getTasks() : [];
-    const today = new Date(); today.setHours(0,0,0,0);
-    let events = tasks.filter(t => t.type === 'event' && occursOn(t, today));
-    if (opts.studentName){
-      events = events.filter(t => (t.students||['전체']).includes('전체') ||
-                                  (t.students||[]).includes(opts.studentName));
-    }
-    events.forEach(t=>{
-      const card = document.createElement('div');
-      card.className = 'event-card';
-      card.innerHTML = `
-        <div class="event-icon">✨</div>
-        <div class="event-body">
-          <div class="event-title">${escapeHTML(t.text || '(제목 없음)')}</div>
-          <div class="event-desc">${escapeHTML((t.desc||'').trim() || '설명 없음')}</div>
-        </div>`;
-      card.onclick = () => alert(`📣 ${t.text}\n\n${(t.desc||'설명 없음')}`);
-      el.appendChild(card);
-    });
-  };
 }
   
   // 전역으로 노출
