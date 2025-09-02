@@ -849,7 +849,7 @@
       setJSON("doneTasks-" + student, doneTasks);
     }
     
-    // ✅ UID 기반으로 변경
+    // UID 기반으로 변경
     function isDone(studentName, uid) {
       const store = getDoneTasks(studentName) || {};
       return store[uid] === true;
@@ -875,22 +875,28 @@
     function removeTask(btn) { btn.parentElement.remove(); }
     
     // 월요일 시작, 포맷은 기존 코드 그대로 'YYYY-MM-DD'
-    function setupDatePicker(sel, opts={}){
-      return flatpickr(sel, {
-        dateFormat:"Y-m-d",           // 저장용(값)
-        altInput:true,
-        altFormat:"Y-m-d (D)",        // 표시용: 2025-03-10 (월)
-        locale:{...flatpickr.l10ns.ko, firstDayOfWeek:1},
-        disableMobile:true,
-        ...opts
-      });
-    }
-    
-    // 단일 날짜(비반복) - 기본 오늘
-    setupDatePicker("#task-date", { defaultDate:new Date() });
-    // 반복 범위
-    const fpStart = setupDatePicker("#task-start", { defaultDate:new Date() });
-    const fpEnd   = setupDatePicker("#task-end");
+      function setupDatePicker(sel, opts={}){
+        if (typeof window.flatpickr !== 'function') {
+          const el = document.querySelector(sel);
+          if (el) el.type = 'date';
+          return;
+        }
+        return flatpickr(sel, {
+          dateFormat:"Y-m-d",           // 저장용(값)
+          altInput:true,
+          altFormat:"Y-m-d (D)",        // 표시용: 2025-03-10 (월)
+          locale:{...flatpickr.l10ns.ko, firstDayOfWeek:1},
+          disableMobile:true,
+          ...opts
+        });
+      }
+
+      // 단일 날짜(비반복) - 기본 오늘
+      setupDatePicker("#task-date", { defaultDate:new Date() });
+      // 반복 범위
+      const fpStart = setupDatePicker("#task-start", { defaultDate:new Date() });
+      const fpEnd   = setupDatePicker("#task-end");
+
 
     // ===========================================================
     // 과제 저장 (신규/편집 모드 공용)
