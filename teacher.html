@@ -1645,7 +1645,6 @@ grid.addEventListener('dblclick', (e) => {
           const isPostponed = statusCode === 'p';
           const isPast = inst.dateObj < today;
 
-          if (isPostponed && postponedTo && postponedTo !== inst.date) return;
           if (!showPE && (isPostponed || isExempt)) return;
           if (!isExempt && done && isPast) return;  // 과거 & 완료면 숨김(면제 제외)
 
@@ -1668,9 +1667,14 @@ grid.addEventListener('dblclick', (e) => {
           if (!isPostponed && !isExempt) style = `border:1px solid #e6e8eb; background:${bg}; ` + style;
           chip.style.cssText = style;
 
+          let dateLabel = inst.date;
+          if (isPostponed && postponedTo) {
+            dateLabel += ` → ${postponedTo}`;
+          }
+
           chip.innerHTML = `
           <span>${escapeHTML(inst.text)}${isExempt ? ' 🚫' : ''}</span>
-          <span style="font-size:10px; color:${dateColor};">${inst.date}</span>
+          <span style="font-size:10px; color:${dateColor};">${dateLabel}</span>
           `;
           listBox.appendChild(chip);
         });
