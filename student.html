@@ -335,7 +335,10 @@
   /* -------- V2 저장소 -------- */
   // teacher가 teacherTasksV2 키로 저장 중이면 그걸 우선, 없으면 tasksV2를 읽음
     function getTasks(){
-    return getJSON('teacherTasksV2', null) || getJSON('tasksV2', []);
+      const a = getJSON('teacherTasksV2', null);
+      if (Array.isArray(a)) return a;
+      const b = getJSON('tasksV2', []);
+      return Array.isArray(b) ? b : [];
   }
   // UID 기반 완료 저장소
   function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
@@ -509,7 +512,7 @@ async function renderCalendar(){
       }
     }).join('');
 
-    html += `<td class="${cellCls.join(' ')}">
+    html += `<td class="${cls.join(' ')}">
       <strong class="day-num">${day}</strong>
       ${badge}
       ${itemsHTML}
@@ -684,6 +687,14 @@ function buildInstancesUpTo(dateLimit /* Date */){
       todoContainer.appendChild(box);
     });
 
+    if (todoContainer.children.length === 0) {
+      const p = document.createElement('p');
+      p.style.color = '#667085';
+      p.style.textAlign = 'center';
+      p.textContent = '표시할 할 일이 없습니다.';
+      todoContainer.appendChild(p);
+  }
+
   }
   prevDayBtn.onclick = () => {
     currentDate.setDate(currentDate.getDate() - 1);
@@ -710,9 +721,6 @@ function buildInstancesUpTo(dateLimit /* Date */){
     localStorage.removeItem('currentStudent');
     location.href = "index.html";
   };
-
-
-
   
 </script>
 </body>
