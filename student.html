@@ -485,11 +485,11 @@ async function renderCalendar(){
       ? `<span class="badge-holiday">${escapeHTML(holName)}</span>`
       : (vacName ? `<span class="badge-vacation">${escapeHTML(vacName)}</span>` : '');
     
-    const cls = [];
-    if (isSun) cls.push('sun');
-    if (isSat) cls.push('sat');
-    if (holName) cls.push('holiday');
-    if (vacName) cls.push('vacation');
+    const cellCls = [];
+    if (isSun) cellCls.push('sun');
+    if (isSat) cellCls.push('sat');
+    if (holName) cellCls.push('holiday');
+    if (vacName) cellCls.push('vacation');
 
     // ✅ 날짜에 들어갈 아이템들(일정/과제) 만들기
     const itemsHTML = (instancesMap[dateStr] || []).map(inst => {
@@ -512,7 +512,7 @@ async function renderCalendar(){
       }
     }).join('');
 
-    html += `<td class="${cls.join(' ')}">
+    html += `<td class="${cellCls.join(' ')}">
       <strong class="day-num">${day}</strong>
       ${badge}
       ${itemsHTML}
