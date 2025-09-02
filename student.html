@@ -337,22 +337,6 @@
   function getTasks(){
     return getJSON('tasksV2', []);
   }
-  // UID 기반 완료 저장소
-  function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
-  function setDoneStore(name, obj){ setJSON('doneTasks-'+name, obj || {}); }
-
-  // UID 기반 완료 체크/저장
-  function isDone(name, uid){
-    const s = getDoneStore(name);
-    return s[uid] === true;
-  }
-  function setDone(name, uid, done){
-    const s = getDoneStore(name);
-    if (done) s[uid] = true; else delete s[uid];
-    setDoneStore(name, s);
-  }
-
-
 
 const pad2 = (n)=> String(n).padStart(2,'0');
 
@@ -501,8 +485,8 @@ async function renderCalendar(){
           const st = getStatusFor(currentStudent, inst.id); // {s:'e'|'d'|'p'|'' ...}
           statusCode = st?.s || '';
         }
-        const isExempt = statusCode === 'e';
-        const done = !isExempt && (statusCode === 'd' || isDone(currentStudent, inst.id));
+       const isExempt = statusCode === 'e';
+        const done = statusCode === 'd';
         const pillCls = isExempt ? 'task-pill exempt' : (done ? 'task-pill done' : 'task-pill pending');
         const icon    = isExempt ? ' 🚫' : '';
         return `<div class="${pillCls}">${escapeHTML(inst.text)}${icon}</div>`;
@@ -603,7 +587,11 @@ function buildInstancesUpTo(dateLimit /* Date */){
       const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
       if (!assigned) return;
 
-      const done = isDone(currentStudent, inst.uid);
+      const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.uid) : null;
+      const statusCode  = st?.s || '';
+      const isExempt    = statusCode === 'e';
+      const done        = statusCode === 'd';
+      const postponedTo = st?.du || null;
       const isPast = inst.dateObj < today0;
 
       // 과거 + 완료는 숨김 (단, 면제는 예외)
@@ -674,6 +662,7 @@ function buildInstancesUpTo(dateLimit /* Date */){
         box.style.cursor = "default";
       } else {
         box.onclick = () => {
+          // 공통(common.js)의 setDone 사용 → {s:'d'|''}로 저장
           setDone(currentStudent, inst.uid, !done);
           renderTasks();
         };
