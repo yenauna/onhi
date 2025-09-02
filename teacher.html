@@ -1697,7 +1697,11 @@ window.addEventListener('load', () => {
   };
 
   // 초기 진입 시 한 번 UI 상태 맞추기 (완료/미완료 복원)
-  schedule();
+  renderStudentStatus();
+
+  // 클릭/더블클릭 구분용 타이머
+  let _tapTimer = null;
+  const TAP_DELAY = 250;
 
   // 클릭/더블클릭 구분용 타이머
   let _tapTimer = null;
