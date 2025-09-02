@@ -336,9 +336,8 @@
   // teacher가 teacherTasksV2 키로 저장 중이면 그걸 우선, 없으면 tasksV2를 읽음
     function getTasks(){
       const a = getJSON('teacherTasksV2', null);
-      if (Array.isArray(a)) return a;
-      const b = getJSON('tasksV2', []);
-      return Array.isArray(b) ? b : [];
+      if (Array.isArray(a) && a.length > 0) return a;
+      return getJSON('tasksV2', []);
   }
   // UID 기반 완료 저장소
   function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
