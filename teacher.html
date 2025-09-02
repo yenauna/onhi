@@ -799,6 +799,10 @@
       renderStudentList();
     }
 
+    // Expose tab-switch functions for inline handlers
+    window.showStudentStatus = showStudentStatus;
+    window.showTaskManagement = showTaskManagement;
+    window.showStudentManagement = showStudentManagement;
     
     // ===========================================================
     // 학생 체크박스 렌더링(과제 대상 지정용)
