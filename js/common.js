@@ -277,6 +277,7 @@ function renderEventsStrip(containerId, options={}){
   Object.assign(w, {
     qs, qsa, pad2, dayNames, escapeHTML,
     getJSON, setJSON, normalizeDate,
+    getDoneStore, setDoneStore,
     loadStudentsCached, invalidateStudentsCache, loadStudents, sortStudents, loadAllTeacherTasks,
     ensureHolidays,
     genUID, getTasks, setTasks, migrateToUIDOnce,
