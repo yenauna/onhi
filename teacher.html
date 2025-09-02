@@ -1699,19 +1699,41 @@ window.addEventListener('load', () => {
   // 초기 진입 시 한 번 UI 상태 맞추기 (완료/미완료 복원)
   schedule();
 
+  // 클릭/더블클릭 구분용 타이머
+  let _tapTimer = null;
+  const TAP_DELAY = 250;
+
   // 클릭 토글 → 완료/미완료 저장 + 재렌더
   container.addEventListener('click', (e) => {
     const chip = e.target.closest('.student-chip');
     if (!chip || !container.contains(chip) || chip.classList.contains('exempt')) return;
 
-    const student  = chip.dataset.student;
-    const uid      = chip.dataset.uid;
-    const nowIsDone = !chip.classList.contains('missed');
+    // 더블클릭과 구분하기 위해 토글을 지연
+    if (_tapTimer) clearTimeout(_tapTimer);
+    _tapTimer = setTimeout(() => {
+      _tapTimer = null;
 
-    setDone(student, uid, !nowIsDone);           // UID 기준 저장
-    chip.classList.toggle('missed', nowIsDone);  // 즉시 반영
-    schedule();                                   // 큐에 재렌더
+      const student  = chip.dataset.student;
+      const uid      = chip.dataset.uid;
+      const nowIsDone = !chip.classList.contains('missed');
+
+      setDone(student, uid, !nowIsDone);          // UID 기준 저장
+      chip.classList.toggle('missed', nowIsDone); // 즉시 반영
+      schedule();                                 // 큐에 재렌더
+    }, TAP_DELAY);
   }, false);
+
+  // 더블클릭 → 상태 변경 모달 열기
+  container.addEventListener('dblclick', (e) => {
+    const chip = e.target.closest('.student-chip');
+    if (!chip || !container.contains(chip)) return;
+
+    // 대기 중인 단일 클릭 실행 취소
+    if (_tapTimer) { clearTimeout(_tapTimer); _tapTimer = null; }
+
+    const student = chip.dataset.student;
+    const uid     = chip.dataset.uid;
+    openStatusModal(student, uid);
 
   // (선택) 다른 탭/창에서 변경되면 갱신
   window.addEventListener('storage', (e) => {
