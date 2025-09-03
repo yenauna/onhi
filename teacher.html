@@ -1654,6 +1654,7 @@ grid.addEventListener('dblclick', (e) => {
           const isPostponed = statusCode === 'p';
           const isPast = inst.dateObj < today;
 
+          if (isPast && (isPostponed || isExempt)) return;
           if (!showPE && (isPostponed || isExempt)) return;
           if (!isExempt && done && isPast) return;  // 과거 & 완료면 숨김(면제 제외)
 
