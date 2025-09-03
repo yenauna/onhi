@@ -472,20 +472,32 @@ async function renderCalendar(){
     if (holName) cellCls.push('holiday');
     if (vacName) cellCls.push('vacation');
 
-    // ✅ 날짜에 들어갈 아이템들(일정/과제) 만들기
+    const added = new Set();  // 같은 id 중복 방지용
+
+    // 날짜에 들어갈 아이템들(일정/과제) 만들기
     const itemsHTML = (instancesMap[dateStr] || []).map(inst => {
+      if (added.has(inst.id)) return '';
+      added.add(inst.id);
       if (inst.type === 'event') {
         const title = escapeHTML(inst.text || '(제목 없음)');
         const desc  = escapeHTML((inst.desc || '').trim() || '설명 없음');
         return `<button type="button" class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</button>`;
       } else {
+        
         // 과제 pill (면제/완료/미완료)
         let statusCode = '';
         if (typeof getStatusFor === 'function') {
           const st = getStatusFor(currentStudent, inst.id); // {s:'e'|'d'|'p'|'' ...}
           statusCode = st?.s || '';
+          postponedto = st?.du //|| null;
         }
-       const isExempt = statusCode === 'e';
+
+        // 미룬 날짜 셀에서는 1회만 표시(중복 방지). 원래 날짜는 그대로 표시.
+        if (statusCode === 'p' && postponedTo && postponedTo === dateStr) {
+          // 그대로 진행(한 번만 렌더)
+        }
+        
+        const isExempt = statusCode === 'e';
         const done = statusCode === 'd';
         const pillCls = isExempt ? 'task-pill exempt' : (done ? 'task-pill done' : 'task-pill pending');
         const icon    = isExempt ? ' 🚫' : '';
@@ -507,65 +519,77 @@ async function renderCalendar(){
   setCalLabel();
 }
 
-function buildInstancesUpTo(dateLimit /* Date */){
-  const tasks = getTasks();  // [{id,type,date,text,repeat,repeatStart,repeatEnd,students}]
-  const limit0 = normalizeDate(dateLimit);
+  // targetDate 하루치만 계산. '미룸' 날짜면 한 번만, 원래/반복 날짜도 그대로 보이게.
+function buildInstancesOn(targetDate){
+  const tasks = getTasks();
   const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
+  const d0 = normalizeDate(targetDate);
+  const y = d0.getFullYear(), m = d0.getMonth()+1, dd = d0.getDate();
+  const dateStr = `${y}-${pad2(m)}-${pad2(dd)}`;
   const out = [];
 
-  const push = (t, dObj) => {
-    const y=dObj.getFullYear(), m=dObj.getMonth()+1, dd=dObj.getDate();
+  const inRangeOn = (t) => {
+    const s = t.repeatStart || t.date || '';
+    const e = t.repeatEnd   || '';
+    if (s && dateStr < s) return false;
+    if (e && dateStr > e) return false;
+    return true;
+  };
+
+  const pushOne = (t) => {
     out.push({
       uid: t.id,
       text: t.text,
-      date: `${y}-${pad2(m)}-${pad2(dd)}`,
-      dateObj: new Date(dObj),
+      date: dateStr,
+      dateObj: new Date(d0),
       students: t.students || ['전체']
     });
   };
 
-  tasks.forEach(t=>{
+  tasks.forEach(t => {
     if (t.type === 'event' || t.type === 'challenge') return;
 
-    const base = normalizeDate(t.repeatStart || t.date);
-    const end  = t.repeatEnd ? normalizeDate(t.repeatEnd) : limit0;
-    const rpt  = t.repeat || 'none';
+    // 대상 학생만
+    const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
+    if (!assigned) return;
 
-    if (rpt === 'daily'){
-      for (let cur=new Date(base); cur<=limit0 && cur<=end; cur.setDate(cur.getDate()+1)){
-        push(t, cur);
+    // 상태 조회
+    const st  = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, t.id) : null;
+    const code = st?.s || '';     // '', 'd', 'p', 'e'
+    const du   = st?.du || null;
+
+    let pushedByPostpone = false;
+
+    // ① 미룬 날짜면 여기서 1회만 푸시(중복 방지)
+    if (code === 'p' && du === dateStr) {
+      pushOne(t);
+      pushedByPostpone = true;
+    }
+
+    // ② 원래/반복 날짜 판단 (미룬 날짜에서 이미 넣었으면 중복 방지)
+    if (!pushedByPostpone && inRangeOn(t)) {
+      const rpt = t.repeat || 'none';
+      if (rpt === 'daily') {
+        pushOne(t);
+      } else if (dayMap[rpt] != null) {
+        if (d0.getDay() === dayMap[rpt]) pushOne(t);
+      } else {
+        if ((t.date || '') === dateStr) pushOne(t);
       }
-    } else if (dayMap[rpt] != null){
-      const targetDow = dayMap[rpt];
-      const cur = new Date(base);
-      while (cur.getDay() !== targetDow) cur.setDate(cur.getDate()+1);
-      for (; cur<=limit0 && cur<=end; cur.setDate(cur.getDate()+7)){
-        push(t, cur);
-      }
-    } else {
-      if (!isNaN(base) && base <= limit0) push(t, base);
     }
   });
 
-   // 미룸 상태 인스턴스 추가
-  if (typeof getDoneStore === 'function' && currentStudent){
-    const stMap = getDoneStore(currentStudent) || {};
-    Object.entries(stMap).forEach(([uid, st]) => {
-      if (st && st.s === 'p' && st.du){
-        const duDate = normalizeDate(st.du);
-        if (duDate <= limit0 && !out.some(i => i.uid === uid && i.date === st.du)){
-          const baseInst = out.find(i => i.uid === uid);
-          if (baseInst){
-            out.push({ ...baseInst, date: st.du, dateObj: duDate });
-          }
-        }
-      }
-    });
-  }
+  // 안전 dedup (같은 uid가 실수로 2번 들어오면 1개만)
+  const seen = new Set();
+  const dedup = out.filter(o => (seen.has(o.uid) ? false : (seen.add(o.uid), true)));
 
-  out.sort((a,b)=> b.dateObj - a.dateObj); // 최근일 우선
-  return out;
-}  
+  // 보기 좋게 정렬(선택사항)
+  dedup.sort((a,b)=> a.text.localeCompare(b.text));
+
+  return dedup;
+}
+
+
   
   // 공통 헬퍼 사용  
   function renderTasks() {
@@ -576,7 +600,7 @@ function buildInstancesUpTo(dateLimit /* Date */){
     const today0 = normalizeDate(new Date());
     const currDate0 = normalizeDate(currentDate);
 
-    const instances = buildInstancesUpTo(currentDate); // currentDate까지의 인스턴스
+    const instances = buildInstancesOn(currentDate);
     const allTasks  = getTasks();                      // 대상 필터용
 
     instances.forEach(inst=>{
