@@ -587,18 +587,13 @@ function buildInstancesUpTo(dateLimit /* Date */){
       const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
       if (!assigned) return;
 
+      //과거 + 완료는 숨김 (단, 면제는 예외) ''| 'd'(완료) | 'p'(미룸) | 'e'(면제)
       const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.uid) : null;
-      const statusCode  = st?.s || '';
+      const statusCode  = st?.s || '';           
       const isExempt    = statusCode === 'e';
       const done        = statusCode === 'd';
       const postponedTo = st?.du || null;
       const isPast = inst.dateObj < today0;
-
-      // 과거 + 완료는 숨김 (단, 면제는 예외)
-      const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.uid) : null;
-      const statusCode = st?.s || '';          // ''| 'd'(완료) | 'p'(미룸) | 'e'(면제)
-      const postponedTo = st?.du || null;
-      const isExempt = statusCode === 'e';
 
       if (!isExempt && done && isPast) return;
 
