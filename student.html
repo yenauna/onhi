@@ -180,10 +180,6 @@
       border-color:#D1D5DB;
     }
     .calendar .event-pill{
-      background:none;
-      border:none;
-      border-radius:0;
-      padding:4px 8px;
       margin-top:6px;
       font-size:12px;
       display:inline-block;
@@ -481,15 +477,16 @@ async function renderCalendar(){
       if (inst.type === 'event') {
         const title = escapeHTML(inst.text || '(제목 없음)');
         const desc  = escapeHTML((inst.desc || '').trim() || '설명 없음');
-        return `<button type="button" class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</button>`;
+        return `<div class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</div>`;
       } else {
         
         // 과제 pill (면제/완료/미완료)
         let statusCode = '';
+        let postponedTo = null;
         if (typeof getStatusFor === 'function') {
           const st = getStatusFor(currentStudent, inst.id); // {s:'e'|'d'|'p'|'' ...}
           statusCode = st?.s || '';
-          postponedto = st?.du //|| null;
+          postponedTo = st?.du || null;
         }
 
         // 미룬 날짜 셀에서는 1회만 표시(중복 방지). 원래 날짜는 그대로 표시.
