@@ -316,6 +316,9 @@ function buildInstancesFromTasks(){
         instances.forEach(inst=>{
           const isTarget = inst.students.includes('전체') || inst.students.includes(stu.name);
           if (!isTarget) return;
+
+          const joined = stu.joined || '0000-00-00';
+          if (inst.date < joined) return;
           
           const done   = isDone(stu.name, inst.uid);   // ✅ UID로 체크
           const isPast = inst.dateObj < today;
