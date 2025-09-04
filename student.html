@@ -303,6 +303,8 @@
 <script>
   let currentStudent = null;
   let currentDate = new Date();
+  let joinDate = '0000-00-00';
+  let joinDateObj = new Date(0);
 
   const taskBox = document.getElementById("task-box");
   const todoContainer = document.getElementById("todo-container");
@@ -428,6 +430,7 @@ async function renderCalendar(){
       for (let d=1; d<=lastDate; d++){
         const ds = `${year}-${pad2(month+1)}-${pad2(d)}`;
         if (!inRange(ds)) continue;
+        if (joinDate && ds < joinDate) continue;
         pushInst(ds, t);
       }
     } else if (dayMap[rpt] != null) {
@@ -436,6 +439,7 @@ async function renderCalendar(){
         if (dateObj.getDay() === dayMap[rpt]){
           const ds = `${year}-${pad2(month+1)}-${pad2(d)}`;
           if (!inRange(ds)) continue;
+          if (joinDate && ds < joinDate) continue;
           pushInst(ds, t);
         }
       }
@@ -443,7 +447,7 @@ async function renderCalendar(){
       const d = new Date(t.date);
       if (d.getFullYear() === year && d.getMonth() === month){
         const ds = `${year}-${pad2(month+1)}-${pad2(d.getDate())}`;
-        pushInst(ds, t);
+        if (!(joinDate && ds < joinDate)) pushInst(ds, t);
       }
     }
   });
@@ -523,6 +527,7 @@ function buildInstancesOn(targetDate){
   const d0 = normalizeDate(targetDate);
   const y = d0.getFullYear(), m = d0.getMonth()+1, dd = d0.getDate();
   const dateStr = `${y}-${pad2(m)}-${pad2(dd)}`;
+  if (joinDate && dateStr < joinDate) return [];
   const out = [];
 
   const inRangeOn = (t) => {
@@ -711,6 +716,10 @@ function buildInstancesOn(targetDate){
     const savedStudent = localStorage.getItem('currentStudent');
     if (savedStudent) {
       currentStudent = savedStudent;
+      const stu = (loadStudents() || []).find(s => s.name === currentStudent) || null;
+      joinDate = stu?.joined || '0000-00-00';
+      joinDateObj = stu?.joined ? new Date(stu.joined) : new Date(0);
+      joinDateObj.setHours(0,0,0,0);
       showTodo();
     } else {
       location.href = "index.html";
