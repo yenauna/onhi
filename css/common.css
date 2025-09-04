@@ -13,7 +13,7 @@ body{
 
 /* 공통 레이아웃 컨테이너(각 페이지 카드 바깥) */
 .container{
-  width:100%;
+  width:calc(100% - 40px);
   margin:0 auto;
   background:var(--card); border:1px solid var(--card-line);
   border-radius:26px; box-shadow:0 16px 40px rgba(0,0,0,.10);
