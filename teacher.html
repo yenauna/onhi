@@ -766,7 +766,7 @@
     // 화면 전환: 탭 버튼 핸들러
     // ===========================================================
     function showStudentStatus() {
-      renderEventsStrip('events-strip-teacher', { editable: true }); // 선생님 화면: 수정 가능
+      renderEventsStrip('events-strip-teacher');
       setActiveTab('status');
       document.getElementById("student-status-page").style.display = "block";
       document.getElementById("task-management").style.display = "none";
@@ -1097,11 +1097,10 @@
   const t = tasks.find(x => x.id === inst.id);
   if (!t) return '';
 
-  // ▼ 일정: 검은 글씨, 배경 없음, 클릭 시 설명만
+  // ▼ 일정: 검은 글씨, 배경 없음, 클릭 시 선택
   if (t.type === 'event') {
     const title = escapeHTML(t.text || '(제목 없음)');
-    const desc  = escapeHTML((t.desc||'').trim() || '설명 없음');
-    return `<div class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</div>`;
+    return `<div class="event-pill" onclick="selectTask('${dateStr}', ${idx})">${title}</div>`;
   }
 
   // ▼ 과제: 기존 로직 유지
@@ -1254,6 +1253,7 @@ const anyIncomplete = assignedNames.some(name => {
     window.saveAssignment = origSave; // 원복
     alert('수정되었습니다!');
     renderCalendar(); hideActionUI(); renderStudentStatus();
+    renderEventsStrip('events-strip-teacher');
   };
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1278,6 +1278,7 @@ function deleteTaskClicked() {
   renderCalendar();
   hideActionUI();
   renderStudentStatus();
+  renderEventsStrip('events-strip-teacher');
 }
 
 
@@ -2137,7 +2138,7 @@ function migrateLegacyDoneToUIDOnce() {
     function toggleShowEvents(){
       const show = localStorage.getItem('showEvents') !== 'no';
       localStorage.setItem('showEvents', show ? 'no' : 'yes');
-      renderEventsStrip('events-strip-teacher', { editable: true });
+      renderEventsStrip('events-strip-teacher');
       renderStudentStatus();
       applyShowEventsBtn();
     }
@@ -2145,7 +2146,7 @@ function migrateLegacyDoneToUIDOnce() {
     document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
     window.addEventListener('storage', (e)=>{
         if (e.key === 'showEvents') {
-          renderEventsStrip('events-strip-teacher', { editable: true });
+          renderEventsStrip('events-strip-teacher');
           renderStudentStatus();
           applyShowEventsBtn();
         }
