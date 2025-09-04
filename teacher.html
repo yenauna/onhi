@@ -1020,8 +1020,11 @@
       const adjustedStartDay = (startDay + 6) % 7;   // 월=0 기준
       const lastDate         = new Date(year, month + 1, 0).getDate();
 
-      // ✅ V2 과제 로드
+      // V2 과제 로드
       const tasks = (typeof getTasks === 'function') ? getTasks() : [];
+
+       const joinMap = {};
+      loadStudents().forEach(s => joinMap[s.name] = s.joined || '0000-00-00');
 
       // 이 달에 표시할 인스턴스 구성
       const instancesMap = {}; // dateStr -> [{id,text,originDate}]
@@ -1109,10 +1112,10 @@
     const set = new Set(t.students);
     assignedNames = assignedNames.filter(n => set.has(n));
   }
-  // [teacher.html] renderCalendar()의 pills 계산 부분 교체
-const anyIncomplete = assignedNames.some(name => {
-  const st = (typeof getStatusFor==='function') ? getStatusFor(name, inst.id) : null;
-
+      assignedNames = assignedNames.filter(n => (joinMap[n] || '0000-00-00') <= dateStr);
+      const anyIncomplete = assignedNames.some(name => {
+        const st = (typeof getStatusFor==='function') ? getStatusFor(name, inst.id) : null;
+        
   // 면제는 분모/체크에서 제외
   if (st && st.s === 'e') return false;
 
@@ -1645,6 +1648,8 @@ grid.addEventListener('dblclick', (e) => {
         instances.forEach(inst => {
           const assigned = inst.students.includes("전체") || inst.students.includes(stu.name);
           if (!assigned) return;
+          const joined = stu.joined || '0000-00-00';
+          if (inst.date < joined) return;
 
           const st = (typeof getStatusFor === 'function') ? getStatusFor(stu.name, inst.uid) : null;
           const statusCode = st?.s || '';
@@ -1837,7 +1842,9 @@ window.addEventListener('load', () => {
       const students = loadStudents();
       if (students.some(s => s.id === id)) { alert("이미 존재하는 번호입니다."); return; }
 
-      students.push({ id, name, password });
+      const today = new Date();
+      const joined = `${today.getFullYear()}-${pad2(today.getMonth()+1)}-${pad2(today.getDate())}`;
+      students.push({ id, name, password, joined });
       saveStudents(students);
 
       document.getElementById("new-student-id").value = "";
@@ -1863,7 +1870,8 @@ window.addEventListener('load', () => {
         alert("이미 존재하는 번호입니다."); return;
       }
 
-      students[idx] = { id: newId, name: newName, password: newPw };
+      const joined = students[idx].joined;
+      students[idx] = { id: newId, name: newName, password: newPw, joined };
       saveStudents(students);
       invalidateStudentsCache();
 
