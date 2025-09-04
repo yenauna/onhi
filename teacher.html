@@ -1290,12 +1290,12 @@ function deleteTaskClicked() {
     // ===========================================================
     // 달력: 과제 선택 시 상태 갱신
     // ===========================================================
-    function selectTask(dateStr, idx) {
+    function selectTask(dateStr, idx, uidOverride) {
       selectedDate = dateStr;
       selectedUid = null;
 
       const uids = calendarRefs[dateStr] || [];
-      const uid  = uids[idx];
+      const uid  = uidOverride || uids[idx];
       
       const $btns     = document.getElementById('task-action-buttons');
       const $selected = document.getElementById('task-action-selected');
