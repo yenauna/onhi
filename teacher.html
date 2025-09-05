@@ -179,6 +179,7 @@
                font-size:12px; cursor:pointer; display:inline-block; border:1px solid rgba(0,0,0,.06); }
     .task-pill.pending{ background:#f6c1c1; border-color:#e9b3b3; }
     .task-pill.done{ background:#fff; border-color:#dfe3e6; }
+    .task-pill:hover{ opacity:.9; }
 
     .event-pill{
       margin-top:6px;
@@ -246,19 +247,6 @@
       margin-left:4px;
       white-space:nowrap;
     }
-
-    /* 달력 과제 pill */
-    .task-pill{
-      background:#f6c1c1;
-      border-radius:10px;
-      padding:4px 8px;
-      margin-top:6px;
-      font-size:12px;
-      cursor:pointer;
-      display:inline-block;
-      border:1px solid rgba(0,0,0,.06);
-    }
-    .task-pill:hover{ opacity:.9; }
 
     /* 선택 안내/버튼 영역 */
     #task-action-selected{ margin:10px 0; font-size:14px; color:#555; }
@@ -373,9 +361,7 @@
       height:36px;
       padding:0 14px;
     }
-
-    /* 요일 가운데 정렬 + 높이 줄이기 */
-    . th { text-align:center; height: 36px; padding:6px 0; }
+    
     /* 토/일 & 공휴일/방학 표시용 */
     .calendar td .day-num { font-weight:600; }
     .calendar td.sun  .day-num,
@@ -396,7 +382,7 @@
       box-shadow:none;           /* 그림자 제거 */
     }
     /* (선택) 토/일 요일 머리글도 빨간색 */
-    . th:nth-child(6),
+    .calendar thead th:nth-child(6),
     .calendar thead th:nth-child(7) { color:#d74b4b; }
     
     /* ===== 학생 추가 영역 일렬 정렬 & 통일 ===== */
