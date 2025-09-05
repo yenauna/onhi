@@ -673,6 +673,58 @@
     </div>
   </div>
 
+  <!-- ===== 도전 관리 ===== -->
+<div class="container" id="challenges-box" style="display:none;">
+  <div id="challenge-list-view">
+    <div class="toolbar" style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+      <button type="button" onclick="Challenges.openChallengeForm(null)">+ 새 도전</button>
+      <input id="chl-search" placeholder="검색 (제목/설명)" oninput="Challenges.renderChallengeList()" style="flex:1;max-width:260px;" />
+    </div>
+    <div id="challenge-list"></div>
+  </div>
+
+  <section id="challenge-form" style="display:none;">
+    <h3 style="margin:6px 0 12px;">도전 편집</h3>
+    <label>제목<br><input id="chf-title" style="width:100%"></label>
+    <br>
+    <label>설명<br><textarea id="chf-desc" style="width:100%;min-height:96px"></textarea></label>
+    <br>
+    <label><input type="checkbox" id="chf-active" checked> 활성화</label>
+    <br><br>
+    <label>대상 학생(여러명 선택 가능)<br>
+      <select id="chf-students" multiple size="10" style="width:100%;max-width:420px;"></select>
+    </label>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button onclick="Challenges.saveChallengeFromForm()">저장</button>
+      <button onclick="Challenges.cancelChallengeForm()">취소</button>
+    </div>
+  </section>
+
+  <section id="challenge-status-view" style="display:none;">
+    <div class="st-header" style="display:flex;align-items:center;gap:8px;">
+      <button onclick="Challenges.backToListFromStatus()">← 뒤로</button>
+      <strong class="st-ch-title"></strong>
+      <span class="st-ch-active" style="color:#475467"></span>
+    </div>
+    <div class="st-actions" style="margin:10px 0;display:flex;gap:8px;">
+      <button onclick="Challenges.bulkMarkStatus(true)">모두 완료</button>
+      <button onclick="Challenges.bulkMarkStatus(false)">모두 미완료</button>
+    </div>
+    <table class="st-table" style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">학생</th>
+          <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">상태</th>
+          <th style="border-bottom:1px solid #e5e7eb;padding:6px;">조작</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</div>
+
+
+
   <!-- ===========================================================
        스크립트 (기능 그대로 / 가독성 있게 정리 + 주석 제목 추가)
        =========================================================== -->
@@ -771,6 +823,7 @@
       const map = {
         status:  document.getElementById('tab-status'),
         task:    document.getElementById('tab-task'),
+        challenges:  document.getElementById('tab-challenges'),
         student: document.getElementById('tab-student')
       };
       Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
@@ -1787,58 +1840,22 @@ window.addEventListener('load', () => {
     // 도전 관리
     // ===========================================================
     function showChallenges(){
-      //탭 active 토글 (필요시 기존 setActivieTab 재사용)
-      if(typeof setActiveTab === 'function') setActiveTAb('challenges');
-      //다른 박스 숨기기
-      const ids = ['teacher-box', 'calendar-box', 'staus-box', challenges-box']; 확인 필요
-      ids.forEach(id=>{const el=document.getElementByld(id); if(el) el.style.display = (id==='challenges-box')? 'block':'none';});
-      Challenges.renderChallengeList();
+      setActiveTab('challenges');
+
+      // 나머지 화면 숨김
+      document.getElementById("student-status-page").style.display = "none";
+      document.getElementById("task-management").style.display = "none";
+      document.getElementById("student-management").style.display = "none";
+
+      // 도전 관리 보이기
+      document.getElementById("challenges-box").style.display = "block";
+
+      // 목록 렌더
+      if (window.Challenges?.renderChallengeList) {
+        Challenges.renderChallengeList();
+      }
     }
-
-    <div class="container" id="challenges-box" style="display:none;">
-      <div id="challenge-list-view">
-      <div class="toolbar" style="display:flex;align-items:center;gap:8px;margin:8px 0;">
-      <button type="button" onclick="Challenges.openChallengeForm(null)">+ 새 도전</button>
-      <input id="chl-search" placeholder="검색 (제목/설명)" oninput="Challenges.renderChallengeList()" style="flex:1;max-width:260px;" />
-      </div>
-      <div id="challenge-list"></div>
-      </div>
-
-
-      <section id="challenge-form" style="display:none;">
-      <h3 style="margin:6px 0 12px;">도전 편집</h3>
-      <label>제목<br><input id="chf-title" style="width:100%"></label>
-      <br>
-      <label>설명<br><textarea id="chf-desc" style="width:100%;min-height:96px"></textarea></label>
-      <br>
-      <label><input type="checkbox" id="chf-active" checked> 활성화</label>
-      <br><br>
-      <label>대상 학생(여러명 선택 가능)<br>
-      <select id="chf-students" multiple size="10" style="width:100%;max-width:420px;"></select>
-      </label>
-      <div style="margin-top:12px;display:flex;gap:8px;">
-      <button onclick="Challenges.saveChallengeFromForm()">저장</button>
-      <button onclick="Challenges.cancelChallengeForm()">취소</button>
-      </div>
-      </section>
-
-
-      <section id="challenge-status-view" style="display:none;">
-      <div class="st-header" style="display:flex;align-items:center;gap:8px;">
-      <button onclick="Challenges.backToListFromStatus()">← 뒤로</button>
-      <strong class="st-ch-title"></strong>
-      <span class="st-ch-active" style="color:#475467"></span>
-      </div>
-      <div class="st-actions" style="margin:10px 0;display:flex;gap:8px;">
-      <button onclick="Challenges.bulkMarkStatus(true)">모두 완료</button>
-      <button onclick="Challenges.bulkMarkStatus(false)">모두 미완료</button>
-      </div>
-      <table class="st-table" style="width:100%;border-collapse:collapse;">
-      <thead><tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">학생</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">상태</th><th style="border-bottom:1px solid #e5e7eb;padding:6px;">조작</th></tr></thead>
-      <tbody></tbody>
-      </table>
-      </section>
-      </div>
+    window.showChallenges = showChallenges; // 인라인 onclick 대비
 
         
     // ===========================================================
