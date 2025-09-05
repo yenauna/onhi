@@ -631,93 +631,49 @@ function buildInstancesOn(targetDate){
     const today0 = normalizeDate(new Date());
     const currDate0 = normalizeDate(currentDate);
 
-    const instances = buildInstancesOn(currentDate);
-    const allTasks  = getTasks();                      // 대상 필터용
+    const instances = [];
+    const start = (joinDate && joinDate !== '0000-00-00') ? new Date(joinDateObj) : new Date(currentDate);
+    for (let d = new Date(start); d <= currentDate; d.setDate(d.getDate() + 1)) {
+      const list = buildInstancesOn(d);
+      list.forEach(inst => {
+        const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.uid) : null;
+        const statusCode = st?.s || '';
+        if (statusCode === '') instances.push(inst);
+      });
+    }
+
+    instances.sort((a,b)=> a.dateObj - b.dateObj || a.text.localeCompare(b.text));
 
     instances.forEach(inst=>{
-      const t = allTasks.find(x=> x.id === inst.uid);
-      if (!t) return;
-
-      // 대상 학생 필터
-      const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
-      if (!assigned) return;
-
-      //과거 + 완료는 숨김 (단, 면제는 예외) ''| 'd'(완료) | 'p'(미룸) | 'e'(면제)
-      const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.uid) : null;
-      const statusCode  = st?.s || '';           
-      const isExempt    = statusCode === 'e';
-      const done        = statusCode === 'd';
-      const postponedTo = st?.du || null;
       const isPast = inst.dateObj < today0;
 
-      if (!isExempt && done && isPast) return;
-
-      // 카드 내용, 스타일
       const box = document.createElement('div');
       box.className = "task-box";
-      if (isExempt) box.classList.add('exempt');
-      if (done) box.classList.add('done');
-      if (statusCode === 'p') box.classList.add('postponed');
       
-      // 날짜 라벨
       const isToday = inst.dateObj.getTime() === currDate0.getTime();
       const dayNames = ['일','월','화','수','목','금','토'];
       const labelText = isToday
           ? '오늘'
           : `${inst.dateObj.getMonth()+1}월 ${inst.dateObj.getDate()}일 (${dayNames[inst.dateObj.getDay()]})`;
-      
-      // 면제 배지 및 아이콘
-      const tagHTML = isExempt ? `<span class="tag tag-exempt">면제</span>` : '';
-      const iconHTML = isExempt ? ' 🚫' : '';
-
+     
       box.innerHTML = `
-      ${tagHTML}
-      <span class="task-name">${escapeHTML(inst.text)}${iconHTML}</span>
-      <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
-      `;
-
-      // 미룸 표시
-      if (statusCode === 'p') {
-        const dateEl = box.querySelector('.task-date');
-        if (dateEl) {
-          const arrow = `<span class="postpone-arrow">→</span>`;
-          if (postponedTo && postponedTo !== inst.date){
-            const d = new Date(postponedTo);
-            const newLabel = `${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`;
-            dateEl.innerHTML += ` ${arrow} ${newLabel}`;
-          } else {
-            dateEl.innerHTML += ` ${arrow}`;
-          }
-        }
-      }
-
-      // 시각 효과
-      if (isExempt) {
-        // CSS 클래스 .exempt가 이미 기본 톤을 정리함
-      } else if (done) {
-        box.style.backgroundColor = "transparent";
-        box.style.color = "#9aa6b2";
-      } else if (isPast && statusCode !== 'p') {
-        box.style.backgroundColor = "#f05555";
-        box.style.color = "#fff";
-        box.classList.add('past');
-      } else if (statusCode !== 'p') {
-        box.style.backgroundColor = "#f6c1c1";
-        box.style.color = "#000";
-      }
-
-      // 클릭 토글 (UID 저장)
-      if (isExempt) {
-        // 학생은 면제 상태를 변경할 수 없게 클릭 비활성화
-        box.style.cursor = "default";
+      <span class="task-name">${escapeHTML(inst.text)}</span>
+      
+      if (isPast) {
+      box.style.backgroundColor = "#f05555";
+      box.style.color = "#fff";
+      box.classList.add('past');
       } else {
-        box.onclick = () => {
-          // 공통(common.js)의 setDone 사용 → {s:'d'|''}로 저장
-          setDone(currentStudent, inst.uid, !done);
-          renderTasks();
-        };
-      }
+      box.style.backgroundColor = "#f6c1c1";
+      box.style.color = "#000";
 
+     }
+
+      box.onclick = () => {
+        setDone(currentStudent, inst.uid, true);
+        renderTasks();
+      };
+      
       todoContainer.appendChild(box);
     });
 
