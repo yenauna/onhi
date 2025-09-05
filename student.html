@@ -658,14 +658,16 @@ function buildInstancesOn(targetDate){
      
       box.innerHTML = `
       <span class="task-name">${escapeHTML(inst.text)}</span>
+        <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
+      `;
       
       if (isPast) {
-      box.style.backgroundColor = "#f05555";
-      box.style.color = "#fff";
-      box.classList.add('past');
+        box.style.backgroundColor = "#f05555";
+        box.style.color = "#fff";
+        box.classList.add('past');
       } else {
-      box.style.backgroundColor = "#f6c1c1";
-      box.style.color = "#000";
+        box.style.backgroundColor = "#f6c1c1";
+        box.style.color = "#000";
 
      }
 
