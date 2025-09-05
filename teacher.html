@@ -5,15 +5,15 @@
   <title>과제 배정 (선생님)</title>
 
   <!-- 폰트: 제목=Jua, 본문/버튼=SUIT -->
-  <link href="https://fonts.googleapis.com/2?family=Jua&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT.css">
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
 
   
-  <link rel="stylesheet" href="/common.css">
+  <link rel="stylesheet" href="css/common.css">
   <script src="js/common.js"></script>
   <script src="js/challenges.js"></script>
 
@@ -498,7 +498,7 @@
   <!-- =====================================
        가운데 카드 컨테이너
        ===================================== -->
-  <div class="container">
+  <div class="container" id="main-box">
     <!-- ===== 오늘 할 일(학생별 현황) ===== -->
     <div id="student-status-page" style="display:none; margin-top: 8px;">
       <div id="events-strip-teacher" class="event-grid"></div>
@@ -836,6 +836,12 @@
     function showStudentStatus() {
       renderEventsStrip('events-strip-teacher');
       setActiveTab('status');
+
+      // 컨테이너 토글
+      document.getElementById("main-box").style.display = "block";
+      document.getElementById("challenges-box").style.display = "none";
+
+      // 섹션 토글
       document.getElementById("student-status-page").style.display = "block";
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "none";
@@ -845,9 +851,16 @@
 
     function showTaskManagement() {
       setActiveTab('task');
+
+      // 컨테이너 토글
+      document.getElementById("main-box").style.display = "block";
+      document.getElementById("challenges-box").style.display = "none";
+
+      // 섹션 토글
       document.getElementById("student-status-page").style.display = "none";
       document.getElementById("task-management").style.display = "block";
       document.getElementById("student-management").style.display = "none";
+      
       renderCalendar();
       hideActionUI();
       renderStudentSelector();
@@ -859,21 +872,43 @@
 
     function showStudentManagement() {
       setActiveTab('student');
+
+      // 컨테이너 토글
+      document.getElementById("main-box").style.display = "block";
+      document.getElementById("challenges-box").style.display = "none";
+
+      // 섹션 토글
       document.getElementById("student-status-page").style.display = "none";
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "block";
+      
       hideActionUI();
       renderStudentList();
+    }
+    
+    function showChallenges(){
+      setActiveTab('challenges');
+
+      // 컨테이너 토글
+      document.getElementById("main-box").style.display = "none";
+      document.getElementById("challenges-box").style.display = "block";
+
+      // 목록 렌더
+      if (window.Challenges?.renderChallengeList) {
+        Challenges.renderChallengeList();
+      }
     }
 
     // 탭 버튼 클릭 이벤트 등록
     document.getElementById('tab-status')?.addEventListener('click', showStudentStatus);
     document.getElementById('tab-task')?.addEventListener('click', showTaskManagement);
+    document.getElementById('tab-challenges')?.addEventListener('click', showChallenges);
     document.getElementById('tab-student')?.addEventListener('click', showStudentManagement);
 
     // Expose tab-switch functions for inline handlers
     window.showStudentStatus = showStudentStatus;
     window.showTaskManagement = showTaskManagement;
+    window.showChallenges = showChallenges;
     window.showStudentManagement = showStudentManagement;
     
     // ===========================================================
