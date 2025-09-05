@@ -11,6 +11,7 @@
   <!-- 공통 -->
   <link rel="stylesheet" href="css/common.css">
   <script src="js/common.js"></script>
+  <script src="js/challenges.js"></script>
 
   <style>
      .student-page{
@@ -248,6 +249,21 @@
   text-decoration:none !important;
 }
 
+    /* 레이아웃 */
+    .content-grid{ display:grid; grid-template-columns:1fr; gap:16px; align-items:start; }
+    @media (min-width: 960px){ .content-grid{ grid-template-columns: 2fr 1fr; } }
+    #right-col{ display:none; }
+    .sec-title{ margin:4px 0 8px; font-weight:700; }
+
+
+/* 도전 카드 */
+.challenge-card{ border:1px solid #e5e7eb; border-radius:14px; padding:12px 14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); cursor:pointer; }
+.challenge-card:hover{ filter:brightness(0.99); }
+.challenge-card .ch-title{ font-weight:700; margin-bottom:6px; }
+.challenge-card .ch-desc{ font-size:14px; color:#475467; margin-bottom:8px; }
+.challenge-card .ch-state{ font-size:13px; color:#344054; }
+.challenge-card.done{ opacity:.9; }
+.challenge-card.done .ch-title{ text-decoration:line-through; color:#98a2b3; }
     
   </style>
 </head>
@@ -274,9 +290,16 @@
     <button id="next-day">다음날 ▶</button>
   </div>
     
-  <h2 id="today-date"></h2>
-    
-  <div id="todo-container"></div>
+  <div id="main-content" class="content-grid">
+    <section id="left-col">
+      <h2 id="today-date"></h2>
+      <div id="todo-container"></div>
+    </section>
+    <aside id="right-col">
+      <h3 class="sec-title">🎯 오늘의 도전</h3>
+      <div id="challenges-container"></div>
+    </aside>
+  </div>
   <button id="logout-btn">로그아웃</button>
 </div>
 
@@ -705,6 +728,8 @@ function buildInstancesOn(targetDate){
       p.textContent = '표시할 할 일이 없습니다.';
       todoContainer.appendChild(p);
   }
+
+    Challenges.renderChallengesForStudent(currentStudent);
 
   }
   prevDayBtn.onclick = () => {
