@@ -556,7 +556,6 @@ function buildInstancesOn(targetDate){
   const d0 = normalizeDate(targetDate);
   const y = d0.getFullYear(), m = d0.getMonth()+1, dd = d0.getDate();
   const dateStr = `${y}-${pad2(m)}-${pad2(dd)}`;
-  if (joinDate && dateStr < joinDate) return [];
   const out = [];
 
   const inRangeOn = (t) => {
@@ -632,7 +631,18 @@ function buildInstancesOn(targetDate){
     const currDate0 = normalizeDate(currentDate);
 
     const instances = [];
-    const start = (joinDate && joinDate !== '0000-00-00') ? new Date(joinDateObj) : new Date(currentDate);
+    const tasks = getTasks();
+    let earliest = null;
+    tasks.forEach(t => {
+      if (t.type === 'event' || t.type === 'challenge') return;
+      const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
+      if (!assigned) return;
+      const ds = t.date || t.repeatStart || null;
+      if (!ds) return;
+      if (!earliest || ds < earliest) earliest = ds;
+    });
+    const start = earliest ? new Date(earliest) : new Date(currentDate);
+    start.setHours(0,0,0,0);
     for (let d = new Date(start); d <= currentDate; d.setDate(d.getDate() + 1)) {
       const list = buildInstancesOn(d);
       list.forEach(inst => {
