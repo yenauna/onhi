@@ -1767,8 +1767,16 @@ grid.addEventListener('dblclick', (e) => {
           chip.dataset.uid = inst.uid;               // UID 저장
 
           let style = "padding:8px; border-radius:12px; margin:6px 0; display:flex; justify-content:space-between; align-items:center; cursor:pointer;";
-          if (!isPostponed && !isExempt) style = `border:1px solid #e6e8eb; background:${bg}; ` + style;
-          chip.style.Text = style;
+          if (!isPostponed && !isExempt) {
+            let border = '#e6e8eb';
+            let color = '#000';
+            if (isPast && !done) {
+              border = '#b23326';
+              color = '#fff';
+            }
+            style = `border:1px solid ${border}; background:${bg}; color:${color}; ` + style;
+          }
+          chip.style.cssText = style;
 
           let dateLabel = inst.date;
           if (isPostponed && postponedTo) {
