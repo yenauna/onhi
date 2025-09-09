@@ -43,6 +43,7 @@ Uses localStorage via helper functions from common.js.
     setJSON('challengeStatus-' + student, map);
   }
 
+
   function renderChallengesForStudent(student){
     const cont = document.getElementById('challenges-container');
     if (!cont) return;
@@ -56,21 +57,58 @@ Uses localStorage via helper functions from common.js.
       cont.appendChild(p);
       return;
     }
+
     list.forEach(ch => {
       const status = getChallengeStatusFor(student, ch.id);
-      const done = status && status.s === 'd';
+      const doneSimple = status && status.s === 'd'; // (구형) 단일 완료
+      const steps = Array.isArray(ch.steps) ? ch.steps : [];
+      const max = steps.length; // 단계 수
+      const prog = getChallengeProgressFor(student, ch.id);
+      const curr = Math.min(prog.step || 0, max); // 0~max
+
+      const done = max > 0 ? (curr >= max) : doneSimple;
+
       const card = document.createElement('div');
       card.className = 'challenge-card' + (done ? ' done' : '');
-      card.innerHTML = `<div class="ch-title">${escapeHTML(ch.title || '')}</div>` +
-        (ch.desc ? `<div class="ch-desc">${escapeHTML(ch.desc)}</div>` : '') +
-        `<div class="ch-state">${done ? '✅ 완료' : '⭕ 미완료'}</div>`;
+
+      // 진행률 바용 CSS 변수
+      const pct = max > 0 ? Math.round((curr / max) * 100) : (done ? 100 : 0);
+      card.style.setProperty('--prog', pct + '%');
+
+      // 본문
+      const title = `<div class="ch-title">${escapeHTML(ch.title || '')}</div>`;
+      const desc  = ch.desc ? `<div class="ch-desc">${escapeHTML(ch.desc)}</div>` : '';
+
+      let stateHTML = '';
+      if (max > 0){
+        const nowLabel   = (curr === 0) ? '미시작' : `${curr}단계`;
+        const nextTarget = (curr < max) ? escapeHTML(steps[curr] || '') : '모든 단계 완료!';
+        stateHTML =
+          `<div class="ch-state">
+          <div>진행: ${nowLabel} / 총 ${max}단계 (${pct}%)</div>
+          <div style="font-size:12px;color:#667085;margin-top:4px;">
+          ${curr < max ? '다음 목표: ' + nextTarget : '훌륭해요! 🎉'}
+          </div>
+          </div>`;
+      } else {
+        stateHTML = `<div class="ch-state">${done ? '✅ 완료' : '⭕ 미완료'}</div>`;
+      }
+
+      card.innerHTML = title + desc + stateHTML;
+
+      // 동작: 단계형이면 클릭=+1, 마지막에서 더 누르면 그대로(최대치 유지)
       card.onclick = () => {
-        setChallengeDone(student, ch.id, !done);
+        if (max > 0){
+          incChallengeProgress(student, ch.id, max);
+        } else {
+          setChallengeDone(student, ch.id, !doneSimple);
+        }
         renderChallengesForStudent(student);
       };
       cont.appendChild(card);
     });
   }
+
 
   function renderChallengeList(){
     const box = document.getElementById('challenge-list');
@@ -124,6 +162,16 @@ Uses localStorage via helper functions from common.js.
     const activeInput = document.getElementById('chf-active');
     const select = document.getElementById('chf-students');
 
+    const stepsInput = document.getElementById('chf-steps');
+    if (id){
+      const ch = getChallenges().find(c => c.id === id) || {};
+      // ... (기존 title/desc/active/students 채우는 코드 뒤에)
+      const lines = Array.isArray(ch.steps) ? ch.steps : [];
+      stepsInput.value = lines.join('\n');  // 한 줄에 하나
+    } else {
+      stepsInput.value = '';
+    }
+
     // populate student options
     const students = loadStudents();
     select.innerHTML = '';
@@ -163,11 +211,34 @@ Uses localStorage via helper functions from common.js.
     const active = document.getElementById('chf-active').checked;
     const select = document.getElementById('chf-students');
     const students = Array.from(select.selectedOptions).map(o => o.value);
-    const ch = { id: id || genId(), title, desc, active, students: students.length ? students : ['전체'] };
+    const ch = { id: id || genId(), title, desc, active, students: students.length ? students : ['전체'] }; steps
     upsertChallenge(ch);
     cancelChallengeForm();
     renderChallengeList();
   }
+
+  // --- [추가] 학생별 도전 진행도 저장소 ---
+  // 구조: localStorage['challengeProgress-학생'] = { [challengeId]: { step:number, ts:string } }
+  function getChallengeProgressFor(student, id){
+    const map = getJSON('challengeProgress-' + student, {}) || {};
+    return map[id] || { step: 0, ts: null }; // step: 0은 미시작
+  }
+  function setChallengeProgress(student, id, step){
+    const map = getJSON('challengeProgress-' + student, {}) || {};
+    map[id] = { step: Math.max(0, step), ts: new Date().toISOString() };
+    setJSON('challengeProgress-' + student, map);
+  }
+  function incChallengeProgress(student, id, maxSteps){
+    const curr = getChallengeProgressFor(student, id).step || 0;
+    const next = Math.min(curr + 1, maxSteps); // 최대 m단계
+    setChallengeProgress(student, id, next);
+  }
+  function decChallengeProgress(student, id){
+    const curr = getChallengeProgressFor(student, id).step || 0;
+    const next = Math.max(curr - 1, 0);
+    setChallengeProgress(student, id, next);
+  }
+
 
   function cancelChallengeForm(){
     const listView = document.getElementById('challenge-list-view');
