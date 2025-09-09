@@ -251,47 +251,136 @@ Uses localStorage via helper functions from common.js.
   }
 
   function openChallengeStatus(id){
-    const listView = document.getElementById('challenge-list-view');
-    const formView = document.getElementById('challenge-form');
-    const statusView = document.getElementById('challenge-status-view');
-    if(listView) listView.style.display='none';
-    if(formView) formView.style.display='none';
-    if(statusView) statusView.style.display='block';
+  const listView = document.getElementById('challenge-list-view');
+  const formView = document.getElementById('challenge-form');
+  const statusView = document.getElementById('challenge-status-view');
+  if(listView) listView.style.display='none';
+  if(formView) formView.style.display='none';
+  if(statusView) statusView.style.display='block';
 
-    const ch = getChallenges().find(c=>c.id===id); if(!ch) return;
-    statusView.dataset.id = id;
-    statusView.querySelector('.st-ch-title').textContent = ch.title || '(제목 없음)';
-    statusView.querySelector('.st-ch-active').textContent = ch.active? '활성(ON)' : '비활성(OFF)';
-    const tbody = statusView.querySelector('tbody');
-    tbody.innerHTML='';
+  const ch = getChallenges().find(c=>c.id===id); if(!ch) return;
+  statusView.dataset.id = id;
+  statusView.querySelector('.st-ch-title').textContent = ch.title || '(제목 없음)';
+  statusView.querySelector('.st-ch-active').textContent = ch.active? '활성(ON)' : '비활성(OFF)';
 
-    const roster = (ch.students && !ch.students.includes('전체')) ? ch.students : loadStudents().map(s=>s.name);
-    roster.forEach(name=>{
-      const m = getJSON('challengeStatus-'+name, {}) || {};
-      const done = m[id]?.s === 'd';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${escapeHTML(name)}</td><td class="st">${done?'✅ 완료':'⭕ 미완료'}</td><td><button class="toggle">토글</button></td>`;
+  const tbody = statusView.querySelector('tbody');
+  tbody.innerHTML='';
+
+  // ★ 단계 정보
+  const steps = Array.isArray(ch.steps) ? ch.steps : [];
+  const max = steps.length; // 0이면 기존(단일 완료) 방식
+
+  // 대상 학생
+  const roster = (ch.students && !ch.students.includes('전체'))
+    ? ch.students
+    : loadStudents().map(s=>s.name);
+
+  roster.forEach(name=>{
+    // 기존(단일 완료) 상태
+    const m = getJSON('challengeStatus-'+name, {}) || {};
+    const doneSimple = m[id]?.s === 'd';
+
+    // 단계형 진행도
+    const prog = (typeof getChallengeProgressFor === 'function')
+      ? getChallengeProgressFor(name, id)
+      : { step: 0, ts: null };
+
+    const curr = Math.min(Math.max(prog.step || 0, 0), max); // 0~max
+    const done = max > 0 ? (curr >= max) : doneSimple;
+
+    const tr = document.createElement('tr');
+
+    // 상태 셀
+    let stateCellHTML = '';
+    if (max > 0){
+      const nowLabel = curr === 0 ? '미시작' : `${curr}단계`;
+      stateCellHTML = `
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span>${nowLabel} / 총 ${max}단계</span>
+          <div style="display:inline-flex;gap:4px;">
+            <button class="dec">−</button>
+            <button class="inc">＋</button>
+            <button class="to-max">모두완료</button>
+            <button class="to-zero">초기화</button>
+          </div>
+        </div>`;
+    } else {
+      stateCellHTML = done ? '✅ 완료' : '⭕ 미완료';
+    }
+
+    tr.innerHTML = `
+      <td>${escapeHTML(name)}</td>
+      <td class="st">${stateCellHTML}</td>
+      <td>
+        ${max > 0
+          ? `<span class="muted">단계형</span>`
+          : `<button class="toggle">토글</button>`}
+      </td>`;
+
+    // 🔘 버튼 바인딩
+    if (max > 0){
+      tr.querySelector('.inc').onclick = ()=>{
+        if (typeof incChallengeProgress === 'function') {
+          incChallengeProgress(name, id, max);
+        } else if (typeof setChallengeProgress === 'function') {
+          // fallback
+          const next = Math.min(curr+1, max);
+          setChallengeProgress(name, id, next);
+        }
+        openChallengeStatus(id);
+      };
+      tr.querySelector('.dec').onclick = ()=>{
+        if (typeof decChallengeProgress === 'function') {
+          decChallengeProgress(name, id);
+        } else if (typeof setChallengeProgress === 'function') {
+          // fallback
+          const next = Math.max(curr-1, 0);
+          setChallengeProgress(name, id, next);
+        }
+        openChallengeStatus(id);
+      };
+      tr.querySelector('.to-max').onclick = ()=>{
+        if (typeof setChallengeProgress === 'function') setChallengeProgress(name, id, max);
+        openChallengeStatus(id);
+      };
+      tr.querySelector('.to-zero').onclick = ()=>{
+        if (typeof setChallengeProgress === 'function') setChallengeProgress(name, id, 0);
+        openChallengeStatus(id);
+      };
+    } else {
       tr.querySelector('.toggle').onclick = ()=>{
         const mm = getJSON('challengeStatus-'+name, {}) || {};
         if(done) delete mm[id]; else mm[id]={s:'d', ts:new Date().toISOString()};
         setJSON('challengeStatus-'+name, mm);
         openChallengeStatus(id);
       };
-      tbody.appendChild(tr);
-    });
-  }
+    }
+
+    tbody.appendChild(tr);
+  });
+}
 
   function bulkMarkStatus(done){
     const id = document.getElementById('challenge-status-view').dataset.id;
     const ch = getChallenges().find(c=>c.id===id); if(!ch) return;
-    const roster = (ch.students && !ch.students.includes('전체')) ? ch.students : loadStudents().map(s=>s.name);
+    const steps = Array.isArray(ch.steps) ? ch.steps : [];
+    const max = steps.length;
+
+    const roster = (ch.students && !ch.students.includes('전체'))
+      ? ch.students : loadStudents().map(s=>s.name);
+
     roster.forEach(name=>{
-      const m = getJSON('challengeStatus-'+name, {}) || {};
-      if(done) m[id]={s:'d', ts:new Date().toISOString()}; else delete m[id];
-      setJSON('challengeStatus-'+name, m);
+      if (max > 0){
+        setChallengeProgress(name, id, done ? max : 0);
+      } else {
+        const m = getJSON('challengeStatus-'+name, {}) || {};
+        if(done) m[id]={s:'d', ts:new Date().toISOString()}; else delete m[id];
+        setJSON('challengeStatus-'+name, m);
+      }
     });
     openChallengeStatus(id);
   }
+  
   function backToListFromStatus(){
     const statusView = document.getElementById('challenge-status-view');
     const listView = document.getElementById('challenge-list-view');
