@@ -264,6 +264,10 @@
 .challenge-card .ch-state{ font-size:13px; color:#344054; }
 .challenge-card.done{ opacity:.9; }
 .challenge-card.done .ch-title{ text-decoration:line-through; color:#98a2b3; }
+    .challenge-card::after{
+      content:""; position:absolute; left:0; bottom:0; height:4px; width:var(--prog,0%);
+      background:linear-gradient(90deg, #2e7d57, #4bb27d);
+    }
 
     
   </style>
