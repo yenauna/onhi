@@ -673,23 +673,38 @@
     <label>제목<br><input id="chf-title" style="width:100%"></label>
     <br>
     <label>설명<br><textarea id="chf-desc" style="width:100%;min-height:96px"></textarea></label>
-    <br>
-      <!--  단계 입력 (한 줄에 하나) -->
-    <label>단계 (한 줄에 하나)<br>
-      <textarea id="chf-steps" style="width:100%;min-height:120px"
-        placeholder="예)\n1단계 : 리코더 1곡\n2단계 : 리코더 3곡\n3단계 : 리코더 5곡"></textarea>
-    </label>
-    <br>
-    <label><input type="checkbox" id="chf-active" checked> 활성화</label>
-    <br><br>
-    <label>대상 학생(여러명 선택 가능)<br>
-      <select id="chf-students" multiple size="10" style="width:100%;max-width:420px;"></select>
-    </label>
-    <div style="margin-top:12px;display:flex;gap:8px;">
-      <button onclick="Challenges.saveChallengeFromForm()">저장</button>
-      <button onclick="Challenges.cancelChallengeForm()">취소</button>
-    </div>
-  </section>
+      <br>
+      <label>단계 수<br>
+        <select id="chf-step-count">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </label>
+      <div id="chf-steps-box" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;"></div>
+      <br>
+      <label><input type="checkbox" id="chf-active" checked> 활성화</label>
+      <br><br>
+      <label>대상<br>
+        <select id="chf-target">
+          <option value="all">전체</option>
+          <option value="selected">선택</option>
+        </select>
+      </label>
+      <div id="chf-student-selector" class="student-card-grid" style="display:none;"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button onclick="Challenges.saveChallengeFromForm()">저장</button>
+        <button onclick="Challenges.cancelChallengeForm()">취소</button>
+      </div>
+    </section>
 
   <section id="challenge-status-view" style="display:none;">
     <div class="st-header" style="display:flex;align-items:center;gap:8px;">
