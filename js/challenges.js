@@ -162,10 +162,45 @@ Uses localStorage via helper functions from common.js.
     });
   }
 
+  function updateStepFields(count, values=[]){
+    const box = document.getElementById('chf-steps-box');
+    if (!box) return;
+    box.innerHTML = '';
+    for (let i = 0; i < count; i++){
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = `단계 ${i+1}`;
+      inp.value = values[i] || '';
+      inp.style.width = '100%';
+      box.appendChild(inp);
+    }
+  }
+
+  function renderChallengeStudentSelector(selected=[]){
+    const grid = document.getElementById('chf-student-selector');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const students = (typeof getStudentsSorted === 'function') ? getStudentsSorted() : loadStudents();
+    students.forEach(stu => {
+      const card = document.createElement('div');
+      card.className = 'student-card';
+      card.dataset.name = stu.name;
+      card.textContent = `${stu.id} ${stu.name}`;
+      if (selected.includes(stu.name)) card.classList.add('is-selected');
+      grid.appendChild(card);
+    });
+    grid.onclick = (e)=>{
+      const card = e.target.closest('.student-card');
+      if (!card) return;
+      card.classList.toggle('is-selected');
+    };
+  }
+
   function openChallengeForm(id){
     const listView = document.getElementById('challenge-list-view');
     const formView = document.getElementById('challenge-form');
     const statusView = document.getElementById('challenge-status-view');
+  
     if (listView) listView.style.display = 'none';
     if (statusView) statusView.style.display = 'none';
     if (formView) formView.style.display = 'block';
@@ -173,46 +208,44 @@ Uses localStorage via helper functions from common.js.
     const titleInput = document.getElementById('chf-title');
     const descInput = document.getElementById('chf-desc');
     const activeInput = document.getElementById('chf-active');
-    const select = document.getElementById('chf-students');
+    const stepCountSel = document.getElementById('chf-step-count');
+    const targetSel = document.getElementById('chf-target');
 
-    const stepsInput = document.getElementById('chf-steps');
-    if (id){
-      const ch = getChallenges().find(c => c.id === id) || {};
-      // ... (기존 title/desc/active/students 채우는 코드 뒤에)
-      const lines = Array.isArray(ch.steps) ? ch.steps : [];
-      stepsInput.value = lines.join('\n');  // 한 줄에 하나
-    } else {
-      stepsInput.value = '';
-    }
-
-    // populate student options
-    const students = loadStudents();
-    select.innerHTML = '';
-    const optAll = document.createElement('option');
-    optAll.value = '전체';
-    optAll.textContent = '전체';
-    select.appendChild(optAll);
-    students.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.name;
-      opt.textContent = s.name;
-      select.appendChild(opt);
-    });
+    stepCountSel.onchange = () => {
+      const n = parseInt(stepCountSel.value, 10) || 0;
+      updateStepFields(n);
+    };
+    targetSel.onchange = () => {
+      const grid = document.getElementById('chf-student-selector');
+      const show = targetSel.value === 'selected';
+      if (grid) grid.style.display = show ? 'flex' : 'none';
+    };
 
     if (id){
       const ch = getChallenges().find(c => c.id === id) || {};
+      const steps = Array.isArray(ch.steps) ? ch.steps : [];
+      stepCountSel.value = String(steps.length);
+      updateStepFields(steps.length, steps);
       formView.dataset.id = id;
       titleInput.value = ch.title || '';
       descInput.value = ch.desc || '';
       activeInput.checked = ch.active !== false;
       const roster = ch.students || ['전체'];
-      Array.from(select.options).forEach(o => { o.selected = roster.includes(o.value); });
+      targetSel.value = roster.includes('전체') ? 'all' : 'selected';
+      renderChallengeStudentSelector(roster.includes('전체') ? [] : roster);
+      const grid = document.getElementById('chf-student-selector');
+      if (grid) grid.style.display = targetSel.value === 'selected' ? 'flex' : 'none';
     } else {
       formView.dataset.id = '';
       titleInput.value = '';
       descInput.value = '';
       activeInput.checked = true;
-      Array.from(select.options).forEach(o => { o.selected = false; });
+      stepCountSel.value = '0';
+      updateStepFields(0);
+      targetSel.value = 'all';
+      renderChallengeStudentSelector([]);
+      const grid = document.getElementById('chf-student-selector');
+      if (grid) grid.style.display = 'none';
     }
   }
 
@@ -222,9 +255,25 @@ Uses localStorage via helper functions from common.js.
     const title = document.getElementById('chf-title').value.trim();
     const desc = document.getElementById('chf-desc').value.trim();
     const active = document.getElementById('chf-active').checked;
-    const select = document.getElementById('chf-students');
-    const students = Array.from(select.selectedOptions).map(o => o.value);
-    const ch = { id: id || genId(), title, desc, active, students: students.length ? students : ['전체'] }; steps
+    const stepCount = parseInt(document.getElementById('chf-step-count').value, 10) || 0;
+    let steps = [];
+    if (stepCount > 0){
+      const inputs = Array.from(document.querySelectorAll('#chf-steps-box input'));
+      steps = inputs.map(i => i.value.trim());
+      if (steps.length !== stepCount || steps.some(s => !s)) {
+        alert('모든 단계 내용을 입력하세요.');
+        return;
+      }
+    }
+    const target = document.getElementById('chf-target').value;
+    let students = ['전체'];
+    if (target === 'selected'){
+      students = Array.from(document.querySelectorAll('#chf-student-selector .student-card.is-selected')).map(el => el.dataset.name);
+      if (!students.length){ alert('학생을 하나 이상 선택하세요.'); return; }
+    }
+    const ch = { id: id || genId(), title, desc, active, students };
+    if (stepCount > 0) ch.steps = steps;
+    else ch.steps = [];
     upsertChallenge(ch);
     cancelChallengeForm();
     renderChallengeList();
