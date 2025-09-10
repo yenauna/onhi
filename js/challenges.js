@@ -76,19 +76,16 @@ Uses localStorage via helper functions from common.js.
       card.style.setProperty('--prog', pct + '%');
 
       // 본문
-      const title = `<div class="ch-title">${escapeHTML(ch.title || '')}</div>`;
+      const title = `<div class="ch-title">${escapeHTML(ch.title || '')} (${pct}%)</div>`;
       const desc  = ch.desc ? `<div class="ch-desc">${escapeHTML(ch.desc)}</div>` : '';
 
       let stateHTML = '';
       if (max > 0){
-        const nowLabel   = (curr === 0) ? '미시작' : `${curr}단계`;
-        const nextTarget = (curr < max) ? escapeHTML(steps[curr] || '') : '모든 단계 완료!';
+        const nextTarget = (curr < max) ? escapeHTML(steps[curr] || '') : '모든 단계 완료! 🎉';
         stateHTML =
           `<div class="ch-state">
-          <div>진행: ${nowLabel} / 총 ${max}단계 (${pct}%)</div>
-          <div style="font-size:12px;color:#667085;margin-top:4px;">
-          ${curr < max ? '다음 목표: ' + nextTarget : '훌륭해요! 🎉'}
-          </div>
+          <div>진행: ${curr}단계 / 총 ${max}단계</div>
+          <div style="font-size:12px;color:#667085;margin-top:4px;">다음 목표: ${nextTarget}</div>
           </div>`;
       } else {
         stateHTML = `<div class="ch-state">${done ? '✅ 완료' : '⭕ 미완료'}</div>`;
@@ -96,7 +93,18 @@ Uses localStorage via helper functions from common.js.
 
       card.innerHTML = title + desc + stateHTML;
 
-       if (max > 0){
+      if (max > 0){
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'ch-toggle';
+        toggle.textContent = '단계 보기';
+        toggle.onclick = (e)=>{
+          e.stopPropagation();
+          card.classList.toggle('expanded');
+          toggle.textContent = card.classList.contains('expanded') ? '접기' : '단계 보기';
+        };
+        card.appendChild(toggle);
+        
         const stepsBox = document.createElement('div');
         stepsBox.className = 'ch-steps';
         steps.forEach((st, i)=>{
