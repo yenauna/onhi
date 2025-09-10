@@ -289,6 +289,9 @@
     .chl-actions button{ margin-left:6px; }
     .chl-actions .danger{ color:#b42318; }
     .muted{ color:#667085; }
+    #challenge-status-view tr.not-started{ background:#f05555; color:#fff; }
+    #challenge-status-view tr.in-progress{ background:#f6c1c1; }
+    #challenge-status-view tr.done{ background:#fff; border:1px solid #dcdfe4; }
     
 
     /* ================================
@@ -663,6 +666,13 @@
     <div class="toolbar" style="display:flex;align-items:center;gap:8px;margin:8px 0;">
       <button type="button" onclick="Challenges.openChallengeForm(null)">+ 새 도전</button>
       <input id="chl-search" placeholder="검색 (제목/설명)" oninput="Challenges.renderChallengeList()" style="flex:1;max-width:260px;" />
+      <select id="chl-sort" onchange="Challenges.renderChallengeList()">
+        <option value="name">이름 순</option>
+        <option value="incomplete">미완료 많은 순</option>
+        <option value="complete">완료 많은 순</option>
+        <option value="progressHigh">진행도 높은 순</option>
+        <option value="progressLow">진행률 낮은 순</option>
+      </select>
     </div>
     <div id="challenge-list"></div>
   </div>
