@@ -256,19 +256,22 @@
     .sec-title{ margin:4px 0 8px; font-weight:700; }
 
 
-/* 도전 카드 */
-.challenge-card{ border:1px solid #e5e7eb; border-radius:14px; padding:12px 14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); cursor:pointer; position:relative; overflow:hidden; }
-.challenge-card:hover{ filter:brightness(0.99); }
-.challenge-card .ch-title{ font-weight:700; margin-bottom:6px; }
-.challenge-card .ch-desc{ font-size:14px; color:#475467; margin-bottom:8px; }
-.challenge-card .ch-state{ font-size:13px; color:#344054; }
-.challenge-card .ch-steps{ margin-top:8px; display:none; flex-direction:column; gap:4px; }
-.challenge-card.expanded .ch-steps{ display:flex; }
-.challenge-card .ch-toggle{ margin-top:8px; }
-.challenge-card .ch-step{ padding:6px 8px; text-align:left; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; cursor:pointer; }
-.challenge-card .ch-step.done{ background:#e0f2f1; text-decoration:line-through; color:#2e7d57; }
-.challenge-card.done{ opacity:.9; }
-.challenge-card.done .ch-title{ text-decoration:line-through; color:#98a2b3; }
+    /* 도전 카드 */
+    #challenges-container{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .challenge-card{ border:1px solid #e5e7eb; border-radius:14px; padding:12px 14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); cursor:pointer; position:relative; overflow:hidden; }
+    .challenge-card.not-started{ background:#f05555; color:#fff; }
+    .challenge-card.in-progress{ background:#f6c1c1; }
+    .challenge-card.done{ background:#fff; border:1px solid #dcdfe4; opacity:.9; }
+    .challenge-card.done .ch-title{ text-decoration:line-through; color:#98a2b3; }
+    .challenge-card:hover{ filter:brightness(0.99); }
+    .challenge-card .ch-title{ font-weight:700; margin-bottom:6px; }
+    .challenge-card .ch-desc{ font-size:14px; color:#475467; margin-bottom:8px; }
+    .challenge-card .ch-state{ font-size:13px; color:#344054; }
+    .challenge-card .ch-steps{ margin-top:8px; display:none; flex-direction:column; gap:4px; }
+    .challenge-card.expanded .ch-steps{ display:flex; }
+    .challenge-card .ch-toggle{ margin-top:8px; }
+    .challenge-card .ch-step{ padding:6px 8px; text-align:left; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; cursor:pointer; }
+    .challenge-card .ch-step.done{ background:#e0f2f1; text-decoration:line-through; color:#2e7d57; }
     .challenge-card::after{
       content:""; position:absolute; left:0; bottom:0; height:4px; width:var(--prog,0%);
       background:linear-gradient(90deg, #2e7d57, #4bb27d);
@@ -306,7 +309,12 @@
       <div id="todo-container"></div>
     </section>
     <aside id="right-col">
-      <h3 class="sec-title">🎯 오늘의 도전</h3>
+      <h3 class="sec-title">🎯 오늘의 도전 <span id="ch-progress-avg"></span></h3>
+      <select id="ch-sort" onchange="Challenges.renderChallengesForStudent(currentStudent)" style="margin-bottom:8px;">
+        <option value="name">이름 순</option>
+        <option value="low">진행률 낮은 순</option>
+        <option value="high">진행률 높은 순</option>
+      </select>
       <div id="challenges-container"></div>
     </aside>
   </div>
