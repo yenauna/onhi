@@ -96,15 +96,28 @@ Uses localStorage via helper functions from common.js.
 
       card.innerHTML = title + desc + stateHTML;
 
-      // 동작: 단계형이면 클릭=+1, 마지막에서 더 누르면 그대로(최대치 유지)
-      card.onclick = () => {
-        if (max > 0){
-          incChallengeProgress(student, ch.id, max);
-        } else {
+       if (max > 0){
+        const stepsBox = document.createElement('div');
+        stepsBox.className = 'ch-steps';
+        steps.forEach((st, i)=>{
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'ch-step' + (i < curr ? ' done' : '');
+          btn.textContent = st;
+          btn.onclick = (ev)=>{
+            ev.stopPropagation();
+            setChallengeProgress(student, ch.id, i + 1);
+            renderChallengesForStudent(student);
+          };
+          stepsBox.appendChild(btn);
+        });
+        card.appendChild(stepsBox);
+      } else {
+        card.onclick = () => {
           setChallengeDone(student, ch.id, !doneSimple);
-        }
-        renderChallengesForStudent(student);
-      };
+       renderChallengesForStudent(student);
+        };
+      }
       cont.appendChild(card);
     });
   }
