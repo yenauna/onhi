@@ -48,7 +48,8 @@ Uses localStorage via helper functions from common.js.
     const cont = document.getElementById('challenges-container');
     if (!cont) return;
     cont.innerHTML = '';
-    const list = listAssignedChallenges(student);
+    const sort = document.getElementById('ch-sort')?.value || 'name';
+    let list = listAssignedChallenges(student);
     if (list.length === 0){
       const p = document.createElement('p');
       p.style.color = '#667085';
@@ -58,18 +59,35 @@ Uses localStorage via helper functions from common.js.
       return;
     }
 
-    list.forEach(ch => {
+    let totalPct = 0;
+    list = list.map(ch => {
       const status = getChallengeStatusFor(student, ch.id);
-      const doneSimple = status && status.s === 'd'; // (구형) 단일 완료
+      const doneSimple = status && status.s === 'd';      
       const steps = Array.isArray(ch.steps) ? ch.steps : [];
       const max = steps.length; // 단계 수
       const prog = getChallengeProgressFor(student, ch.id);
       const curr = Math.min(prog.step || 0, max); // 0~max
 
       const done = max > 0 ? (curr >= max) : doneSimple;
+      const pct = max > 0 ? Math.round((curr / max) * 100) : (done ? 100 : 0);
+      totalPct += pct;
+      return { ...ch, curr, max, done, pct, steps };
+    });
+
+    list.sort((a,b)=>{
+      if (sort==='low') return a.pct - b.pct;
+      if (sort==='high') return b.pct - a.pct;
+      return (a.title||'').localeCompare(b.title||'');
+    });
+
+    list.forEach(ch => {
+      const {curr, max, done, pct, steps} = ch;
 
       const card = document.createElement('div');
-      card.className = 'challenge-card' + (done ? ' done' : '');
+      let statusClass = 'not-started';
+      if (done) statusClass = 'done';
+      else if (curr > 0) statusClass = 'in-progress';
+      card.className = 'challenge-card ' + statusClass;
 
       // 진행률 바용 CSS 변수
       const pct = max > 0 ? Math.round((curr / max) * 100) : (done ? 100 : 0);
@@ -84,7 +102,7 @@ Uses localStorage via helper functions from common.js.
         const nextTarget = (curr < max) ? escapeHTML(steps[curr] || '') : '모든 단계 완료! 🎉';
         stateHTML =
           `<div class="ch-state">
-          <div>진행: ${curr}단계 / 총 ${max}단계</div>
+          <div>진행: ${curr} / ${max}</div>
           <div style="font-size:12px;color:#667085;margin-top:4px;">다음 목표: ${nextTarget}</div>
           </div>`;
       } else {
@@ -128,6 +146,10 @@ Uses localStorage via helper functions from common.js.
       }
       cont.appendChild(card);
     });
+
+    const avg = list.length ? Math.round(totalPct / list.length) : 0;
+    const avgSpan = document.getElementById('ch-progress-avg');
+    if (avgSpan) avgSpan.textContent = `(전체의 ${avg}% 진행 완료)`;
   }
 
 
@@ -135,18 +157,48 @@ Uses localStorage via helper functions from common.js.
     const box = document.getElementById('challenge-list');
     if (!box) return;
     const keyword = (document.getElementById('chl-search')?.value || '').trim();
+    const sort = document.getElementById('chl-sort')?.value || 'name';
     box.innerHTML = '';
-    getChallenges().filter(ch => {
+    let list = getChallenges().map(ch => {
+      const students = (ch.students && !ch.students.includes('전체')) ? ch.students : loadStudents().map(s=>s.name);
+      const steps = Array.isArray(ch.steps) ? ch.steps : [];
+      const max = steps.length;
+      let doneCnt=0, progCnt=0, noneCnt=0, progSum=0;
+      students.forEach(name=>{
+        const status = getChallengeStatusFor(name, ch.id);
+        const doneSimple = status && status.s==='d';
+        const p = getChallengeProgressFor(name, ch.id);
+        const curr = Math.min(p.step||0, max);
+        const done = max>0 ? curr>=max : doneSimple;
+        if(done){ doneCnt++; progSum +=1; }
+        else if(curr>0){ progCnt++; progSum += (max>0?curr/max:0); }
+        else { noneCnt++; }
+      });
+      const avg = students.length>0 ? Math.round((progSum/students.length)*100) : 0;
+      return { ...ch, stats:{done:doneCnt, prog:progCnt, none:noneCnt, avg:avg, total:students.length} };
+    }).filter(ch => {
       if (!keyword) return true;
       const txt = (ch.title || '') + ' ' + (ch.desc || '');
       return txt.includes(keyword);
-    }).forEach(ch => {
+      });
+
+    list.sort((a,b)=>{
+      if (sort==='incomplete') return (b.stats.prog + b.stats.none) - (a.stats.prog + a.stats.none);
+      if (sort==='complete') return b.stats.done - a.stats.done;
+      if (sort==='progressHigh') return b.stats.avg - a.stats.avg;
+      if (sort==='progressLow') return a.stats.avg - b.stats.avg;
+      return (a.title||'').localeCompare(b.title||'');
+    });
+
+    list.forEach(ch => {      
       const item = document.createElement('div');
       item.className = 'chl-item' + (ch.active ? '' : ' inactive');
       const left = document.createElement('div');
       left.style.flex = '1';
+      const summary = `완료 ${ch.stats.done}명, 진행중 ${ch.stats.prog}명, 미시작 ${ch.stats.none}명`;
       left.innerHTML = `<div class="chl-title">${escapeHTML(ch.title || '(제목 없음)')}</div>` +
-        (ch.desc ? `<div class="chl-desc" style="font-size:14px;color:#475467;">${escapeHTML(ch.desc)}</div>` : '');
+        (ch.desc ? `<div class="chl-desc" style="font-size:14px;color:#475467;">${escapeHTML(ch.desc)}</div>` : '') +
+        `<div class="chl-meta">${summary}</div>`;
       const right = document.createElement('div');
       right.style.display = 'flex'
         right.style.gap = '4px';
@@ -359,14 +411,18 @@ Uses localStorage via helper functions from common.js.
     const done = max > 0 ? (curr >= max) : doneSimple;
 
     const tr = document.createElement('tr');
+    let rowClass = 'not-started';
+    if (done) rowClass = 'done';
+    else if (curr > 0) rowClass = 'in-progress';
+    tr.className = rowClass;
 
     // 상태 셀
     let stateCellHTML = '';
     if (max > 0){
-      const nowLabel = curr === 0 ? '미시작' : `${curr}단계`;
+      const nowLabel = curr === 0 ? '미시작' : `${curr}`;
       stateCellHTML = `
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span>${nowLabel} / 총 ${max}단계</span>
+          <span>${nowLabel} / ${max}</span>
           <div style="display:inline-flex;gap:4px;">
             <button class="dec">−</button>
             <button class="inc">＋</button>
@@ -431,6 +487,7 @@ Uses localStorage via helper functions from common.js.
 }
 
   function bulkMarkStatus(done){
+    if (done && !confirm('모두 완료로 바꾸시겠습니까?')) return;
     const id = document.getElementById('challenge-status-view').dataset.id;
     const ch = getChallenges().find(c=>c.id===id); if(!ch) return;
     const steps = Array.isArray(ch.steps) ? ch.steps : [];
