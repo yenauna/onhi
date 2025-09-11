@@ -62,13 +62,13 @@ body{
 
 /* 조회용 모드 토글(교사용만 사용) */
 .topbar .right-tools .mode-btn{
-  font-size:12px; padding:6px 10px; line-height:1;
-  border-radius:999px; border:1px solid #dcdfe4;
-  background:#f6f7f9; color:#495057; cursor:pointer;
+  font-size:12px; padding:6px 10px; line-height:1.2;
+  border-radius:999px; border:1px solid var(--brand);
+  background:var(--bg-base); color:var(--brand); cursor:pointer;
   box-shadow:0 4px 10px rgba(0,0,0,.06);
   white-space:nowrap; flex-shrink:0;
 }
-.topbar .right-tools .mode-btn.is-edit{ background:#f0f7f4; border-color:#cfe7dc; }
+.topbar .right-tools .mode-btn.is-edit{ background:var(--brand); color:#fff; border-color:var(--brand); }
 
 
 /* 공통 프라이머리 버튼 */
