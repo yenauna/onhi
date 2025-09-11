@@ -283,10 +283,12 @@ function buildInstancesFromTasks(){
     if(!strip) return;
     Array.from(strip.querySelectorAll('.challenge-success')).forEach(el=>el.remove());
     const now = Date.now();
-   const challenges =
+      const challenges =
       (window.Challenges && typeof window.Challenges.getChallenges === 'function')
         ? window.Challenges.getChallenges()
         : [];
+    const byId = {};
+    challenges.forEach(ch => byId[ch.id] = ch);
     const students = loadStudents();
     students.forEach(stu=>{
       const map = getJSON('challengeStatus-'+stu.name, {}) || {};
@@ -295,7 +297,24 @@ function buildInstancesFromTasks(){
         if(st && st.s==='d' && st.ts){
           const ts = new Date(st.ts).getTime();
           if(now - ts < 86400000){
-            const ch = challenges.find(c=>c.id===id);
+            const ch = byId[id];
+            const div = document.createElement('div');
+            div.className = 'challenge-success';
+            div.textContent = ch
+              ? `${stu.name} ${ch.title} 도전에 성공!`
+              : `${stu.name} 도전에 성공!`;
+            strip.appendChild(div);
+          }
+        }
+      });
+      const prog = getJSON('challengeProgress-' + stu.name, {}) || {};
+      Object.keys(prog).forEach(id=>{
+        const info = prog[id];
+        const ch = byId[id];
+        const steps = Array.isArray(ch?.steps) ? ch.steps.length : 0;
+        if(steps > 0 && info && info.ts && (info.step || 0) >= steps){
+          const ts = new Date(info.ts).getTime();
+          if(now - ts < 86400000){
             const div = document.createElement('div');
             div.className = 'challenge-success';
             div.textContent = ch
