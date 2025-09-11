@@ -298,7 +298,7 @@ function applyBoardModeToButton(){
   if (!btn) return;
   const mode = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
   const isEdit = mode === 'edit';
-  btn.textContent = isEdit ? '편집가능' : '보기전용';
+  btn.innerHTML = isEdit ? '편집<br>가능' : '읽기<br>전용';
   btn.setAttribute('aria-pressed', String(isEdit));
   btn.classList.toggle('is-edit', isEdit);
    // index 페이지에서는 버튼을 비활성화해 단순 표시만 한다
