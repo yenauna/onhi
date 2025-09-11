@@ -900,19 +900,6 @@
       hideActionUI();
       renderStudentList();
     }
-    
-    function showChallenges(){
-      setActiveTab('challenges');
-
-      // 컨테이너 토글
-      document.getElementById("main-box").style.display = "none";
-      document.getElementById("challenges-box").style.display = "block";
-
-      // 목록 렌더
-      if (window.Challenges?.renderChallengeList) {
-        Challenges.renderChallengeList();
-      }
-    }
 
     // 탭 버튼 클릭 이벤트 등록
     document.getElementById('tab-status')?.addEventListener('click', showStudentStatus);
