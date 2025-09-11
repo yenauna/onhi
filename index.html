@@ -371,7 +371,6 @@ function buildInstancesFromTasks(){
           card.appendChild(chip);
         });
 
-
         if (!any){
           // 미완료 없으면 비워두되, 자리 유지 위해 안내 1줄
           const none = document.createElement('div');
@@ -384,14 +383,13 @@ function buildInstancesFromTasks(){
       });
     }
 
-
     function applyShowEventsBtn(){
       const btn = document.getElementById('eventsBtn');
       if (!btn) return;
       let pref = localStorage.getItem('showEvents');
       if (pref !== 'yes' && pref !== 'no'){ pref='yes'; localStorage.setItem('showEvents', pref); }
       const show = pref !== 'no';
-      btn.textContent = show ? '일정숨김' : '일정표시';
+      btn.innerHTML = show ? '일정<br>숨김' : '일정<br>표시';
       btn.setAttribute('aria-pressed', String(show));
       const strip = document.getElementById('events-strip');
       if (strip) strip.style.display = show ? '' : 'none';
@@ -402,8 +400,6 @@ function buildInstancesFromTasks(){
       applyShowEventsBtn();
       renderBoard();
     }
-
-
 
      // 페이지가 하단에서 스크립트를 로드하므로 즉시 초기화 가능
     document.addEventListener('DOMContentLoaded', () => {
