@@ -270,20 +270,26 @@ Uses localStorage via helper functions from common.js.
     const stepCountSel = document.getElementById('chf-step-count');
     const targetSel = document.getElementById('chf-target');
 
-    stepCountSel.onchange = () => {
-      const n = parseInt(stepCountSel.value, 10) || 0;
-      updateStepFields(n);
-    };
-    targetSel.onchange = () => {
-      const grid = document.getElementById('chf-student-selector');
-      const show = targetSel.value === 'selected';
-      if (grid) grid.style.display = show ? 'flex' : 'none';
-    };
+   if (stepCountSel) {
+      stepCountSel.onchange = () => {
+        const n = parseInt(stepCountSel.value, 10) || 0;
+        updateStepFields(n);
+      };
+    }
+    if (targetSel) {
+      targetSel.onchange = () => {
+        const grid = document.getElementById('chf-student-selector');
+        const show = targetSel.value === 'selected';
+        if (grid) grid.style.display = show ? 'flex' : 'none';
+      };
+    }
 
     if (id){
       const ch = getChallenges().find(c => c.id === id) || {};
       const steps = Array.isArray(ch.steps) ? ch.steps : [];
-      stepCountSel.value = String(steps.length);
+       if (stepCountSel) {
+        stepCountSel.value = String(steps.length);
+      }
       updateStepFields(steps.length, steps);
       formView.dataset.id = id;
       titleInput.value = ch.title || '';
@@ -299,9 +305,9 @@ Uses localStorage via helper functions from common.js.
       titleInput.value = '';
       descInput.value = '';
       activeInput.checked = true;
-      stepCountSel.value = '0';
+      if (stepCountSel) stepCountSel.value = '0';
       updateStepFields(0);
-      targetSel.value = 'all';
+      if (targetSel) targetSel.value = 'all';
       renderChallengeStudentSelector([]);
       const grid = document.getElementById('chf-student-selector');
       if (grid) grid.style.display = 'none';
