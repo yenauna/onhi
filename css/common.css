@@ -6,6 +6,12 @@
   --accent:#4caf7d;
 }
 
+/* 스크롤바 공간을 항상 확보해 레이아웃 흔들림 방지 */
+html{
+  overflow-y:scroll;
+  scrollbar-gutter:stable;
+}
+
 /* 공통 상단바 여백 */
 body{
   padding-top:96px;
