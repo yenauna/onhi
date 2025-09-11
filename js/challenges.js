@@ -90,7 +90,6 @@ Uses localStorage via helper functions from common.js.
       card.className = 'challenge-card ' + statusClass;
 
       // 진행률 바용 CSS 변수
-      const pct = max > 0 ? Math.round((curr / max) * 100) : (done ? 100 : 0);
       card.style.setProperty('--prog', pct + '%');
 
       // 본문
