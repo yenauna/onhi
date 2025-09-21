@@ -2323,5 +2323,15 @@ function migrateLegacyDoneToUIDOnce() {
     window.addEventListener('load', renderVacationList);
 
   </script>
+
+  <!-- Supabase CDN -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  const { createClient } = supabase;
+  const SUPABASE_URL = "👉 프로젝트 Settings > API의 Project URL";
+  const SUPABASE_ANON_KEY = "👉 anon public key";
+  window.sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
 </body>
 </html>
