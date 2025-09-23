@@ -1875,13 +1875,14 @@ window.addEventListener('load', () => {
     function showChallenges(){
       setActiveTab('challenges');
 
+      // 메인 컨테이너 숨기고 도전 박스만 노출
+      document.getElementById("main-box").style.display = "none";
+      document.getElementById("challenges-box").style.display = "block";
+
       // 나머지 화면 숨김
       document.getElementById("student-status-page").style.display = "none";
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "none";
-
-      // 도전 관리 보이기
-      document.getElementById("challenges-box").style.display = "block";
 
       // 목록 렌더
       if (window.Challenges?.renderChallengeList) {
