@@ -267,14 +267,22 @@ Uses localStorage via helper functions from common.js.
     const titleInput = document.getElementById('chf-title');
     const descInput = document.getElementById('chf-desc');
     const activeInput = document.getElementById('chf-active');
-    const stepCountSel = document.getElementById('chf-step-count');
+    const stepCountInput = document.getElementById('chf-step-count');
+    let applyStepCount = null;
     const targetSel = document.getElementById('chf-target');
 
-   if (stepCountSel) {
-      stepCountSel.onchange = () => {
-        const n = parseInt(stepCountSel.value, 10) || 0;
-        updateStepFields(n);
+   if (stepCountInput) {
+      applyStepCount = (values = []) => {
+        const maxAttr = parseInt(stepCountInput.max || stepCountInput.getAttribute('max'), 10);
+        let n = parseInt(stepCountInput.value, 10);
+        if (Number.isNaN(n) || n < 0) n = 0;
+        if (!Number.isNaN(maxAttr)) n = Math.min(n, maxAttr);
+        stepCountInput.value = String(n);
+        updateStepFields(n, values);
       };
+     const handleStepCountChange = () => applyStepCount();
+      stepCountInput.oninput = handleStepCountChange;
+      stepCountInput.onchange = handleStepCountChange;
     }
     if (targetSel) {
       targetSel.onchange = () => {
@@ -287,8 +295,10 @@ Uses localStorage via helper functions from common.js.
     if (id){
       const ch = getChallenges().find(c => c.id === id) || {};
       const steps = Array.isArray(ch.steps) ? ch.steps : [];
-       if (stepCountSel) {
-        stepCountSel.value = String(steps.length);
+       if (stepCountInput && applyStepCount) {
+        stepCountInput.value = String(steps.length);
+        applyStepCount(steps);
+      } else {
       }
       updateStepFields(steps.length, steps);
       formView.dataset.id = id;
@@ -305,8 +315,12 @@ Uses localStorage via helper functions from common.js.
       titleInput.value = '';
       descInput.value = '';
       activeInput.checked = true;
-      if (stepCountSel) stepCountSel.value = '0';
-      updateStepFields(0);
+      if (stepCountInput && applyStepCount) {
+        stepCountInput.value = '0';
+        applyStepCount();
+      } else {
+        updateStepFields(0);
+      }
       if (targetSel) targetSel.value = 'all';
       renderChallengeStudentSelector([]);
       const grid = document.getElementById('chf-student-selector');
@@ -320,7 +334,11 @@ Uses localStorage via helper functions from common.js.
     const title = document.getElementById('chf-title').value.trim();
     const desc = document.getElementById('chf-desc').value.trim();
     const active = document.getElementById('chf-active').checked;
-    const stepCount = parseInt(document.getElementById('chf-step-count').value, 10) || 0;
+    const stepCountEl = document.getElementById('chf-step-count');
+    let stepCount = parseInt(stepCountEl ? stepCountEl.value : '0', 10);
+    if (Number.isNaN(stepCount) || stepCount < 0) stepCount = 0;
+    const maxAttr = stepCountEl ? parseInt(stepCountEl.max || stepCountEl.getAttribute('max'), 10) : NaN;
+    if (!Number.isNaN(maxAttr)) stepCount = Math.min(stepCount, maxAttr);
     let steps = [];
     if (stepCount > 0){
       const inputs = Array.from(document.querySelectorAll('#chf-steps-box input'));
