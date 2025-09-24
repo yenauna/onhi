@@ -36,6 +36,36 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
   const pad2 = (n) => String(n).padStart(2, '0');
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
+  const toDateStrict = (value) => {
+    if (value instanceof Date) {
+      const d = new Date(value.getTime());
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    if (typeof value === 'string') {
+      const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (m) {
+        const y = Number(m[1]);
+        const mo = Number(m[2]) - 1;
+        const da = Number(m[3]);
+        return new Date(y, mo, da);
+      }
+    }
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const formatKoreanDate = (value) => {
+    const d = toDateStrict(value);
+    if (!d) return value == null ? '' : String(value);
+    const month = d.getMonth() + 1;
+    const date = d.getDate();
+    const day = dayNames[d.getDay()];
+    return `${month}월 ${date}일 (${day})`;
+  };
+  
   const escapeHTML = (s) => String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -276,6 +306,7 @@ function renderEventsStrip(containerId, options={}){
   // 전역으로 노출
   Object.assign(w, {
     qs, qsa, pad2, dayNames, escapeHTML,
+    toDateStrict, formatKoreanDate,
     getJSON, setJSON, normalizeDate,
     getDoneStore, setDoneStore,
     loadStudentsCached, invalidateStudentsCache, loadStudents, sortStudents, loadAllTeacherTasks,
