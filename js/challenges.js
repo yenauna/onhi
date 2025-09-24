@@ -112,16 +112,9 @@ Uses localStorage via helper functions from common.js.
       card.innerHTML = progress + title + desc + stateHTML;
 
       if (max > 0){
-        const toggle = document.createElement('button');
-        toggle.type = 'button';
-        toggle.className = 'ch-toggle';
-        toggle.textContent = '단계 보기';
-        toggle.onclick = (e)=>{
-          e.stopPropagation();
+        card.addEventListener('click', () => {
           card.classList.toggle('expanded');
-          toggle.textContent = card.classList.contains('expanded') ? '접기' : '단계 보기';
-        };
-        card.appendChild(toggle);
+         });
         
         const stepsBox = document.createElement('div');
         stepsBox.className = 'ch-steps';
