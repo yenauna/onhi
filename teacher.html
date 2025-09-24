@@ -985,7 +985,7 @@
         return flatpickr(sel, {
           dateFormat:"Y-m-d",           // 저장용(값)
           altInput:true,
-          altFormat:"Y-m-d (D)",        // 표시용: 2025-03-10 (월)
+          altFormat:"n월 j일 (D)",       // 표시용: 3월 10일 (월)
           locale:{...flatpickr.l10ns.ko, firstDayOfWeek:1},
           disableMobile:true,
           ...opts
@@ -1783,9 +1783,14 @@ grid.addEventListener('dblclick', (e) => {
           }
           chip.style.cssText = style;
 
-          let dateLabel = inst.date;
+          let dateLabel = typeof formatKoreanDate === 'function'
+            ? formatKoreanDate(inst.dateObj)
+            : inst.date;
           if (isPostponed && postponedTo) {
-            dateLabel += ` → ${postponedTo}`;
+            const postponedLabel = typeof formatKoreanDate === 'function'
+              ? formatKoreanDate(postponedTo)
+              : postponedTo;
+            dateLabel += ` → ${postponedLabel}`;
           }
 
           chip.innerHTML = `
