@@ -123,6 +123,29 @@
           return t;
         };
       }
+      if (typeof formatKoreanDate !== 'function') {
+        window.formatKoreanDate = function(value){
+          const toDate = (v) => {
+            if (v instanceof Date) {
+              const copied = new Date(v.getTime());
+              copied.setHours(0,0,0,0);
+              return copied;
+            }
+            if (typeof v === 'string') {
+              const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if (m) return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+            }
+            const d = new Date(v);
+            if (Number.isNaN(d.getTime())) return null;
+            d.setHours(0,0,0,0);
+            return d;
+          };
+          const d = toDate(value);
+          if (!d) return value == null ? '' : String(value);
+          const names = ['일', '월', '화', '수', '목', '금', '토'];
+          return `${d.getMonth()+1}월 ${d.getDate()}일 (${names[d.getDay()]})`;
+        };
+      }
       if (typeof loadAllTeacherTasks !== 'function') {
         window.loadAllTeacherTasks = function(){
           const res = [];
@@ -381,7 +404,7 @@ function buildInstancesFromTasks(){
           chip.dataset.uid = inst.uid;                 // UID 보관
           chip.innerHTML = `
           <span>${escapeHTML(inst.text)}</span>
-          <span class="date">${inst.date}</span>
+          <span class="date">${formatKoreanDate(inst.dateObj)}</span>
           `;
           
           if (mode === 'edit') {
