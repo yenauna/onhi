@@ -112,9 +112,26 @@ Uses localStorage via helper functions from common.js.
       card.innerHTML = progress + title + desc + stateHTML;
 
       if (max > 0){
-        card.addEventListener('click', () => {
-          card.classList.toggle('expanded');
-         });
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-expanded', 'false');
+
+        const toggleExpanded = (expanded) => {
+          const isExpanded = expanded ?? !card.classList.contains('expanded');
+          card.classList.toggle('expanded', isExpanded);
+          card.setAttribute('aria-expanded', String(isExpanded));
+          };
+        card.addEventListener('click', (event) => {
+          if (event.target.closest('.ch-step')) return;
+          toggleExpanded();
+        });
+
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' '){
+            event.preventDefault();
+            toggleExpanded();
+          }
+        });
         
         const stepsBox = document.createElement('div');
         stepsBox.className = 'ch-steps';
@@ -123,8 +140,7 @@ Uses localStorage via helper functions from common.js.
           btn.type = 'button';
           btn.className = 'ch-step' + (i < curr ? ' done' : '');
           btn.textContent = st;
-          btn.onclick = (ev)=>{
-            ev.stopPropagation();
+          btn.onclick = ()=>{
             setChallengeProgress(student, ch.id, i + 1);
             renderChallengesForStudent(student);
           };
