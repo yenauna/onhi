@@ -93,6 +93,7 @@ Uses localStorage via helper functions from common.js.
       card.style.setProperty('--prog', pct + '%');
 
       // 본문
+      const progress = `<div class="ch-progress"><div class="ch-progress-fill"></div></div>`;
       const title = `<div class="ch-title">${escapeHTML(ch.title || '')} (${pct}%)</div>`;
       const desc  = ch.desc ? `<div class="ch-desc">${escapeHTML(ch.desc)}</div>` : '';
 
@@ -108,7 +109,7 @@ Uses localStorage via helper functions from common.js.
         stateHTML = `<div class="ch-state">${done ? '✅ 완료' : '⭕ 미완료'}</div>`;
       }
 
-      card.innerHTML = title + desc + stateHTML;
+      card.innerHTML = progress + title + desc + stateHTML;
 
       if (max > 0){
         const toggle = document.createElement('button');
