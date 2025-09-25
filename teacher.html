@@ -1196,7 +1196,7 @@
 
   // ▼ 일정: 검은 글씨, 배경 없음, 클릭 시 선택
   if (t.type === 'event') {
-    const  = escapeHTML(t.text || '(제목 없음)');
+    const title = escapeHTML(t.text || '(제목 없음)');
     return `<div class="event-pill" onclick="selectTask('${dateStr}', ${idx})">${title}</div>`;
   }
 
