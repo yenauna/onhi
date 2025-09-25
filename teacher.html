@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>과제 배정</title>
+  <title>오늘 할 일</title>
 
   <!-- 폰트: 제목=Jua, 본문/버튼=SUIT -->
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
@@ -283,7 +283,7 @@
        ================================ */
     #challenge-list .chl-item{ display:flex; justify-content:space-between; gap:12px; border:1px solid #e5e7eb; border-radius:14px; padding:12px 14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); margin-bottom:10px; }
     #challenge-list .chl-item.inactive{ opacity:.7; }
-    .chl-title{ font-weight:700; margin-bottom:6px; }
+    .chl-{ font-weight:700; margin-bottom:6px; }
     .chl-desc{ font-size:14px; color:#475467; margin-bottom:6px; }
     .chl-meta{ font-size:12px; color:#667085; }
     .chl-actions button{ margin-left:6px; }
@@ -679,7 +679,7 @@
 
   <section id="challenge-form" style="display:none;">
     <h3 style="margin:6px 0 12px;">도전 편집</h3>
-    <label>제목<br><input id="chf-title" style="width:100%"></label>
+    <label>제목<br><input id="chf-" style="width:100%"></label>
     <br>
     <label>설명<br><textarea id="chf-desc" style="width:100%;min-height:96px"></textarea></label>
       <br>
@@ -706,7 +706,7 @@
   <section id="challenge-status-view" style="display:none;">
     <div class="st-header" style="display:flex;align-items:center;gap:8px;">
       <button onclick="Challenges.backToListFromStatus()">← 뒤로</button>
-      <strong class="st-ch-title"></strong>
+      <strong class="st-ch-"></strong>
       <span class="st-ch-active" style="color:#475467"></span>
     </div>
     <div class="st-actions" style="margin:10px 0;display:flex;gap:8px;">
@@ -1195,7 +1195,7 @@
 
   // ▼ 일정: 검은 글씨, 배경 없음, 클릭 시 선택
   if (t.type === 'event') {
-    const title = escapeHTML(t.text || '(제목 없음)');
+    const  = escapeHTML(t.text || '(제목 없음)');
     return `<div class="event-pill" onclick="selectTask('${dateStr}', ${idx})">${title}</div>`;
   }
 
