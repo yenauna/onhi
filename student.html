@@ -525,7 +525,8 @@ async function renderCalendar(){
       if (inst.type === 'event') {
         const title = escapeHTML(inst.text || '(제목 없음)');
         const desc  = escapeHTML((inst.desc || '').trim() || '설명 없음');
-        return `<div class="event-pill" onclick="alert('📣 ${title}\\n\\n${desc}')">${title}</div>`;
+        const descAttr = desc.replace(/\r?\n/g, '&#10;');
+        return `<div class="event-pill" data-title="${title}" data-desc="${descAttr}">${title}</div>`;
       } else {
         
         // 과제 pill (면제/완료/미완료)
@@ -561,6 +562,14 @@ async function renderCalendar(){
 
   html += '</tr>';
   tbody.innerHTML = html;
+
+  tbody.querySelectorAll('.event-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const title = (pill.dataset.title || '(제목 없음)').trim();
+      const desc = (pill.dataset.desc || '').trim() || '설명 없음';
+      alert(`📣 ${title}\n\n${desc.replace(/\r?\n/g, '\n')}`);
+    });
+  });
   setCalLabel();
 }
 
