@@ -81,16 +81,43 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
 
   // students 캐시
   let _studentsCache = null;
-  const loadStudentsCached = () => (_studentsCache ?? (_studentsCache = getJSON('students', [])));
+  const normalizeStudentsList = (value) => {
+    let list;
+    if (Array.isArray(value)) {
+      list = value;
+    } else if (value && Array.isArray(value.students)) {
+      list = value.students;
+    } else {
+      list = [];
+    }
+
+    let changed = !Array.isArray(value);
+    const normalized = list.map(stu => {
+      if (stu && typeof stu === 'object') {
+        const gender = stu.gender === '여자' ? '여자' : '남자';
+        if (stu.gender !== gender) changed = true;
+        return { ...stu, gender };
+      } else {
+        changed = true;
+        return { id:'', name:'', password:'', gender:'남자' };
+      }
+    });
+
+    return { list: normalized, changed };
+  };
+
+  const loadStudentsCached = () => {
+    if (_studentsCache) return _studentsCache;
+    const raw = getJSON('students', []);
+    const { list, changed } = normalizeStudentsList(raw);
+    if (changed) setJSON('students', list);
+    _studentsCache = list;
+    return _studentsCache;
+  };
   const invalidateStudentsCache = () => { _studentsCache = null; };
 
    // students 로딩 (배열 또는 {students:[...]})
-  const loadStudents = () => {
-    const data = loadStudentsCached();
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.students)) return data.students;
-    return [];
-  };
+  const loadStudents = () => loadStudentsCached().map(stu => ({ ...stu }));
 
   // 학생 정렬(id 숫자, 50 초과는 뒤로)
   function sortStudents(arr){
