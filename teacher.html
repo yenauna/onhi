@@ -413,6 +413,30 @@
     #new-student-id { width:72px; text-align:center; }
     #new-student-name { flex:1 1 200px; min-width:140px; }
     #new-student-password { width:160px; }
+
+    .gender-toggle-btn {
+      height:var(--ctrl-h);
+      padding:0 16px;
+      border-radius:12px;
+      border:1px solid var(--card-line);
+      background:#fff;
+      cursor:pointer;
+      font:inherit;
+      min-width:70px;
+      transition:background-color .2s ease, color .2s ease, border-color .2s ease;
+    }
+    .gender-toggle-btn.is-female {
+      background:#fde2f3;
+      border-color:#f9a8d4;
+      color:#be185d;
+    }
+    #student-list .gender-toggle-btn {
+      height:32px;
+      padding:0 14px;
+      border-radius:10px;
+      font-size:15px;
+      min-width:64px;
+    }
     
     /* 추가 버튼 통일 */
     .add-student-row button {
@@ -626,6 +650,7 @@
       <div class="add-student-row">
         <input type="text" id="new-student-id" placeholder="번호">
         <input type="text" id="new-student-name" placeholder="이름">
+        <button type="button" id="new-student-gender" class="gender-toggle-btn" data-gender="남자" aria-pressed="true" onclick="toggleGender(this)">남자</button>
         <input type="password" id="new-student-password" placeholder="비밀번호">
         <button type="button" class="btn-primary" onclick="addStudent()">추가</button>
       </div>
@@ -643,6 +668,7 @@
         <colgroup>
           <col><!-- 번호 -->
           <col><!-- 이름 -->
+          <col><!-- 성별 -->
           <col><!-- 비밀번호 -->
           <col><!-- 보기 -->
           <col><!-- 작업 -->
@@ -651,6 +677,7 @@
           <tr>
             <th>번호</th>
             <th>이름</th>
+            <th>성별</th>
             <th>비밀번호</th>
             <th>보기</th>
             <th>작업</th>
@@ -1905,7 +1932,25 @@ window.addEventListener('load', () => {
       setJSON("students", students);
       invalidateStudentsCache();
     }
-      
+
+    function setGenderButtonState(btn, gender) {
+      if (!btn) return;
+      const value = gender === '여자' ? '여자' : '남자';
+      btn.dataset.gender = value;
+      btn.textContent = value;
+      btn.setAttribute('aria-pressed', String(value === '남자'));
+      btn.classList.toggle('is-female', value === '여자');
+    }
+
+    function toggleGender(btn) {
+      if (!btn) return;
+      const current = btn.dataset.gender === '여자' ? '여자' : '남자';
+      const next = current === '남자' ? '여자' : '남자';
+      setGenderButtonState(btn, next);
+    }
+    window.toggleGender = toggleGender;
+    setGenderButtonState(document.getElementById('new-student-gender'), document.getElementById('new-student-gender')?.dataset.gender || '남자');
+    
     // ===========================================================
     // 학생 리스트 렌더링
     // ===========================================================
@@ -1917,6 +1962,7 @@ window.addEventListener('load', () => {
       tbody.innerHTML = "";
 
       students.forEach(stu => {
+        const gender = stu.gender === '여자' ? '여자' : '남자';
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="col-id">
@@ -1924,6 +1970,9 @@ window.addEventListener('load', () => {
           </td>
           <td>
             <input data-field="name" value="${stu.name}" />
+          </td>
+          <td style="text-align:center;">
+            <button type="button" class="gender-toggle-btn" data-gender="${gender}" onclick="toggleGender(this)">${gender}</button>
           </td>
           <td>
             <input data-field="password" ${showAll ? 'type="text"' : 'type="password"'} value="${stu.password}" />
@@ -1939,6 +1988,7 @@ window.addEventListener('load', () => {
           </td>
         `;
         tbody.appendChild(tr);
+        setGenderButtonState(tr.querySelector('.gender-toggle-btn'), gender);
       });
     }
 
@@ -1967,6 +2017,8 @@ window.addEventListener('load', () => {
       const id = document.getElementById("new-student-id").value.trim();
       const name = document.getElementById("new-student-name").value.trim();
       const password = document.getElementById("new-student-password").value.trim();
+      const genderBtn = document.getElementById("new-student-gender");
+      const gender = genderBtn?.dataset.gender === '여자' ? '여자' : '남자';
 
       if (!id || !name || !password) { alert("번호, 이름, 비밀번호를 모두 입력하세요."); return; }
 
@@ -1975,12 +2027,13 @@ window.addEventListener('load', () => {
 
       const today = new Date();
       const joined = `${today.getFullYear()}-${pad2(today.getMonth()+1)}-${pad2(today.getDate())}`;
-      students.push({ id, name, password, joined });
+      students.push({ id, name, password, joined, gender });
       saveStudents(students);
 
       document.getElementById("new-student-id").value = "";
       document.getElementById("new-student-name").value = "";
       document.getElementById("new-student-password").value = "";
+      setGenderButtonState(genderBtn, '남자');
       renderStudentList();
     }
 
@@ -1990,6 +2043,8 @@ window.addEventListener('load', () => {
       const newId = tr.querySelector('input[data-field="id"]').value.trim();
       const newName = tr.querySelector('input[data-field="name"]').value.trim();
       const newPw = tr.querySelector('input[data-field="password"]').value.trim();
+      const genderBtn = tr.querySelector('.gender-toggle-btn');
+      const newGender = genderBtn?.dataset.gender === '여자' ? '여자' : '남자';
 
       if (!newId || !newName || !newPw) { alert("번호, 이름, 비밀번호를 모두 입력하세요."); return; }
 
@@ -2001,8 +2056,9 @@ window.addEventListener('load', () => {
         alert("이미 존재하는 번호입니다."); return;
       }
 
-      const joined = students[idx].joined;
-      students[idx] = { id: newId, name: newName, password: newPw, joined };
+      const prev = students[idx];
+      const joined = prev.joined;
+      students[idx] = { ...prev, id: newId, name: newName, password: newPw, gender: newGender, joined };
       saveStudents(students);
       invalidateStudentsCache();
 
