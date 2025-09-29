@@ -370,11 +370,47 @@ function toggleBoardMode(){
   if (typeof window.renderBoard === 'function') window.renderBoard();
 }
 
+const COMPACT_PREF_KEY = 'compactView';
+
+function applyCompactMode(opts = {}){
+  let pref = localStorage.getItem(COMPACT_PREF_KEY);
+  if (pref !== 'yes' && pref !== 'no') {
+    pref = 'no';
+    localStorage.setItem(COMPACT_PREF_KEY, pref);
+  }
+  const enabled = pref === 'yes';
+  document.body.classList.toggle('compact-view', enabled);
+
+  const btn = document.getElementById('compactBtn');
+  if (btn) {
+    btn.innerHTML = enabled ? '기본<br>크기' : '한 화면<br>보기';
+    btn.setAttribute('aria-pressed', String(enabled));
+  }
+
+  if (opts.refresh) {
+    if (document.getElementById('board') && typeof window.renderBoard === 'function') window.renderBoard();
+    if (document.getElementById('student-status-list') && typeof window.renderStudentStatus === 'function') window.renderStudentStatus();
+  }
+}
+
+function toggleCompactMode(){
+  const enabled = localStorage.getItem(COMPACT_PREF_KEY) === 'yes';
+  localStorage.setItem(COMPACT_PREF_KEY, enabled ? 'no' : 'yes');
+  applyCompactMode({ refresh: true });
+}
+
 /* 초기화 */
 window.addEventListener('load', ()=>{
   if (!localStorage.getItem('boardMode')) localStorage.setItem('boardMode','view');
   applyBoardModeToButton();
+  applyCompactMode();
   const mb = document.getElementById('modeBtn');
-   // 교사 페이지에서만 모드 전환 허용
+  // 교사 페이지에서만 모드 전환 허용
   if (mb && document.body.dataset.role === 'teacher') mb.addEventListener('click', toggleBoardMode);
+  const cb = document.getElementById('compactBtn');
+  if (cb) cb.addEventListener('click', toggleCompactMode);
+});
+
+window.addEventListener('storage', (e) => {
+  if (e.key === COMPACT_PREF_KEY) applyCompactMode({ refresh: true });
 });
