@@ -78,6 +78,21 @@
       outline: 3px solid #2e7d57; outline-offset: 2px;
     }
 
+    body.compact-view .grid{
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap:8px;
+    }
+    body.compact-view .grid .card{
+      padding:10px;
+      border-radius:14px;
+    }
+    body.compact-view .grid .title{ font-size:15px; }
+    body.compact-view .grid .chip{
+      margin:4px 0;
+      padding:6px 8px;
+    }
+    body.compact-view .grid .chip span:first-child{ font-size:13px; }
+    body.compact-view .grid .chip .date{ font-size:9px; }
     
   </style>
 </head>
@@ -93,6 +108,7 @@
     </nav>
     <div class="right-tools">
       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false"></button>
+      <button type="button" id="compactBtn" class="mode-btn" aria-pressed="false"></button>
       <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false" disabled></button>
     </div>
   </header>
@@ -451,6 +467,7 @@ function buildInstancesFromTasks(){
 
      // 페이지가 하단에서 스크립트를 로드하므로 즉시 초기화 가능
     document.addEventListener('DOMContentLoaded', () => {
+      window.applyCompactMode?.();
       applyShowEventsBtn?.();         // 페이지에 있으면 실행
       renderBoard?.();                // index/teacher의 보드 렌더
       window.renderStudentStatus?.(); // teacher의 ‘오늘 할 일’ 뷰
