@@ -149,3 +149,82 @@ body{
   border-color:#D1D5DB;
   color:#374151;
 }
+
+/* ===== 교사용 '오늘 할 일' 카드 ===== */
+#student-status-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+  gap:10px;
+}
+
+.status-card{
+  border:1px solid #e6e8eb;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 4px 10px rgba(0,0,0,.04);
+  padding:12px;
+}
+
+.status-card__title{
+  font-weight:600;
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+
+.status-card__list{
+  margin-top:10px;
+}
+
+.status-chip{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border:1px solid #e6e8eb;
+  background:#fff;
+  border-radius:12px;
+  margin:6px 0;
+  padding:8px 10px;
+  cursor:pointer;
+  gap:8px;
+}
+
+.status-chip__label{
+  font-weight:500;
+  word-break:break-word;
+}
+
+.status-chip__date{
+  font-size:10px;
+  color:#666;
+  flex-shrink:0;
+}
+
+body.compact-view #student-status-list{
+  grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
+  gap:8px;
+}
+
+body.compact-view .status-card{
+  border-radius:14px;
+  padding:10px;
+}
+
+body.compact-view .status-card__list{
+  margin-top:8px;
+}
+
+body.compact-view .status-chip{
+  margin:4px 0;
+  padding:6px 8px;
+  border-radius:10px;
+  gap:6px;
+}
+
+body.compact-view .status-chip__label{
+  font-size:13px;
+}
+
+body.compact-view .status-chip__date{
+  font-size:9px;
+}
