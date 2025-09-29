@@ -503,6 +503,7 @@
     </nav>
     <div class="right-tools">
       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false">일정숨김</button>
+      <button type="button" id="compactBtn" class="mode-btn" aria-pressed="false"></button>
       <button type="button" id="peToggleBtn" class="mode-btn" aria-pressed="false"></button>
       <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
     </div>
@@ -517,7 +518,6 @@
       <div id="events-strip-teacher" class="event-grid"></div>
       <div
         id="student-status-list"
-        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"
       ></div>
     </div>
 
@@ -1759,12 +1759,16 @@ grid.addEventListener('dblclick', (e) => {
 
       students.forEach(stu => {
         const card = document.createElement("div");
-        Object.assign(card.style, {
-          border:"1px solid #e6e8eb", padding:"12px", borderRadius:"16px",
-          background:"#fff", boxShadow:"0 4px 10px rgba(0,0,0,.04)", marginBottom:"10px"
-        });
-        card.innerHTML = `👦 ${labelOf(stu)}<div style="margin-top: 10px;"></div>`;
-        const listBox = card.lastElementChild;
+        card.className = "status-card";
+
+        const title = document.createElement("div");
+        title.className = "status-card__title";
+        title.textContent = `👦 ${labelOf(stu)}`;
+
+        const listBox = document.createElement("div");
+        listBox.className = "status-card__list";
+
+        card.append(title, listBox);
 
         instances.forEach(inst => {
           const assigned = inst.students.includes("전체") || inst.students.includes(stu.name);
@@ -1784,32 +1788,39 @@ grid.addEventListener('dblclick', (e) => {
           if (!showPE && (isPostponed || isExempt)) return;
           if (!isExempt && done && isPast) return;  // 과거 & 완료면 숨김(면제 제외)
 
+          let bg = "#f6c1c1";
+          let borderColor = "#e6e8eb";
+          let textColor = "#000";
+          let dateColor = "#666";
 
-          let bg = "#f6c1c1", dateColor = "#666";
-          if (isExempt) { bg = "#E5E7EB"; dateColor = "#374151"; }
-          else if (isPast && !done) { bg = "#c0392b"; dateColor = "#fff"; }
-          else if (!isPast && done) { bg = "white"; dateColor = "#666"; }
+          if (isPostponed) {
+            bg = "#fddf7f";
+            borderColor = "#f0c24c";
+            textColor = "#604400";
+          }
+
+          if (isExempt) {
+            bg = "#E5E7EB";
+            borderColor = "#D1D5DB";
+            textColor = "#374151";
+            dateColor = "#374151";
+          } else if (isPast && !done) {
+            bg = "#c0392b";
+            borderColor = "#b23326";
+            textColor = "#fff";
+            dateColor = "#fff";
+          } else if (!isPast && done) {
+            bg = "white";
+          }
 
           const chip = document.createElement("div");
-          let cls = "student-chip";
+          let cls = "student-chip status-chip";
           if (!done && !isPostponed && !isExempt) cls += " missed";
           if (isPostponed) cls += " postponed";
           if (isExempt) cls += " exempt";
           chip.className = cls;
           chip.dataset.student = stu.name;
           chip.dataset.uid = inst.uid;               // UID 저장
-
-          let style = "padding:8px; border-radius:12px; margin:6px 0; display:flex; justify-content:space-between; align-items:center; cursor:pointer;";
-          if (!isPostponed && !isExempt) {
-            let border = '#e6e8eb';
-            let color = '#000';
-            if (isPast && !done) {
-              border = '#b23326';
-              color = '#fff';
-            }
-            style = `border:1px solid ${border}; background:${bg}; color:${color}; ` + style;
-          }
-          chip.style.cssText = style;
 
           let dateLabel = typeof formatKoreanDate === 'function'
             ? formatKoreanDate(inst.dateObj)
@@ -1821,10 +1832,21 @@ grid.addEventListener('dblclick', (e) => {
             dateLabel += ` → ${postponedLabel}`;
           }
 
-          chip.innerHTML = `
-          <span>${escapeHTML(inst.text)}${isExempt ? ' 🚫' : ''}</span>
-          <span style="font-size:10px; color:${dateColor};">${dateLabel}</span>
-          `;
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'status-chip__label';
+          labelSpan.textContent = `${inst.text}${isExempt ? ' 🚫' : ''}`;
+
+          const dateSpan = document.createElement('span');
+          dateSpan.className = 'status-chip__date';
+          dateSpan.textContent = dateLabel;
+          dateSpan.style.color = dateColor;
+
+          chip.append(labelSpan, dateSpan);
+
+          chip.style.background = bg;
+          chip.style.borderColor = borderColor;
+          chip.style.color = textColor;
+          
           listBox.appendChild(chip);
         });
 
@@ -1850,6 +1872,7 @@ window.addEventListener('load', () => {
   };
 
   // 초기 진입 시 한 번 UI 상태 맞추기 (완료/미완료 복원)
+  window.applyCompactMode?.();
   renderStudentStatus();
 
   // 클릭/더블클릭 구분용 타이머
