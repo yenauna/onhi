@@ -383,7 +383,7 @@ function applyCompactMode(opts = {}){
 
   const btn = document.getElementById('compactBtn');
   if (btn) {
-    btn.innerHTML = enabled ? '기본<br>크기' : '한 화면<br>보기';
+    btn.innerHTML = enabled ? '기본<br>크기' : '작게<br>보기';
     btn.setAttribute('aria-pressed', String(enabled));
   }
 
