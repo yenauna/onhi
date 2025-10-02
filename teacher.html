@@ -282,7 +282,8 @@
     /* ================================
        도전 관리
        ================================ */
-    #challenge-list .chl-item{ display:flex; justify-content:space-between; gap:12px; border:1px solid #e5e7eb; border-radius:14px; padding:12px 14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); margin-bottom:10px; }
+    #challenge-list .chl-item{ position:relative; display:flex; justify-content:space-between; gap:12px; border:1px solid #e5e7eb; border-radius:14px; padding:12px 14px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); margin-bottom:10px; cursor:pointer; transition:box-shadow .2s ease, transform .2s ease; }
+    #challenge-list .chl-item:hover{ box-shadow:0 6px 18px rgba(0,0,0,.08); transform:translateY(-2px); }
     #challenge-list .chl-item.inactive{ opacity:.7; }
     .chl-{ font-weight:700; margin-bottom:6px; }
     .chl-desc{ font-size:14px; color:#475467; margin-bottom:6px; }
@@ -290,9 +291,18 @@
     .chl-actions button{ margin-left:6px; }
     .chl-actions .danger{ color:#b42318; }
     .muted{ color:#667085; }
-    #challenge-status-view tr.not-started{ background:#f05555; color:#fff; }
-    #challenge-status-view tr.in-progress{ background:#f6c1c1; }
-    #challenge-status-view tr.done{ background:#fff; border:1px solid #dcdfe4; }
+    #challenge-list .chl-item button{ position:relative; z-index:1; }
+
+    #challenge-status-view .st-student-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px; margin-top:16px; }
+    #challenge-status-view .challenge-card{ border:1px solid #e5e7eb; border-radius:14px; padding:14px 16px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); color:#101828; }
+    #challenge-status-view .challenge-card .ch-progress{ position:relative; width:100%; height:14px; border-radius:999px; background:#edf1f4; overflow:hidden; margin-bottom:12px; }
+    #challenge-status-view .challenge-card .ch-progress-fill{ position:absolute; inset:0; width:var(--prog,0%); background:linear-gradient(90deg, #2e7d57, #4bb27d); transition:width .3s ease; }
+    #challenge-status-view .challenge-card .ch-title{ font-weight:700; margin-bottom:6px; }
+    #challenge-status-view .challenge-card .ch-state{ font-size:14px; color:#344054; }
+    #challenge-status-view .challenge-card .ch-next{ font-size:12px; color:#667085; margin-top:6px; }
+    #challenge-status-view .challenge-card .ch-controls{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+    #challenge-status-view .challenge-card .ch-controls button{ flex:1; min-width:96px; padding:8px 10px; border-radius:10px; border:1px solid #d0d5dd; background:#f9fafb; font-size:13px; }
+    #challenge-status-view .challenge-card .ch-controls button:hover{ background:#eef2f6; }
     
 
     /* ================================
@@ -741,16 +751,7 @@
       <button onclick="Challenges.bulkMarkStatus(true)">모두 완료</button>
       <button onclick="Challenges.bulkMarkStatus(false)">모두 미완료</button>
     </div>
-    <table class="st-table" style="width:100%;border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">학생</th>
-          <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:6px;">상태</th>
-          <th style="border-bottom:1px solid #e5e7eb;padding:6px;">조작</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="st-student-grid"></div>
   </section>
 </div>
 
