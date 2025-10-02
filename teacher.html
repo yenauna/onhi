@@ -1148,9 +1148,16 @@
       loadStudents().forEach(s => joinMap[s.name] = s.joined || '0000-00-00');
 
       // 이 달에 표시할 인스턴스 구성
-      const instancesMap = {}; // dateStr -> [{id,text,originDate}]
+      const instancesMap = {}; // dateStr -> [{id,text,originDate,type,order}]
       const pushInst = (dateStr, t) => {
-        (instancesMap[dateStr] ??= []).push({ id: t.id, text: t.text, originDate: t.date });
+        const bucket = instancesMap[dateStr] ?? (instancesMap[dateStr] = []);
+        bucket.push({
+          id: t.id,
+          text: t.text,
+          originDate: t.date,
+          type: t.type || 'assignment',
+          order: bucket.length
+        });
       };
       const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
 
@@ -1193,7 +1200,13 @@
 
   // refs: 날짜별 UID 배열
   for (const [dateStr, arr] of Object.entries(instancesMap)) {
-    calendarRefs[dateStr] = arr.map(x => x.id); // ★ UID만 보관
+    arr.sort((a, b) => {
+      const aIsEvent = a.type === 'event';
+      const bIsEvent = b.type === 'event';
+      if (aIsEvent !== bIsEvent) return aIsEvent ? -1 : 1;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+    calendarRefs[dateStr] = arr.map(x => x.id); // UID만 보관
   }
 
   // 표 HTML
