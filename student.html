@@ -454,7 +454,14 @@ async function renderCalendar(){
   const tasks = getTasks();
   const instancesMap = {};
   const pushInst = (dateStr, t) => {
-    (instancesMap[dateStr] ??= []).push({ id: t.id, text: t.text, type: t.type, desc: t.desc || '' });
+    const bucket = instancesMap[dateStr] ?? (instancesMap[dateStr] = []);
+    bucket.push({
+      id: t.id,
+      text: t.text,
+      type: t.type,
+      desc: t.desc || '',
+      order: bucket.length
+    });
   };
   const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
 
@@ -495,6 +502,15 @@ async function renderCalendar(){
         if (!(joinDate && ds < joinDate)) pushInst(ds, t);
       }
     }
+  });
+
+  Object.values(instancesMap).forEach(arr => {
+    arr.sort((a, b) => {
+      const aIsEvent = a.type === 'event';
+      const bIsEvent = b.type === 'event';
+      if (aIsEvent !== bIsEvent) return aIsEvent ? -1 : 1;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
   });
 
   let html = '<tr>';
