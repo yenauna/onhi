@@ -209,8 +209,8 @@ Uses localStorage via helper functions from common.js.
         (ch.desc ? `<div class="chl-desc" style="font-size:14px;color:#475467;">${escapeHTML(ch.desc)}</div>` : '') +
         `<div class="chl-meta">${summary}</div>`;
       const right = document.createElement('div');
-      right.style.display = 'flex'
-        right.style.gap = '4px';
+      right.style.display = 'flex';
+      right.style.gap = '4px';
       const editBtn = document.createElement('button');
       editBtn.textContent = '편집';
       editBtn.onclick = () => openChallengeForm(ch.id);
