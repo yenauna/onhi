@@ -179,7 +179,7 @@ body{
 .status-chip{
   display:flex;
   justify-content:space-between;
-  align-items:center;
+  align-items:flex-start;
   border:1px solid #e6e8eb;
   background:#fff;
   border-radius:12px;
@@ -189,8 +189,23 @@ body{
   gap:8px;
 }
 
+.status-chip__content{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  flex:1;
+  min-width:0;
+}
+
 .status-chip__label{
   font-weight:500;
+  word-break:break-word;
+}
+
+.status-chip__note{
+  font-size:11px;
+  color:#4b5563;
+  line-height:1.4;
   word-break:break-word;
 }
 
