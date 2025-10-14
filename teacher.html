@@ -1888,11 +1888,18 @@ grid.addEventListener('dblclick', (e) => {
 
           const labelSpan = document.createElement('span');
           labelSpan.className = 'status-chip__label';
-          labelSpan.textContent = `${inst.text}${isExempt ? ' 🚫' : ''}`;
+          labelSpan.textContent = inst.text;
 
           const contentWrap = document.createElement('div');
           contentWrap.className = 'status-chip__content';
           contentWrap.appendChild(labelSpan);
+
+          if (isExempt) {
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'status-chip__icon';
+            iconSpan.textContent = '🚫';
+            contentWrap.appendChild(iconSpan);
+          }
 
           const exemptNote = isExempt ? (st?.note || '').trim() : '';
           if (exemptNote) {
