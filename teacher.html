@@ -1890,12 +1890,24 @@ grid.addEventListener('dblclick', (e) => {
           labelSpan.className = 'status-chip__label';
           labelSpan.textContent = `${inst.text}${isExempt ? ' 🚫' : ''}`;
 
+          const contentWrap = document.createElement('div');
+          contentWrap.className = 'status-chip__content';
+          contentWrap.appendChild(labelSpan);
+
+          const exemptNote = isExempt ? (st?.note || '').trim() : '';
+          if (exemptNote) {
+            const noteSpan = document.createElement('span');
+            noteSpan.className = 'status-chip__note';
+            noteSpan.textContent = exemptNote;
+            contentWrap.appendChild(noteSpan);
+          }
+          
           const dateSpan = document.createElement('span');
           dateSpan.className = 'status-chip__date';
           dateSpan.textContent = dateLabel;
           dateSpan.style.color = dateColor;
 
-          chip.append(labelSpan, dateSpan);
+          chip.append(contentWrap, dateSpan);
 
           chip.style.background = bg;
           chip.style.borderColor = borderColor;
