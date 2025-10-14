@@ -191,8 +191,9 @@ body{
 
 .status-chip__content{
   display:flex;
-  flex-direction:column;
-  gap:2px;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:4px;
   flex:1;
   min-width:0;
 }
@@ -200,6 +201,12 @@ body{
 .status-chip__label{
   font-weight:500;
   word-break:break-word;
+}
+
+.status-chip__icon{
+  font-size:13px;
+  line-height:1;
+  flex-shrink:0;
 }
 
 .status-chip__note{
