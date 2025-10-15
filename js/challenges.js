@@ -452,42 +452,33 @@ Uses localStorage via helper functions from common.js.
     const curr = Math.min(Math.max(prog.step || 0, 0), max); // 0~max
     const done = max > 0 ? (curr >= max) : doneSimple;
 
-    const tr = document.createElement('tr');
-    let rowClass = 'not-started';
-    if (done) rowClass = 'done';
-    else if (curr > 0) rowClass = 'in-progress';
-    tr.className = rowClass;
+    const card = document.createElement('div');
+    card.className = 'challenge-card';
+    if (done) card.classList.add('done');
+    else if (curr > 0) card.classList.add('in-progress');
+    else card.classList.add('not-started');
 
-    // 상태 셀
-    let stateCellHTML = '';
+    const pct = max > 0 ? Math.round((curr / max) * 100) : (done ? 100 : 0);
+    card.style.setProperty('--prog', pct + '%');
+
+    const nextStepText = (curr < max) ? escapeHTML(steps[curr] || '') : '모든 단계 완료!';
+
     if (max > 0){
-      const nowLabel = curr === 0 ? '미시작' : `${curr}`;
-      stateCellHTML = `
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span>${nowLabel} / ${max}</span>
-          <div style="display:inline-flex;gap:4px;">
-            <button class="dec">−</button>
-            <button class="inc">＋</button>
-            <button class="to-max">모두완료</button>
-            <button class="to-zero">초기화</button>
-          </div>
+      card.innerHTML = `
+        <div class="ch-title">${escapeHTML(name)}</div>
+        <div class="ch-progress"><div class="ch-progress-fill"></div></div>
+        <div class="ch-state">
+          <div>진행: ${curr} / ${max}</div>
+          <div class="ch-next">${curr < max ? `다음 단계: ${nextStepText}` : '모든 단계 완료! 🎉'}</div>
+        </div>
+        <div class="ch-controls">
+          <button type="button" class="dec">−1</button>
+          <button type="button" class="inc">＋1</button>
+          <button type="button" class="to-max">모두완료</button>
+          <button type="button" class="to-zero">초기화</button>
         </div>`;
-    } else {
-      stateCellHTML = done ? '✅ 완료' : '⭕ 미완료';
-    }
 
-    tr.innerHTML = `
-      <td>${escapeHTML(name)}</td>
-      <td class="st">${stateCellHTML}</td>
-      <td>
-        ${max > 0
-          ? `<span class="muted">단계형</span>`
-          : `<button class="toggle">토글</button>`}
-      </td>`;
-
-    // 🔘 버튼 바인딩
-    if (max > 0){
-      tr.querySelector('.inc').onclick = ()=>{
+      card.querySelector('.inc').onclick = ()=>{
         if (typeof incChallengeProgress === 'function') {
           incChallengeProgress(name, id, max);
         } else if (typeof setChallengeProgress === 'function') {
@@ -497,7 +488,7 @@ Uses localStorage via helper functions from common.js.
         }
         openChallengeStatus(id);
       };
-      tr.querySelector('.dec').onclick = ()=>{
+      card.querySelector('.dec').onclick = ()=>{
         if (typeof decChallengeProgress === 'function') {
           decChallengeProgress(name, id);
         } else if (typeof setChallengeProgress === 'function') {
@@ -507,24 +498,30 @@ Uses localStorage via helper functions from common.js.
         }
         openChallengeStatus(id);
       };
-      tr.querySelector('.to-max').onclick = ()=>{
+      card.querySelector('.to-max').onclick = ()=>{
         if (typeof setChallengeProgress === 'function') setChallengeProgress(name, id, max);
         openChallengeStatus(id);
       };
-      tr.querySelector('.to-zero').onclick = ()=>{
+      card.querySelector('.to-zero').onclick = ()=>{
         if (typeof setChallengeProgress === 'function') setChallengeProgress(name, id, 0);
         openChallengeStatus(id);
       };
     } else {
-      tr.querySelector('.toggle').onclick = ()=>{
+      card.innerHTML = `
+        <div class="ch-title">${escapeHTML(name)}</div>
+        <div class="ch-state">${done ? '✅ 완료' : '⭕ 미완료'}</div>
+        <div class="ch-controls">
+          <button type="button" class="toggle">${done ? '미완료로' : '완료로'}</button>
+        </div>`;
+
+      card.querySelector('.toggle').onclick = ()=>{
         const mm = getJSON('challengeStatus-'+name, {}) || {};
         if(done) delete mm[id]; else mm[id]={s:'d', ts:new Date().toISOString()};
         setJSON('challengeStatus-'+name, mm);
         openChallengeStatus(id);
       };
     }
-
-    tbody.appendChild(tr);
+    gridEl.appendChild(card);
   });
 }
 
