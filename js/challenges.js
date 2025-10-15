@@ -213,20 +213,23 @@ Uses localStorage via helper functions from common.js.
       right.style.gap = '4px';
       const editBtn = document.createElement('button');
       editBtn.textContent = '편집';
-      editBtn.onclick = () => openChallengeForm(ch.id);
-      const statusBtn = document.createElement('button');
-      statusBtn.textContent = '상태';
-      statusBtn.onclick = () => openChallengeStatus(ch.id);
+      editBtn.onclick = (event) => {
+        event.stopPropagation();
+        openChallengeForm(ch.id);
+      };
       const delBtn = document.createElement('button');
       delBtn.textContent = '삭제';
-      delBtn.onclick = () => {
+      delBtn.onclick = (event) => {
+        event.stopPropagation();
         if (confirm('삭제할까요?')) {
           deleteChallenge(ch.id);
           renderChallengeList();
         }
       };
-      right.append(editBtn, statusBtn, delBtn);
+      right.append(editBtn, delBtn);
       item.append(left, right);
+      item.style.cursor = 'pointer';
+      item.onclick = () => openChallengeStatus(ch.id);
       box.appendChild(item);
     });
   }
@@ -509,12 +512,10 @@ Uses localStorage via helper functions from common.js.
     } else {
       card.innerHTML = `
         <div class="ch-title">${escapeHTML(name)}</div>
-        <div class="ch-state">${done ? '✅ 완료' : '⭕ 미완료'}</div>
-        <div class="ch-controls">
-          <button type="button" class="toggle">${done ? '미완료로' : '완료로'}</button>
-        </div>`;
+        <div class="ch-state">${done ? '✅ 완료' : '⭕ 미완료'}</div>`;
 
-      card.querySelector('.toggle').onclick = ()=>{
+      card.style.cursor = 'pointer';
+      card.onclick = () => {
         const mm = getJSON('challengeStatus-'+name, {}) || {};
         if(done) delete mm[id]; else mm[id]={s:'d', ts:new Date().toISOString()};
         setJSON('challengeStatus-'+name, mm);
