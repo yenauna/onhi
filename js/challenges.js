@@ -418,8 +418,17 @@ Uses localStorage via helper functions from common.js.
   statusView.querySelector('.st-ch-title').textContent = ch.title || '(제목 없음)';
   statusView.querySelector('.st-ch-active').textContent = ch.active? '활성(ON)' : '비활성(OFF)';
 
-  const tbody = statusView.querySelector('tbody');
-  tbody.innerHTML='';
+  const studentGrid = statusView.querySelector('.st-student-grid');
+  if (studentGrid) studentGrid.innerHTML='';
+
+  const ensureGrid = () => {
+    if (!studentGrid) {
+      console.warn('[challenge] student grid element missing');
+    }
+    return studentGrid;
+  };
+  const gridEl = ensureGrid();
+  if (!gridEl) return;
 
   // ★ 단계 정보
   const steps = Array.isArray(ch.steps) ? ch.steps : [];
