@@ -853,12 +853,18 @@
     root.classList.add('whiteboard-root');
     root.innerHTML = `
       <div class="whiteboard-toolbar">
-        <label>색상 <input type="color" data-role="wb-color" value="#2e7d57"></label>
-        <label>선 굵기 <input type="range" data-role="wb-size" min="1" max="20" value="4"></label>
-        <button type="button" data-role="wb-clear">지우기</button>
+        <div class="whiteboard-mode" role="group" aria-label="입력 방식">
+          <button type="button" data-role="wb-mode" data-mode="text" class="is-active" aria-pressed="true">키보드 입력</button>
+          <button type="button" data-role="wb-mode" data-mode="draw" aria-pressed="false">펜 그리기</button>
+        </div>
+        <label data-mode-control="draw">색상 <input type="color" data-role="wb-color" value="#2e7d57"></label>
+        <label data-mode-control="draw">선 굵기 <input type="range" data-role="wb-size" min="1" max="20" value="4"></label>
+        <button type="button" data-role="wb-clear" data-mode-control="draw">그림 지우기</button>
+        <button type="button" data-role="wb-text-clear" data-mode-control="text">텍스트 지우기</button>
       </div>
       <div class="whiteboard-area" data-role="wb-area">
         <canvas data-role="wb-canvas" aria-label="판서 공간"></canvas>
+        <div class="whiteboard-text" data-role="wb-text" contenteditable="true" role="textbox" aria-multiline="true" aria-label="판서 텍스트 입력 영역"></div>
       </div>
     `;
 
@@ -866,7 +872,10 @@
     const area = root.querySelector('[data-role="wb-area"]');
     const colorInput = root.querySelector('[data-role="wb-color"]');
     const sizeInput = root.querySelector('[data-role="wb-size"]');
-    const clearBtn = root.querySelector('[data-role="wb-clear"]');
+    const drawClearBtn = root.querySelector('[data-role="wb-clear"]');
+    const textClearBtn = root.querySelector('[data-role="wb-text-clear"]');
+    const modeButtons = root.querySelectorAll('[data-role="wb-mode"]');
+    const textLayer = root.querySelector('[data-role="wb-text"]');
     if (!canvas || !canvas.getContext || !area) {
       return { cleanup(){}, onResize(){} };
     }
@@ -877,6 +886,43 @@
     let size = sizeInput ? parseInt(sizeInput.value, 10) || 4 : 4;
     let lastX = 0;
     let lastY = 0;
+    let mode = 'text';
+
+    function updateModeUI(){
+      modeButtons.forEach(btn => {
+        const isActive = btn.dataset.mode === mode;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      root.dataset.mode = mode;
+      canvas.setAttribute('aria-hidden', mode === 'text' ? 'true' : 'false');
+      textLayer?.setAttribute('aria-hidden', mode === 'draw' ? 'true' : 'false');
+      if (mode === 'text') {
+        drawing = false;
+        ctx.closePath();
+        textLayer?.focus();
+      }
+    }
+
+    function setMode(nextMode){
+      const normalized = nextMode === 'draw' ? 'draw' : 'text';
+      if (mode === normalized) {
+        if (mode === 'text') {
+          textLayer?.focus();
+        }
+        return;
+      }
+      mode = normalized;
+      updateModeUI();
+    }
+
+    modeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setMode(btn.dataset.mode || 'text');
+      });
+    });
+
+    updateModeUI();
 
     function resizeCanvas(){
       const rect = area.getBoundingClientRect();
@@ -918,6 +964,7 @@
     }
 
     function startDraw(event){
+      if (mode !== 'draw') return;
       event.preventDefault();
       const pos = getPos(event);
       drawing = true;
@@ -969,11 +1016,17 @@
         ctx.lineWidth = size;
       }
     });
-    clearBtn?.addEventListener('click', () => {
+    drawClearBtn?.addEventListener('click', () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const rect = area.getBoundingClientRect();
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, rect.width, rect.height);
+    });
+
+    textClearBtn?.addEventListener('click', () => {
+      if (!textLayer) return;
+      textLayer.textContent = '';
+      textLayer.focus();
     });
 
     const observer = new ResizeObserver(() => resizeCanvas());
