@@ -391,6 +391,14 @@
     .calendar td.sat  .day-num { color:#d74b4b; }     /* 주말 빨강 */
     .calendar td.holiday .day-num,
     .calendar td.vacation .day-num { color:#d74b4b; } /* 공휴일/방학 빨강 */
+
+    .calendar td.drag-target {
+      outline:2px dashed var(--brand);
+      background:rgba(86, 178, 146, 0.12);
+    }
+    .calendar td.drag-origin {
+      opacity:0.6;
+    }
    
     .badge-holiday, .badge-vacation{
       display:inline-block;
@@ -785,6 +793,102 @@
     let selectedUid = null;
 
     let calendarRefs = {};
+    let draggingTask = null;
+
+    function clearCalendarDragState(){
+      draggingTask = null;
+      document.querySelectorAll('#calendar-body td.drag-origin').forEach(td => td.classList.remove('drag-origin'));
+      document.querySelectorAll('#calendar-body td.drag-target').forEach(td => td.classList.remove('drag-target'));
+    }
+
+    function handleTaskDragStart(ev){
+      const target = ev.currentTarget;
+      const uid = target?.dataset.uid;
+      const date = target?.dataset.date;
+      if (!uid || !date) return;
+      draggingTask = { uid, from: date };
+      ev.dataTransfer?.setData('text/plain', uid);
+      if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move';
+      const cell = target.closest('td[data-date]');
+      if (cell) cell.classList.add('drag-origin');
+    }
+
+    function handleTaskDragEnd(){
+      clearCalendarDragState();
+    }
+
+    function handleCalendarDragOver(ev){
+      const target = ev.currentTarget;
+      if (!draggingTask || !target?.dataset.date) return;
+      ev.preventDefault();
+      if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('#calendar-body td.drag-target').forEach(td => {
+        if (td !== target) td.classList.remove('drag-target');
+      });
+      target.classList.add('drag-target');
+    }
+
+    function handleCalendarDragLeave(ev){
+      ev.currentTarget?.classList.remove('drag-target');
+    }
+
+    function handleCalendarDrop(ev){
+      const target = ev.currentTarget;
+      if (!draggingTask || !target?.dataset.date) { clearCalendarDragState(); return; }
+      ev.preventDefault();
+      const { uid, from } = draggingTask;
+      const targetDate = target.dataset.date;
+      target.classList.remove('drag-target');
+      if (!uid || !targetDate || from === targetDate) { clearCalendarDragState(); return; }
+
+      const tasks = (typeof getTasks === 'function') ? getTasks() : [];
+      const idx = tasks.findIndex(t => t.id === uid);
+      if (idx < 0) { clearCalendarDragState(); return; }
+      const task = tasks[idx];
+      const repeat = task?.repeat || 'none';
+      if (repeat !== 'none') {
+        clearCalendarDragState();
+        alert('반복 과제/일정은 드래그로 날짜를 옮길 수 없습니다.');
+        return;
+      }
+      if (task.type === 'challenge') {
+        clearCalendarDragState();
+        alert('도전 과제는 날짜가 없어 이동할 수 없습니다.');
+        return;
+      }
+
+      tasks[idx] = { ...task, date: targetDate };
+      if (typeof setTasks === 'function') {
+        setTasks(tasks);
+      } else {
+        localStorage.setItem('tasksV2', JSON.stringify(tasks));
+      }
+      clearCalendarDragState();
+
+      const refreshCalendar = typeof renderCalendar === 'function' ? renderCalendar() : null;
+      const finalize = () => {
+        if (typeof renderStudentStatus === 'function') renderStudentStatus();
+        if (typeof renderEventsStrip === 'function') renderEventsStrip('events-strip-teacher');
+        if (typeof selectTask === 'function') {
+          const refs = calendarRefs[targetDate] || [];
+          const newIdx = refs.indexOf(uid);
+          if (newIdx >= 0) selectTask(targetDate, newIdx, uid);
+        }
+      };
+      Promise.resolve(refreshCalendar).then(finalize).catch(finalize);
+    }
+
+    function setupCalendarDnD(tbody){
+      tbody.querySelectorAll('[data-uid]').forEach(el => {
+        el.addEventListener('dragstart', handleTaskDragStart);
+        el.addEventListener('dragend', handleTaskDragEnd);
+      });
+      tbody.querySelectorAll('td[data-date]').forEach(td => {
+        td.addEventListener('dragover', handleCalendarDragOver);
+        td.addEventListener('dragleave', handleCalendarDragLeave);
+        td.addEventListener('drop', handleCalendarDrop);
+      });
+    }
 
     let viewYear  = (new Date()).getFullYear();
     let viewMonth = (new Date()).getMonth(); // 0=1월, 11=12월
@@ -1278,7 +1382,7 @@
   // ▼ 일정: 검은 글씨, 배경 없음, 클릭 시 선택
   if (t.type === 'event') {
     const title = escapeHTML(t.text || '(제목 없음)');
-    return `<div class="event-pill" onclick="selectTask('${dateStr}', ${idx})">${title}</div>`;
+    return `<div class="event-pill" data-uid="${inst.id}" data-date="${dateStr}" data-type="event" data-repeat="${t.repeat || 'none'}" draggable="true" onclick="selectTask('${dateStr}', ${idx})">${title}</div>`;
   }
 
   // ▼ 과제: 기존 로직 유지
@@ -1309,13 +1413,13 @@
       
   const cls = anyIncomplete ? 'task-pill pending' : 'task-pill done';
 
-  return `<div class="${cls}" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(t.text)}</div>`;
+  return `<div class="${cls}" data-uid="${inst.id}" data-date="${dateStr}" data-type="${t.type || 'assignment'}" data-repeat="${t.repeat || 'none'}" draggable="true" onclick="selectTask('${dateStr}', ${idx})">${escapeHTML(t.text)}</div>`;
 }).join("");
 
 
 
 
-    html += `<td class="${cls.join(' ')}">
+    html += `<td class="${cls.join(' ')}" data-date="${dateStr}">
       <strong class="day-num">${day}</strong>
       ${badge}
       ${pills}
@@ -1325,6 +1429,7 @@
   }
   html += "</tr>";
   tbody.innerHTML = html;
+      setupCalendarDnD(tbody);
   setCalLabel();
 }
 
