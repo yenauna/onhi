@@ -253,9 +253,23 @@
       color:#fff;
       border-color:var(--brand);
     }
-    .clock-panel{ display:none; gap:12px; flex-direction:column; }
+    .clock-root{
+      --clock-scale:1;
+      display:flex;
+      flex-direction:column;
+      height:100%;
+    }
+    .clock-panel{
+      display:none;
+      gap:12px;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      flex:1 1 auto;
+      min-height:0;
+    }
     .clock-panel.active{ display:flex; }
-    .clock-root{ --clock-scale:1; }
     .clock-time{
       font-size:calc(56px * var(--clock-scale));
       font-weight:700;
