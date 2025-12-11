@@ -10,8 +10,8 @@
     clock: {
       title: '시계 · 타이머',
       icon: '⏰',
-      width: 420,
-      height: 380,
+      width: 380,
+      height: 340,
       minWidth: 320,
       minHeight: 280,
       mount: mountClock
@@ -19,8 +19,8 @@
     seating: {
       title: '자리 배치',
       icon: '🪑',
-      width: 520,
-      height: 540,
+      width: 480,
+      height: 500,
       minWidth: 420,
       minHeight: 360,
       mount: mountSeating
@@ -28,8 +28,8 @@
     picker: {
       title: '학생 선발 · 사다리',
       icon: '🎯',
-      width: 520,
-      height: 560,
+      width: 480,
+      height: 520,
       minWidth: 360,
       minHeight: 360,
       mount: mountPicker
@@ -37,8 +37,8 @@
     whiteboard: {
       title: '판서',
       icon: '📝',
-      width: 680,
-      height: 520,
+      width: 600,
+      height: 480,
       minWidth: 420,
       minHeight: 320,
       mount: mountWhiteboard
@@ -112,6 +112,7 @@
       setupResize(el, def, () => entry.onResize());
       el.querySelector('.window-close').addEventListener('click', () => close(id));
       el.querySelector('.window-minimize').addEventListener('click', () => toggleMinimize(id));
+      el.querySelector('.window-header')?.addEventListener('dblclick', () => toggleMinimize(id));
       el.addEventListener('pointerdown', () => bringToFront(el));
 
       bringToFront(el);
@@ -126,11 +127,18 @@
       const { el, def } = entry;
       if (!el.classList.contains('is-minimized')) {
         el.dataset.prevHeight = el.style.height || '';
+        el.dataset.prevWidth = el.style.width || '';
         el.classList.add('is-minimized');
         el.style.height = '';
+        el.style.width = '240px';
       } else {
         restore(entry, def);
         entry.onResize();
+      }
+      if (el.dataset.prevWidth) {
+        el.style.width = el.dataset.prevWidth;
+      } else if (def.width) {
+        el.style.width = `${def.width}px`;
       }
     }
 
