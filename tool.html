@@ -149,6 +149,8 @@
       width:560px;
       min-width:420px;
       min-height:320px;
+      max-width:min(720px, 94vw);
+      max-height:calc(100% - 80px);
       border-radius:22px;
       background:#fff;
       border:1px solid rgba(0,0,0,0.06);
@@ -222,6 +224,12 @@
     
     .tool-window.is-minimized{
       overflow:hidden;
+      width:220px !important;
+      min-width:0;
+      min-height:0;
+      height:auto !important;
+      max-height:unset;
+    }
     }
     .tool-window.is-minimized .window-body,
     .tool-window.is-minimized .window-resizer{ display:none; }
