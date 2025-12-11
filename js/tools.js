@@ -317,10 +317,9 @@
     const applyResponsiveScale = () => {
       const width = root.clientWidth || 1;
       const height = root.clientHeight || 1;
-      const widthScale = width / 420;
-      const heightScale = height / 260;
-      const scale = Math.min(3, Math.max(0.6, Math.min(widthScale, heightScale)));
-      root.style.setProperty('--clock-scale', scale.toFixed(3));
+      const widthScale = width / 280;
+      const heightScale = height / 200;
+      const scale = Math.min(6, Math.max(0.6, Math.min(widthScale, heightScale)));
     };
     applyResponsiveScale();
     
@@ -515,6 +514,7 @@
         if (clockTimer) clearInterval(clockTimer);
         if (timerInterval) clearInterval(timerInterval);
         if (swInterval) clearInterval(swInterval);
+        resizeObserver.disconnect();
       },
       onResize(){
         applyResponsiveScale();
