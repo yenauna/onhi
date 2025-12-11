@@ -316,7 +316,11 @@
     const dateLabel = root.querySelector('[data-role="clock-date"]');
     const applyResponsiveScale = () => {
       const width = root.clientWidth || 1;
-      const scale = Math.min(1.25, Math.max(0.7, width / 420));
+      const height = root.clientHeight || 1;
+      const widthScale = width / 420;
+      const heightScale = height / 260;
+      const scale = Math.min(3, Math.max(0.6, Math.min(widthScale, heightScale)));
+      root.style.setProperty('--clock-scale', scale.toFixed(3));
       root.style.setProperty('--clock-scale', scale.toFixed(3));
     };
     applyResponsiveScale();
