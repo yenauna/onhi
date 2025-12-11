@@ -314,6 +314,12 @@
 
     const timeLabel = root.querySelector('[data-role="clock-time"]');
     const dateLabel = root.querySelector('[data-role="clock-date"]');
+    const applyResponsiveScale = () => {
+      const width = root.clientWidth || 1;
+      const scale = Math.min(1.25, Math.max(0.7, width / 420));
+      root.style.setProperty('--clock-scale', scale.toFixed(3));
+    };
+    applyResponsiveScale();
     let clockTimer = null;
     if (timeLabel) {
       const updateClock = () => {
@@ -504,7 +510,9 @@
         if (timerInterval) clearInterval(timerInterval);
         if (swInterval) clearInterval(swInterval);
       },
-      onResize(){}
+      onResize(){
+        applyResponsiveScale();
+      }
     };
   }
 
