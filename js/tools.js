@@ -321,9 +321,11 @@
       const heightScale = height / 260;
       const scale = Math.min(3, Math.max(0.6, Math.min(widthScale, heightScale)));
       root.style.setProperty('--clock-scale', scale.toFixed(3));
-      root.style.setProperty('--clock-scale', scale.toFixed(3));
     };
     applyResponsiveScale();
+    
+    const resizeObserver = new ResizeObserver(() => applyResponsiveScale());
+    resizeObserver.observe(root);
     let clockTimer = null;
     if (timeLabel) {
       const updateClock = () => {
