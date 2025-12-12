@@ -325,9 +325,12 @@
     const applyResponsiveScale = () => {
       const width = root.clientWidth || 1;
       const height = root.clientHeight || 1;
-      const widthScale = width / 280;
-      const heightScale = height / 200;
-      const scale = Math.min(6, Math.max(0.6, Math.min(widthScale, heightScale)));
+      const widthScale = width / 240;
+      const heightScale = height / 170;
+      const rawScale = Math.min(widthScale, heightScale);
+      const easedScale = Math.pow(rawScale, 1.15);
+      const scale = Math.min(10, Math.max(0.75, easedScale));
+      root.style.setProperty('--clock-scale', scale.toFixed(3));
     };
     applyResponsiveScale();
     
