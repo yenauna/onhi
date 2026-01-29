@@ -16,6 +16,7 @@
   
   <link rel="stylesheet" href="css/common.css">
   <script src="js/common.js"></script>
+  <script src="js/storage.js"></script>
   <script src="js/challenges.js"></script>
 
   <style>
@@ -505,15 +506,85 @@
 .btn-secondary { background:#f3f4f6; }
 .btn-primary   { background:var(--brand); color:#fff; border-color:var(--brand); box-shadow:0 12px 28px var(--btn-shadow); }
 
-/* 모바일에서 1열로 자연스럽게 떨어지도록 */
+    /* 모바일에서 1열로 자연스럽게 떨어지도록 */
 @media (max-width: 560px){
   .task-row.row-1 #task-date { flex:0 0 140px; }
   .task-row.row-2 { gap:10px; }
 }
 
-
+/* ================================
+       관찰 기록
+       ================================ */
+    .obs-form,
+    .obs-filters{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .obs-grid{
+      display:grid;
+      gap:10px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      align-items:end;
+    }
+    .obs-grid .full{
+      grid-column: 1 / -1;
+    }
+    .obs-card{
+      border:1px solid #e6e8eb;
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
+      box-shadow:0 4px 10px rgba(0,0,0,.04);
+    }
+    .obs-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .obs-item{
+      display:grid;
+      gap:8px;
+      grid-template-columns: 120px 1fr 120px 120px 140px;
+      align-items:center;
+      border:1px solid #e6e8eb;
+      border-radius:14px;
+      padding:10px 12px;
+      background:#fff;
+    }
+    .obs-item .meta{
+      font-size:13px;
+      color:#555;
+    }
+    .obs-item .note{
+      font-size:14px;
+      line-height:1.4;
+    }
+    .obs-item .chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid #e6e8eb;
+      font-size:12px;
+      background:#f6f7f8;
+    }
+    .obs-item button{
+      justify-self:end;
+    }
+    @media (max-width: 720px){
+      .obs-item{
+        grid-template-columns: 1fr;
+        align-items:flex-start;
+      }
+      .obs-item button{
+        justify-self:start;
+      }
+    }
 
     
+
     
   </style>
 </head>
@@ -527,6 +598,7 @@
       <button id="tab-status">오늘 할 일</button>
       <button id="tab-task">과제</button>
       <button id="tab-challenges">도전</button>
+      <button id="tab-observation">관찰 기록</button>
       <button type="button" onclick="location.href='tool.html'">도구</button>
       <button id="tab-student">학생</button>
     </nav>
@@ -716,6 +788,94 @@
       </table>
     </div>
   </div>
+  
+    <!-- ===== 관찰 기록 ===== -->
+    <div id="observation-management" style="display:none; margin-top:20px;">
+      <section class="obs-form">
+        <h3>관찰 기록 추가</h3>
+        <div class="obs-grid">
+          <label>
+            학생
+            <select id="obs-student"></select>
+          </label>
+          <label>
+            종류
+            <select id="obs-type">
+              <option value="칭찬">칭찬</option>
+              <option value="조언">조언</option>
+              <option value="기록(0점)">기록(0점)</option>
+            </select>
+          </label>
+          <label>
+            능력치
+            <select id="obs-ability">
+              <option value="신뢰도">신뢰도</option>
+              <option value="호감도">호감도</option>
+              <option value="집중력">집중력</option>
+              <option value="숙련도">숙련도</option>
+              <option value="정신력">정신력</option>
+            </select>
+          </label>
+          <label>
+            날짜
+            <input type="date" id="obs-date" />
+          </label>
+          <label class="full">
+            문장 템플릿
+            <select id="obs-template"></select>
+          </label>
+          <label class="full">
+            자유 메모 (선택)
+            <textarea id="obs-memo" rows="3" class="task-desc" placeholder="보충 설명이나 상황을 적어주세요."></textarea>
+          </label>
+        </div>
+        <div>
+          <button type="button" class="btn-primary" id="obs-add-btn">관찰 기록 저장</button>
+        </div>
+      </section>
+
+      <section class="obs-filters" style="margin-top:20px;">
+        <h3>관찰 기록 보기</h3>
+        <div class="obs-grid">
+          <label>
+            날짜
+            <input type="date" id="obs-filter-date" />
+          </label>
+          <label>
+            학생
+            <select id="obs-filter-student"></select>
+          </label>
+          <label>
+            종류
+            <select id="obs-filter-type">
+              <option value="">전체</option>
+              <option value="칭찬">칭찬</option>
+              <option value="조언">조언</option>
+              <option value="기록(0점)">기록(0점)</option>
+            </select>
+          </label>
+          <label>
+            능력치
+            <select id="obs-filter-ability">
+              <option value="">전체</option>
+              <option value="신뢰도">신뢰도</option>
+              <option value="호감도">호감도</option>
+              <option value="집중력">집중력</option>
+              <option value="숙련도">숙련도</option>
+              <option value="정신력">정신력</option>
+            </select>
+          </label>
+          <label class="full">
+            검색
+            <input type="text" id="obs-filter-search" placeholder="학생, 템플릿, 메모 검색" />
+          </label>
+        </div>
+      </section>
+
+      <section style="margin-top:16px;">
+        <div id="obs-list" class="obs-list"></div>
+      </section>
+    </div>
 
   <!-- ===== 도전 관리 ===== -->
 <div class="container" id="challenges-box" style="display:none;">
@@ -967,6 +1127,9 @@
         case 'challenges':
           showChallenges();
           break;
+        case 'observation':
+          showObservationManagement();
+          break;
         case 'student':
           showStudentManagement();
           break;
@@ -991,6 +1154,7 @@
         status:  document.getElementById('tab-status'),
         task:    document.getElementById('tab-task'),
         challenges:  document.getElementById('tab-challenges'),
+        observation: document.getElementById('tab-observation'),
         student: document.getElementById('tab-student')
       };
       Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
@@ -1012,6 +1176,7 @@
       document.getElementById("student-status-page").style.display = "block";
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "none";
+      document.getElementById("observation-management").style.display = "none";
       hideActionUI();
       renderStudentStatus();
     }
@@ -1027,6 +1192,7 @@
       document.getElementById("student-status-page").style.display = "none";
       document.getElementById("task-management").style.display = "block";
       document.getElementById("student-management").style.display = "none";
+      document.getElementById("observation-management").style.display = "none";
       
       renderCalendar();
       hideActionUI();
@@ -1048,11 +1214,30 @@
       document.getElementById("student-status-page").style.display = "none";
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "block";
+      document.getElementById("observation-management").style.display = "none";
       
       hideActionUI();
       renderStudentList();
     }
 
+    function showObservationManagement() {
+      setActiveTab('observation');
+
+      document.getElementById("main-box").style.display = "block";
+      document.getElementById("challenges-box").style.display = "none";
+
+      document.getElementById("student-status-page").style.display = "none";
+      document.getElementById("task-management").style.display = "none";
+      document.getElementById("student-management").style.display = "none";
+      document.getElementById("observation-management").style.display = "block";
+
+      hideActionUI();
+      renderObservationStudentOptions();
+      initializeObservationDate();
+      renderObservationTemplates();
+      renderObservationList();
+    }
+    
     function navigateToTab(key){
       const targetHash = `#${key}`;
       if (location.hash === targetHash) {
@@ -1066,6 +1251,7 @@
     document.getElementById('tab-status')?.addEventListener('click', () => navigateToTab('status'));
     document.getElementById('tab-task')?.addEventListener('click', () => navigateToTab('task'));
     document.getElementById('tab-challenges')?.addEventListener('click', () => navigateToTab('challenges'));
+    document.getElementById('tab-observation')?.addEventListener('click', () => navigateToTab('observation'));
     document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
    
     // Expose tab-switch functions for inline handlers
@@ -1073,6 +1259,7 @@
     window.showTaskManagement = showTaskManagement;
     window.showChallenges = showChallenges;
     window.showStudentManagement = showStudentManagement;
+    window.showObservationManagement = showObservationManagement;
     
     // ===========================================================
     // 학생 체크박스 렌더링(과제 대상 지정용)
@@ -2117,6 +2304,8 @@ window.addEventListener('load', () => {
       document.getElementById("student-status-page").style.display = "none";
       document.getElementById("task-management").style.display = "none";
       document.getElementById("student-management").style.display = "none";
+      document.getElementById("observation-management").style.display = "none";
+
 
       // 목록 렌더
       if (window.Challenges?.renderChallengeList) {
@@ -2125,6 +2314,226 @@ window.addEventListener('load', () => {
     }
     window.showChallenges = showChallenges; // 인라인 onclick 대비
 
+      // ===========================================================
+    // 관찰 기록
+    // ===========================================================
+    const OBS_TEMPLATES = {
+      '칭찬': [
+        '오늘 활동에 적극적으로 참여했어요.',
+        '친구에게 친절하게 도와줬어요.',
+        '과제를 끝까지 집중해서 마무리했어요.',
+      ],
+      '조언': [
+        '다음엔 질문 전에 손을 들어볼까요?',
+        '활동 순서를 조금 더 천천히 따라가봐요.',
+        '집중이 흐트러질 때는 잠깐 심호흡을 해봅시다.',
+      ],
+      '기록(0점)': [
+        '과제 미제출',
+        '수업 중 집중 어려움',
+        '지각으로 활동 일부 참여',
+      ],
+    };
+
+    function getTodayString(){
+      const now = new Date();
+      return `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`;
+    }
+
+    function initializeObservationDate(){
+      const dateInput = document.getElementById('obs-date');
+      if (!dateInput) return;
+      if (!dateInput.value) dateInput.value = getTodayString();
+    }
+
+    function renderObservationTemplates(){
+      const select = document.getElementById('obs-template');
+      const typeSelect = document.getElementById('obs-type');
+      if (!select || !typeSelect) return;
+      const type = typeSelect.value || '칭찬';
+      const templates = OBS_TEMPLATES[type] || [];
+      select.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '템플릿 선택';
+      select.appendChild(placeholder);
+      templates.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t;
+        option.textContent = t;
+        select.appendChild(option);
+      });
+    }
+
+    function renderObservationStudentOptions(){
+      const formSelect = document.getElementById('obs-student');
+      const filterSelect = document.getElementById('obs-filter-student');
+      const students = getStudentsSorted();
+
+      if (formSelect) {
+        formSelect.innerHTML = '';
+        if (students.length === 0) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = '학생 없음';
+          formSelect.appendChild(option);
+        } else {
+          students.forEach(stu => {
+            const option = document.createElement('option');
+            option.value = stu.id;
+            option.dataset.name = stu.name;
+            option.textContent = `${stu.id} ${stu.name}`;
+            formSelect.appendChild(option);
+          });
+        }
+      }
+
+      if (filterSelect) {
+        filterSelect.innerHTML = '';
+        const allOption = document.createElement('option');
+        allOption.value = '';
+        allOption.textContent = '전체 학생';
+        filterSelect.appendChild(allOption);
+        students.forEach(stu => {
+          const option = document.createElement('option');
+          option.value = stu.id;
+          option.dataset.name = stu.name;
+          option.textContent = `${stu.id} ${stu.name}`;
+          filterSelect.appendChild(option);
+        });
+      }
+    }
+
+    function getObservationFilters(){
+      return {
+        date: document.getElementById('obs-filter-date')?.value || '',
+        studentId: document.getElementById('obs-filter-student')?.value || '',
+        type: document.getElementById('obs-filter-type')?.value || '',
+        ability: document.getElementById('obs-filter-ability')?.value || '',
+        search: document.getElementById('obs-filter-search')?.value.trim().toLowerCase() || '',
+      };
+    }
+
+    function renderObservationList(){
+      const listEl = document.getElementById('obs-list');
+      if (!listEl || !window.ObservationStorage) return;
+      const filters = getObservationFilters();
+      const list = ObservationStorage.loadObservations()
+        .slice()
+        .sort((a, b) => {
+          const dateDiff = String(b.date || '').localeCompare(String(a.date || ''));
+          if (dateDiff !== 0) return dateDiff;
+          return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+        })
+        .filter(item => {
+          if (filters.date && item.date !== filters.date) return false;
+          if (filters.studentId && String(item.studentId) !== String(filters.studentId)) return false;
+          if (filters.type && item.type !== filters.type) return false;
+          if (filters.ability && item.ability !== filters.ability) return false;
+          if (filters.search) {
+            const haystack = [
+              item.studentName,
+              item.template,
+              item.memo,
+              item.type,
+              item.ability,
+              item.date,
+            ].join(' ').toLowerCase();
+            if (!haystack.includes(filters.search)) return false;
+          }
+          return true;
+        });
+
+      listEl.innerHTML = '';
+      if (list.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'obs-card';
+        empty.textContent = '조건에 맞는 관찰 기록이 없습니다.';
+        listEl.appendChild(empty);
+        return;
+      }
+
+      list.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'obs-item';
+        const memo = item.memo ? `<div class=\"meta\">${escapeHTML(item.memo)}</div>` : '';
+        const dateLabel = typeof formatKoreanDate === 'function' ? formatKoreanDate(item.date) : item.date;
+        row.innerHTML = `
+          <div class=\"meta\">${escapeHTML(dateLabel)}</div>
+          <div class=\"note\">
+            <div><strong>${escapeHTML(item.studentName || '')}</strong></div>
+            <div>${escapeHTML(item.template || '')}</div>
+            ${memo}
+          </div>
+          <div class=\"chip\">${escapeHTML(item.type || '')}</div>
+          <div class=\"chip\">${escapeHTML(item.ability || '')}</div>
+          <button type=\"button\" data-id=\"${escapeHTML(item.id)}\">삭제</button>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    function addObservationRecord(){
+      if (!window.ObservationStorage) return;
+      const studentSelect = document.getElementById('obs-student');
+      const typeSelect = document.getElementById('obs-type');
+      const abilitySelect = document.getElementById('obs-ability');
+      const templateSelect = document.getElementById('obs-template');
+      const memoInput = document.getElementById('obs-memo');
+      const dateInput = document.getElementById('obs-date');
+
+      const studentOption = studentSelect?.options[studentSelect.selectedIndex];
+      const studentId = studentOption?.value || '';
+      const studentName = studentOption?.dataset.name || '';
+      const type = typeSelect?.value || '';
+      const ability = abilitySelect?.value || '';
+      const template = templateSelect?.value || '';
+      const memo = memoInput?.value.trim() || '';
+      const date = dateInput?.value || '';
+
+      if (!studentId) { alert('학생을 선택하세요.'); return; }
+      if (!type) { alert('종류를 선택하세요.'); return; }
+      if (!ability) { alert('능력치를 선택하세요.'); return; }
+      if (!template) { alert('문장 템플릿을 선택하세요.'); return; }
+      if (!date) { alert('날짜를 선택하세요.'); return; }
+
+      const record = {
+        id: ObservationStorage.createObservationId(),
+        studentId,
+        studentName,
+        type,
+        ability,
+        template,
+        memo,
+        date,
+        createdAt: new Date().toISOString(),
+      };
+
+      ObservationStorage.addObservation(record);
+      if (memoInput) memoInput.value = '';
+      renderObservationList();
+    }
+
+    document.getElementById('obs-type')?.addEventListener('change', renderObservationTemplates);
+    document.getElementById('obs-add-btn')?.addEventListener('click', addObservationRecord);
+    document.getElementById('obs-filter-date')?.addEventListener('change', renderObservationList);
+    document.getElementById('obs-filter-student')?.addEventListener('change', renderObservationList);
+    document.getElementById('obs-filter-type')?.addEventListener('change', renderObservationList);
+    document.getElementById('obs-filter-ability')?.addEventListener('change', renderObservationList);
+    document.getElementById('obs-filter-search')?.addEventListener('input', renderObservationList);
+    document.getElementById('obs-list')?.addEventListener('click', (event) => {
+      const btn = event.target.closest('button[data-id]');
+      if (!btn || !window.ObservationStorage) return;
+      const id = btn.dataset.id;
+      if (!id) return;
+      if (!confirm('해당 관찰 기록을 삭제할까요?')) return;
+      ObservationStorage.deleteObservation(id);
+      renderObservationList();
+    });
+    window.addEventListener('students:updated', () => {
+      renderObservationStudentOptions();
+      renderObservationList();
+    });
         
     // ===========================================================
     // 학생 데이터 로드/저장
