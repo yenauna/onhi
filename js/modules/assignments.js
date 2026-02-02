@@ -1,10 +1,3 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/js/modules/assignments.js b/js/modules/assignments.js
-new file mode 100644
-index 0000000000000000000000000000000000000000..e183006ba2cccaaf1939a0667a9120c2e839005e
---- /dev/null
-+++ b/js/modules/assignments.js
-@@ -0,0 +1,1349 @@
 +import {
 +  genUID,
 +  getTasks,
