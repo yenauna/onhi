@@ -1,10 +1,3 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/js/modules/challenges.js b/js/modules/challenges.js
-new file mode 100644
-index 0000000000000000000000000000000000000000..517b4b029bd742175e1a953c424e7f2f60637879
---- /dev/null
-+++ b/js/modules/challenges.js
-@@ -0,0 +1,47 @@
 +const getChallengesApi = () => window.Challenges;
 +
 +const bindChallengeEvents = () => {
