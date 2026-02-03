@@ -934,6 +934,131 @@
 </div>
 
 <script type="module" src="js/teacher-app.js"></script>
+  <script>
+  (function () {
+    const initFallbackTabs = () => {
+      if (window.teacherAppReady) return;
+
+      const setActiveTab = (key) => {
+        const map = {
+          status: document.getElementById('tab-status'),
+          task: document.getElementById('tab-task'),
+          challenges: document.getElementById('tab-challenges'),
+          observation: document.getElementById('tab-observation'),
+          student: document.getElementById('tab-student'),
+        };
+        Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
+        if (map[key]) map[key].classList.add('active');
+      };
+
+      const showSection = (id, show) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? 'block' : 'none';
+      };
+
+      const showTab = (key) => {
+        const mainBox = document.getElementById('main-box');
+        const challengesBox = document.getElementById('challenges-box');
+
+        if (key === 'challenges') {
+          setActiveTab('challenges');
+          if (mainBox) mainBox.style.display = 'none';
+          if (challengesBox) challengesBox.style.display = 'block';
+          showSection('student-status-page', false);
+          showSection('task-management', false);
+          showSection('student-management', false);
+          showSection('observation-management', false);
+          return;
+        }
+
+        if (mainBox) mainBox.style.display = 'block';
+        if (challengesBox) challengesBox.style.display = 'none';
+
+        if (key === 'task') {
+          setActiveTab('task');
+          showSection('student-status-page', false);
+          showSection('task-management', true);
+          showSection('student-management', false);
+          showSection('observation-management', false);
+          return;
+        }
+
+        if (key === 'observation') {
+          setActiveTab('observation');
+          showSection('student-status-page', false);
+          showSection('task-management', false);
+          showSection('student-management', false);
+          showSection('observation-management', true);
+          return;
+        }
+
+        if (key === 'student') {
+          setActiveTab('student');
+          showSection('student-status-page', false);
+          showSection('task-management', false);
+          showSection('student-management', true);
+          showSection('observation-management', false);
+          return;
+        }
+
+        setActiveTab('status');
+        showSection('student-status-page', true);
+        showSection('task-management', false);
+        showSection('student-management', false);
+        showSection('observation-management', false);
+      };
+
+      const openTabFromHash = () => {
+        const hash = (location.hash || '').replace('#', '').toLowerCase();
+        switch (hash) {
+          case 'task':
+            showTab('task');
+            break;
+          case 'challenges':
+            showTab('challenges');
+            break;
+          case 'observation':
+            showTab('observation');
+            break;
+          case 'student':
+            showTab('student');
+            break;
+          case 'status':
+          default:
+            showTab('status');
+            break;
+        }
+      };
+
+      const navigateToTab = (key) => {
+        const targetHash = `#${key}`;
+        if (location.hash === targetHash) {
+          openTabFromHash();
+        } else {
+          location.hash = key;
+        }
+      };
+
+      document.getElementById('tab-status')?.addEventListener('click', () => navigateToTab('status'));
+      document.getElementById('tab-task')?.addEventListener('click', () => navigateToTab('task'));
+      document.getElementById('tab-challenges')?.addEventListener('click', () => navigateToTab('challenges'));
+      document.getElementById('tab-observation')?.addEventListener('click', () => navigateToTab('observation'));
+      document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
+      document.getElementById('tab-tools')?.addEventListener('click', () => {
+        window.location.href = 'tool.html';
+      });
+
+      openTabFromHash();
+      window.addEventListener('hashchange', openTabFromHash);
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initFallbackTabs);
+    } else {
+      initFallbackTabs();
+    }
+  })();
+</script>
 
   <!-- Supabase CDN -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
