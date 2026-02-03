@@ -1,6 +1,5 @@
 import { initAssignments, showStatus, showAssignments, hideActionUI } from './modules/assignments.js';
-import { initObservations, showObservations } from './modules/observations.js';
-import { initStudents, showStudents } from './modules/students.js';
+import { initObservations, showObservations } from './modules/observation.js';import { initStudents, showStudents } from './modules/students.js';
 import { initChallenges, showChallenges } from './modules/challenges.js';
 import { initToolsLink } from './modules/tools-link.js';
 import { initCounseling } from './modules/counseling.js';
