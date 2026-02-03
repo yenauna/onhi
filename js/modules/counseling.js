@@ -1,7 +1,4 @@
-+const initCounseling = () => {};
-+const showCounseling = () => {};
-+
-+export { initCounseling, showCounseling };
- 
-EOF
-)
+const initCounseling = () => {};
+const showCounseling = () => {};
+
+export { initCounseling, showCounseling };
