@@ -181,6 +181,19 @@ const addTaskInput = () => {
   document.getElementById('task-list')?.appendChild(div);
 };
 
+const fetchHolidaysWithTimeout = async (year, country, timeoutMs = 1500) => {
+  const timeout = new Promise(resolve => {
+    setTimeout(() => resolve(null), timeoutMs);
+  });
+  try {
+    const result = await Promise.race([ensureHolidays(year, country), timeout]);
+    if (result && typeof result === 'object') return result;
+  } catch (e) {
+    console.warn('[calendar] holiday fetch failed:', e);
+  }
+  return {};
+};
+
 const setupDatePicker = (sel, opts = {}) => {
   if (typeof window.flatpickr !== 'function') {
     const el = document.querySelector(sel);
@@ -660,14 +673,7 @@ const renderCalendar = async () => {
   const year = viewYear;
   const month = viewMonth;
 
-  let holidaysMap = {};
-  try {
-    const hm = await ensureHolidays(year, 'KR');
-    holidaysMap = (hm && typeof hm === 'object') ? hm : {};
-  } catch (e) {
-    console.warn('[calendar] holiday fetch failed:', e);
-    holidaysMap = {};
-  }
+  const holidaysMap = await fetchHolidaysWithTimeout(year, 'KR');
   const vacations = getVacations() || [];
   const isVacation = (dateStr) => {
     const v = vacations.find(v => v.start <= dateStr && dateStr <= v.end);
