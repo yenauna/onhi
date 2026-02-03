@@ -1347,6 +1347,3 @@
 +  renderCalendar,
 +  renderVacationList,
 +};
- 
-EOF
-)
