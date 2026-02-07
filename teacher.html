@@ -529,6 +529,25 @@
     .obs-grid .full{
       grid-column: 1 / -1;
     }
+    .obs-grid select[multiple]{
+      min-height:120px;
+    }
+    .obs-month{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .obs-month button{
+      height:36px;
+      padding:0 10px;
+      border-radius:10px;
+      border:1px solid var(--card-line);
+      background:#f3f4f6;
+      cursor:pointer;
+    }
+    .obs-month input[type="month"]{
+      height:36px;
+    }
     .obs-card{
       border:1px solid #e6e8eb;
       border-radius:16px;
@@ -568,6 +587,20 @@
       border:1px solid #e6e8eb;
       font-size:12px;
       background:#f6f7f8;
+    }
+    .obs-item .chip.type-chip{
+      border-color:transparent;
+      color:#fff;
+      font-weight:600;
+    }
+    .obs-item .chip.type-praise{
+      background:#2563eb;
+    }
+    .obs-item .chip.type-advice{
+      background:#dc2626;
+    }
+    .obs-item .chip.type-record{
+      background:#111827;
     }
     .obs-item button{
       justify-self:end;
@@ -792,9 +825,9 @@
       <section class="obs-form">
         <h3>관찰 기록 추가</h3>
         <div class="obs-grid">
-          <label>
-            학생
-            <select id="obs-student"></select>
+          <label class="full">
+            학생 (복수 선택 가능)
+            <select id="obs-student" multiple size="4"></select>
           </label>
           <label>
             종류
@@ -807,16 +840,20 @@
           <label>
             능력치
             <select id="obs-ability">
-              <option value="신뢰도">신뢰도</option>
-              <option value="호감도">호감도</option>
-              <option value="집중력">집중력</option>
-              <option value="숙련도">숙련도</option>
-              <option value="정신력">정신력</option>
+              <option value="신뢰도">신뢰도 (책임)</option>
+              <option value="호감도">호감도 (관계)</option>
+              <option value="집중력">집중력 (자기조절)</option>
+              <option value="숙련도">숙련도 (성취)</option>
+              <option value="정신력">정신력 (과정)</option>
             </select>
           </label>
           <label>
-            날짜
-            <input type="date" id="obs-date" />
+            기간 시작
+            <input type="date" id="obs-date-start" />
+          </label>
+          <label>
+            기간 종료
+            <input type="date" id="obs-date-end" />
           </label>
           <label class="full">
             문장 템플릿
@@ -836,8 +873,19 @@
         <h3>관찰 기록 보기</h3>
         <div class="obs-grid">
           <label>
-            날짜
-            <input type="date" id="obs-filter-date" />
+            기간 시작
+            <input type="date" id="obs-filter-start" />
+          </label>
+          <label>
+            기간 종료
+            <input type="date" id="obs-filter-end" />
+          </label>
+          <label>
+            월
+            <div class="obs-month">
+              <button type="button" id="obs-filter-month-btn">월 선택</button>
+              <input type="month" id="obs-filter-month" aria-label="월 선택" />
+            </div>
           </label>
           <label>
             학생
@@ -861,6 +909,13 @@
               <option value="집중력">집중력</option>
               <option value="숙련도">숙련도</option>
               <option value="정신력">정신력</option>
+            </select>
+          </label>
+          <label>
+            정렬
+            <select id="obs-filter-sort">
+              <option value="latest">최신순</option>
+              <option value="input">입력순</option>
             </select>
           </label>
           <label class="full">
