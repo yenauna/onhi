@@ -28,9 +28,12 @@ const getTodayString = () => {
 };
 
 const initializeObservationDate = () => {
-  const dateInput = document.getElementById('obs-date');
-  if (!dateInput) return;
-  if (!dateInput.value) dateInput.value = getTodayString();
+  const startInput = document.getElementById('obs-date-start');
+  const endInput = document.getElementById('obs-date-end');
+  if (!startInput && !endInput) return;
+  const today = getTodayString();
+  if (startInput && !startInput.value) startInput.value = today;
+  if (endInput && !endInput.value) endInput.value = today;
 };
 
 const renderObservationTemplates = () => {
@@ -91,11 +94,27 @@ const renderObservationStudentOptions = () => {
   }
 };
 
+const getMonthRange = (monthValue) => {
+  if (!monthValue) return null;
+  const [yearText, monthText] = monthValue.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  if (!year || !month) return null;
+  const lastDay = new Date(year, month, 0).getDate();
+  return {
+    start: `${yearText}-${pad2(month)}-01`,
+    end: `${yearText}-${pad2(month)}-${pad2(lastDay)}`,
+  };
+};
+
 const getObservationFilters = () => ({
-  date: document.getElementById('obs-filter-date')?.value || '',
+  startDate: document.getElementById('obs-filter-start')?.value || '',
+  endDate: document.getElementById('obs-filter-end')?.value || '',
+  month: document.getElementById('obs-filter-month')?.value || '',
   studentId: document.getElementById('obs-filter-student')?.value || '',
   type: document.getElementById('obs-filter-type')?.value || '',
   ability: document.getElementById('obs-filter-ability')?.value || '',
+  sort: document.getElementById('obs-filter-sort')?.value || 'latest',
   search: document.getElementById('obs-filter-search')?.value.trim().toLowerCase() || '',
 });
 
@@ -103,15 +122,16 @@ const renderObservationList = () => {
   const listEl = document.getElementById('obs-list');
   if (!listEl) return;
   const filters = getObservationFilters();
+  const monthRange = getMonthRange(filters.month);
+  const rangeStart = monthRange?.start || filters.startDate;
+  const rangeEnd = monthRange?.end || filters.endDate;
   const list = ObservationStorage.loadObservations()
     .slice()
-    .sort((a, b) => {
-      const dateDiff = String(b.date || '').localeCompare(String(a.date || ''));
-      if (dateDiff !== 0) return dateDiff;
-      return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
-    })
     .filter(item => {
-      if (filters.date && item.date !== filters.date) return false;
+      const recordStart = item.startDate || item.date || '';
+      const recordEnd = item.endDate || item.date || '';
+      if (rangeStart && String(recordEnd) < String(rangeStart)) return false;
+      if (rangeEnd && String(recordStart) > String(rangeEnd)) return false;
       if (filters.studentId && String(item.studentId) !== String(filters.studentId)) return false;
       if (filters.type && item.type !== filters.type) return false;
       if (filters.ability && item.ability !== filters.ability) return false;
@@ -123,10 +143,22 @@ const renderObservationList = () => {
           item.type,
           item.ability,
           item.date,
+          item.startDate,
+          item.endDate,
         ].join(' ').toLowerCase();
         if (!haystack.includes(filters.search)) return false;
       }
       return true;
+      })
+    .sort((a, b) => {
+      if (filters.sort === 'input') {
+        return String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+      }
+      const dateA = a.startDate || a.date || '';
+      const dateB = b.startDate || b.date || '';
+      const dateDiff = String(dateB).localeCompare(String(dateA));
+      if (dateDiff !== 0) return dateDiff;
+      return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
     });
 
   listEl.innerHTML = '';
@@ -142,7 +174,18 @@ const renderObservationList = () => {
     const row = document.createElement('div');
     row.className = 'obs-item';
     const memo = item.memo ? `<div class="meta">${escapeHTML(item.memo)}</div>` : '';
-    const dateLabel = formatKoreanDate?.(item.date) ?? item.date;
+    const startDate = item.startDate || item.date || '';
+    const endDate = item.endDate || item.date || '';
+    const formattedStart = formatKoreanDate?.(startDate) ?? startDate;
+    const formattedEnd = formatKoreanDate?.(endDate) ?? endDate;
+    const dateLabel = startDate && endDate && startDate !== endDate
+      ? `${formattedStart} ~ ${formattedEnd}`
+      : formattedStart || formattedEnd;
+    const typeClass = item.type === '칭찬'
+      ? 'type-praise'
+      : item.type === '조언'
+        ? 'type-advice'
+        : 'type-record';
     row.innerHTML = `
       <div class="meta">${escapeHTML(dateLabel)}</div>
       <div class="note">
@@ -150,7 +193,7 @@ const renderObservationList = () => {
         <div>${escapeHTML(item.template || '')}</div>
         ${memo}
       </div>
-      <div class="chip">${escapeHTML(item.type || '')}</div>
+      <div class="chip type-chip ${typeClass}">${escapeHTML(item.type || '')}</div>
       <div class="chip">${escapeHTML(item.ability || '')}</div>
       <button type="button" data-id="${escapeHTML(item.id)}">삭제</button>
     `;
@@ -164,36 +207,39 @@ const addObservationRecord = () => {
   const abilitySelect = document.getElementById('obs-ability');
   const templateSelect = document.getElementById('obs-template');
   const memoInput = document.getElementById('obs-memo');
-  const dateInput = document.getElementById('obs-date');
-
-  const studentOption = studentSelect?.options[studentSelect.selectedIndex];
-  const studentId = studentOption?.value || '';
-  const studentName = studentOption?.dataset.name || '';
+  const studentOptions = Array.from(studentSelect?.selectedOptions || []);
   const type = typeSelect?.value || '';
   const ability = abilitySelect?.value || '';
   const template = templateSelect?.value || '';
   const memo = memoInput?.value.trim() || '';
-  const date = dateInput?.value || '';
+  const startDate = document.getElementById('obs-date-start')?.value || '';
+  const endDate = document.getElementById('obs-date-end')?.value || '';
 
-  if (!studentId) { alert('학생을 선택하세요.'); return; }
+  if (studentOptions.length === 0) { alert('학생을 선택하세요.'); return; }
   if (!type) { alert('종류를 선택하세요.'); return; }
   if (!ability) { alert('능력치를 선택하세요.'); return; }
   if (!template) { alert('문장 템플릿을 선택하세요.'); return; }
-  if (!date) { alert('날짜를 선택하세요.'); return; }
-
-  const record = {
-    id: ObservationStorage.createObservationId(),
-    studentId,
-    studentName,
-    type,
-    ability,
-    template,
-    memo,
-    date,
-    createdAt: new Date().toISOString(),
-  };
-
-  ObservationStorage.addObservation(record);
+  if (!startDate || !endDate) { alert('기간을 선택하세요.'); return; }
+  if (String(endDate) < String(startDate)) { alert('기간 종료일이 시작일보다 빠릅니다.'); return; }
+  
+  studentOptions.forEach(option => {
+    const studentId = option.value || '';
+    const studentName = option.dataset.name || '';
+    const record = {
+      id: ObservationStorage.createObservationId(),
+      studentId,
+      studentName,
+      type,
+      ability,
+      template,
+      memo,
+      startDate,
+      endDate,
+      date: startDate,
+      createdAt: new Date().toISOString(),
+    };
+    ObservationStorage.addObservation(record);
+  });
   if (memoInput) memoInput.value = '';
   renderObservationList();
 };
@@ -201,10 +247,34 @@ const addObservationRecord = () => {
 const bindObservationEvents = () => {
   document.getElementById('obs-type')?.addEventListener('change', renderObservationTemplates);
   document.getElementById('obs-add-btn')?.addEventListener('click', addObservationRecord);
-  document.getElementById('obs-filter-date')?.addEventListener('change', renderObservationList);
+  document.getElementById('obs-filter-start')?.addEventListener('change', () => {
+    const monthInput = document.getElementById('obs-filter-month');
+    if (monthInput) monthInput.value = '';
+    renderObservationList();
+  });
+  document.getElementById('obs-filter-end')?.addEventListener('change', () => {
+    const monthInput = document.getElementById('obs-filter-month');
+    if (monthInput) monthInput.value = '';
+    renderObservationList();
+  });
+  document.getElementById('obs-filter-month')?.addEventListener('change', () => {
+    const monthInput = document.getElementById('obs-filter-month');
+    const monthRange = getMonthRange(monthInput?.value || '');
+    const startInput = document.getElementById('obs-filter-start');
+    const endInput = document.getElementById('obs-filter-end');
+    if (monthRange) {
+      if (startInput) startInput.value = monthRange.start;
+      if (endInput) endInput.value = monthRange.end;
+    }
+    renderObservationList();
+  });
+  document.getElementById('obs-filter-month-btn')?.addEventListener('click', () => {
+    document.getElementById('obs-filter-month')?.focus();
+  });
   document.getElementById('obs-filter-student')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-type')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-ability')?.addEventListener('change', renderObservationList);
+  document.getElementById('obs-filter-sort')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-search')?.addEventListener('input', renderObservationList);
   document.getElementById('obs-list')?.addEventListener('click', (event) => {
     const btn = event.target.closest('button[data-id]');
