@@ -783,4 +783,43 @@ function buildInstancesOn(targetDate){
 </script>
 
 </body>
+
+  <!-- ✅ Supabase 연결 테스트 코드: 성공하면 화면에 결과가 뜹니다 -->
+<div id="supabase-test" style="white-space:pre-wrap; font-family: monospace; padding:12px; border:1px solid #ccc; margin:12px;">
+연결 테스트 중...
+</div>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const SUPABASE_URL = "https://ytouzrchngqyuqafziad.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_WUrSn1U6sszhHrpEPOXwCA_ZQoJo6nW";
+
+  const out = document.getElementById("supabase-test");
+
+  function print(obj) {
+    out.textContent = JSON.stringify(obj, null, 2);
+  }
+
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // 1) 로그인 상태 확인
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+    // 2) students 테이블에서 1명만 읽기(읽기가 되면 연결 OK)
+    const { data: students, error: studentsError } =
+      await supabase.from("students").select("student_no,name").limit(1);
+
+    print({
+      ok: true,
+      session: sessionData?.session ? "로그인됨" : "로그인 안 됨",
+      sessionError: sessionError?.message || null,
+      students,
+      studentsError: studentsError?.message || null,
+    });
+  } catch (e) {
+    print({ ok: false, error: String(e) });
+  }
+</script>
 </html>
