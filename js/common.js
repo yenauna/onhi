@@ -106,18 +106,43 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
     return { list: normalized, changed };
   };
 
-  const loadStudentsCached = () => {
-    if (_studentsCache) return _studentsCache;
-    const raw = getJSON('students', []);
-    const { list, changed } = normalizeStudentsList(raw);
-    if (changed) setJSON('students', list);
-    _studentsCache = list;
+  const loadStudentsCached = async () => {
+  if (_studentsCache) return _studentsCache;
+
+  // 아직 supabaseClient 로딩 전이면 빈 배열
+  if (!window.supabase) {
+    console.warn("[Supabase] not ready yet");
+    _studentsCache = [];
     return _studentsCache;
-  };
+  }
+
+  const { data, error } = await window.supabase
+    .from("student_directory")
+    .select("student_no, name, gender")
+    .order("student_no", { ascending: true });
+
+  if (error) {
+    console.error("학생 목록 불러오기 실패", error);
+    _studentsCache = [];
+    return _studentsCache;
+  }
+
+  const raw = (data || []).map(s => ({
+    no: s.student_no,
+    name: s.name,
+    gender: s.gender
+  }));
+
+  const { list } = normalizeStudentsList(raw);
+
+  // ✅ localStorage 저장은 이제 안 함 (동기화 목적)
+  _studentsCache = list;
+  return _studentsCache;
+};
   const invalidateStudentsCache = () => { _studentsCache = null; };
 
    // students 로딩 (배열 또는 {students:[...]})
-  const loadStudents = () => loadStudentsCached().map(stu => ({ ...stu }));
+ const loadStudents = async () => (await loadStudentsCached()).map(stu => ({ ...stu }));
 
   // 학생 정렬(id 숫자, 50 초과는 뒤로)
   function sortStudents(arr){

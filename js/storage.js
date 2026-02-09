@@ -67,7 +67,7 @@ const updateObservation = (id, patch) => {
   return list;
 };
 
-const migrateLegacyDoneToUIDOnce = ({ loadStudentsCached } = {}) => {
+const migrateLegacyDoneToUIDOnce = async ({ loadStudentsCached } = {}) => {
   const FLAG = 'migratedDoneToUID';
   if (localStorage.getItem(FLAG) === 'yes') return;
 
@@ -81,8 +81,8 @@ const migrateLegacyDoneToUIDOnce = ({ loadStudentsCached } = {}) => {
   all.forEach(task => byDateText.set(`${task.date}@@${task.text}`, task.id));
 
   const students = typeof loadStudentsCached === 'function'
-    ? loadStudentsCached().map(stu => stu.name)
-    : [];
+  ? (await loadStudentsCached()).map(stu => stu.name)
+  : [];
 
   students.forEach(name => {
     const store = getDoneTasks(name) || {};
@@ -105,10 +105,9 @@ const migrateLegacyDoneToUIDOnce = ({ loadStudentsCached } = {}) => {
   localStorage.setItem(FLAG, 'yes');
 };
 
-const purgeLegacyDoneKeysForAllStudents = ({ loadStudentsCached } = {}) => {
-  const students = typeof loadStudentsCached === 'function'
-    ? loadStudentsCached().map(stu => stu.name)
-    : [];
+const purgeLegacyDoneKeysForAllStudents = async ({ loadStudentsCached } = {}) => {  const students = typeof loadStudentsCached === 'function'
+  ? (await loadStudentsCached()).map(stu => stu.name)
+  : [];
   const uidRegex = /^t_[0-9a-z]+_[0-9a-z]+$/i;
 
   students.forEach(name => {
