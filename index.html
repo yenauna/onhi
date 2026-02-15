@@ -9,6 +9,7 @@
 
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="stylesheet" href="css/common.css">
+  <script src="js/supabaseClient.js"></script>
   <script src="js/common.js" defer></script>
   <script src="js/challenges.js" defer></script>
 
@@ -317,7 +318,7 @@ function buildInstancesFromTasks(){
   return out;
 }
 
-    function renderChallengeSuccesses(stripId){
+   async function renderChallengeSuccesses(stripId){
     const strip = document.getElementById(stripId);
     if(!strip) return;
     Array.from(strip.querySelectorAll('.challenge-success')).forEach(el=>el.remove());
@@ -328,7 +329,7 @@ function buildInstancesFromTasks(){
         : [];
     const byId = {};
     challenges.forEach(ch => byId[ch.id] = ch);
-    const students = loadStudents();
+    const students = await loadStudents();
     students.forEach(stu=>{
       const map = getJSON('challengeStatus-'+stu.name, {}) || {};
       Object.keys(map).forEach(id=>{
@@ -367,7 +368,7 @@ function buildInstancesFromTasks(){
   }
     
     // =============== 보드 렌더 ===============
-    function renderBoard(){
+    async function renderBoard(){
       const board = document.getElementById('board');
       board.innerHTML = '';
       renderEventsStrip('events-strip'); // 오늘 일정 먼저
@@ -375,7 +376,7 @@ function buildInstancesFromTasks(){
 
       const mode = localStorage.getItem('boardMode') === 'edit' ? 'edit' : 'view';
 
-      const students = sortStudents(loadStudents());
+      const students = sortStudents(await loadStudents());
       const instances = buildInstancesFromTasks();
 
       // 오늘과 과거만(미래 제외)
@@ -523,7 +524,7 @@ function confirmStudentLogin(){
   if (!_loginSelected) return;
   const input = document.getElementById('studentPwInput');
   const pw = input ? input.value.trim() : '';
-  const students = loadStudents(); // 기존 공통 함수 사용
+  const students = await loadStudents(); // 기존 공통 함수 사용
   const stu = students.find(s => s.name === _loginSelected);
   if (!stu) { alert('학생 정보를 찾지 못했습니다.'); return; }
   if (stu.password === pw){
