@@ -520,7 +520,7 @@ function closeLoginPanel(){
   if (modal) modal.style.display = 'none';
   _loginSelected = null;
 }
-function confirmStudentLogin(){
+async function confirmStudentLogin(){
   if (!_loginSelected) return;
   const input = document.getElementById('studentPwInput');
   const pw = input ? input.value.trim() : '';
