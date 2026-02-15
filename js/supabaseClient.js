@@ -1,7 +1,7 @@
 // Supabase UMD 전역 방식 (안전 버전)
 (function () {
   const SUPABASE_URL = "https://ytouzrchngqyuqafziad.supabase.co";
-  const SUPABASE_ANON_KEY = "여기에_anon_key_붙여넣기";
+  const SUPABASE_ANON_KEY = "sb_publishable_WUrSn1U6sszhHrpEPOXwCA_ZQoJo6nW";
 
   const script = document.createElement("script");
   script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
