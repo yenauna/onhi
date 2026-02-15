@@ -110,13 +110,13 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
   if (_studentsCache) return _studentsCache;
 
   // 아직 supabaseClient 로딩 전이면 빈 배열
-  if (!window.supabase) {
+  if (!window.sb) {
     console.warn("[Supabase] not ready yet");
     _studentsCache = [];
     return _studentsCache;
   }
 
-  const { data, error } = await window.supabase
+  const { data, error } = await window.sb
     .from("student_directory")
     .select("student_no, name, gender")
     .order("student_no", { ascending: true });
