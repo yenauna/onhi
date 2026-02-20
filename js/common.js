@@ -81,79 +81,145 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
 
   // students 캐시
   let _studentsCache = null;
+  let _studentSource = null;
+  const STUDENT_TABLE_CANDIDATES = ['students', 'student', 'student_directory', 'onhi_students'];
+
+  const isRlsError = (error) => {
+    const message = String(error?.message || '').toLowerCase();
+    return message.includes('permission denied') || message.includes('row-level security') || message.includes('rls');
+  };
   const normalizeStudentsList = (value) => {
-    let list;
-    if (Array.isArray(value)) {
-      list = value;
-    } else if (value && Array.isArray(value.students)) {
-      list = value.students;
-    } else {
-      list = [];
+    const list = Array.isArray(value) ? value : [];
+    return {
+      list: list.map((stu) => {
+        const id = stu?.id ?? stu?.student_no ?? stu?.student_id ?? stu?.no ?? '';
+        const name = stu?.name ?? stu?.student_name ?? '';
+        const password = stu?.password ?? stu?.student_password ?? stu?.pw ?? '';
+        const joined = stu?.joined ?? stu?.created_at ?? null;
+        const gender = stu?.gender === '여자' ? '여자' : '남자';
+        return { ...stu, id: String(id), name: String(name), password: String(password), joined, gender };
+      }),
+    };
+  };
+
+  const detectStudentSource = async (client) => {
+    if (_studentSource) return _studentSource;
+
+    for (const table of STUDENT_TABLE_CANDIDATES) {
+      const { data, error } = await client.from(table).select('*').limit(1);
+      console.log('[Students][probe] table check:', { table, data, error });
+    
+    if (error) {
+        if (isRlsError(error)) {
+          console.error('[Students][probe] RLS 정책 필요 (select)', { table, error });
+        }
+        continue;
+      }
+
+       _studentSource = {
+        table,
+        columns: Object.keys(data?.[0] || {}),
+      };
+      console.log('[Students][probe] detected source:', _studentSource);
+      return _studentSource;
     }
 
-    let changed = !Array.isArray(value);
-    const normalized = list.map(stu => {
-      if (stu && typeof stu === 'object') {
-        const gender = stu.gender === '여자' ? '여자' : '남자';
-        if (stu.gender !== gender) changed = true;
-        return { ...stu, gender };
-      } else {
-        changed = true;
-        return { id:'', name:'', password:'', gender:'남자' };
-      }
-    });
-
-    return { list: normalized, changed };
+    console.error('[Students] 학생 테이블 탐지 실패. 후보 테이블을 확인하세요:', STUDENT_TABLE_CANDIDATES);
+    return null;
   };
 
   const loadStudentsCached = async () => {
-  if (_studentsCache) return _studentsCache;
+    console.log('[Students] loadStudents() start');
 
-  // 아직 supabaseClient 로딩 전이면 빈 배열
-  if (!window.sb) {
-    console.warn("[Supabase] not ready yet");
-    _studentsCache = [];
+  if (_studentsCache) {
+      console.log('[Students] loadStudents() cache hit', { rows: _studentsCache.length });
+      return _studentsCache;
+    }
+
+  const client = await window.ensureSupabaseClient?.();
+    if (!client) {
+      console.error('[Students] Supabase client unavailable. URL/KEY 값을 확인하세요.');
+      _studentsCache = [];
+      return _studentsCache;
+    }
+
+    const source = await detectStudentSource(client);
+    if (!source) {
+      _studentsCache = [];
+      return _studentsCache;
+    }
+
+  const { data, error } = await client.from(source.table).select('*');
+    console.log('[Students] loadStudents() raw result:', { table: source.table, data, error });
+
+    if (error) {
+      if (isRlsError(error)) {
+        console.error('[Students] RLS 정책 필요: students select 권한이 없습니다.', error);
+      }
+      _studentsCache = [];
+      return _studentsCache;
+    }
+
+    const { list } = normalizeStudentsList(data || []);
+    _studentsCache = list;
+    console.log('[Students] loadStudents() end', { rows: _studentsCache.length });
     return _studentsCache;
-  }
+  };
 
-  const { data, error } = await window.sb
-    .from("student_directory")
-    .select("student_no, name, gender")
-    .order("student_no", { ascending: true });
+  const invalidateStudentsCache = () => {
+    _studentsCache = null;
+  };
 
-  if (error) {
-    console.error("학생 목록 불러오기 실패", error);
-    _studentsCache = [];
-    return _studentsCache;
-  }
+  const loadStudents = async () => (await loadStudentsCached()).map(stu => ({ ...stu }));
 
-  const raw = (data || []).map(s => ({
-    no: s.student_no,
-    name: s.name,
-    gender: s.gender
-  }));
+  const addStudentToSupabase = async (student) => {
+    const client = await window.ensureSupabaseClient?.();
+    if (!client) {
+      console.error('[Students] addStudent() failed: Supabase client unavailable');
+      return { data: null, error: new Error('Supabase client unavailable') };
+    }
 
-  const { list } = normalizeStudentsList(raw);
+    const source = await detectStudentSource(client);
+    if (!source) {
+      return { data: null, error: new Error('Student table not found') };
+    }
 
-  // ✅ localStorage 저장은 이제 안 함 (동기화 목적)
-  _studentsCache = list;
-  return _studentsCache;
-};
-  const invalidateStudentsCache = () => { _studentsCache = null; };
+    const base = {
+      id: student.id,
+      student_no: student.id,
+      name: student.name,
+      student_name: student.name,
+      password: student.password,
+      student_password: student.password,
+      gender: student.gender,
+      created_at: student.joined,
+      joined: student.joined,
+    };
 
-   // students 로딩 (배열 또는 {students:[...]})
- const loadStudents = async () => (await loadStudentsCached()).map(stu => ({ ...stu }));
+    const payload = Object.fromEntries(
+      Object.entries(base).filter(([key, value]) => {
+        if (value == null || value === '') return false;
+        if (source.columns.length === 0) return ['id', 'student_no', 'name', 'password', 'gender'].includes(key);
+        return source.columns.includes(key);
+      })
+    );
 
-  // 학생 정렬(id 숫자, 50 초과는 뒤로)
-  function sortStudents(arr){
-    const toNum = v => { const n = parseInt(String(v),10); return isNaN(n)?0:n; };
-    return (arr||[]).slice().sort((a,b)=>{
-      const an=toNum(a.id), bn=toNum(b.id);
-      const ag=an>50?1:0, bg=bn>50?1:0;
-      if (ag!==bg) return ag-bg;
-      return an-bn;
-    });
-  }
+    const insertPayload = Object.keys(payload).length ? payload : { name: student.name };
+    console.log('[Students] addStudent() insert attempt:', { table: source.table, insertPayload });
+
+    const { data, error } = await client.from(source.table).insert(insertPayload).select('*').maybeSingle();
+    if (error) {
+      if (isRlsError(error)) {
+        console.error('[Students] RLS 정책 필요: students insert 권한이 없습니다.', error);
+      }
+      console.error('[Students] addStudent() failed:', error);
+      return { data: null, error };
+    }
+
+    invalidateStudentsCache();
+    console.log('[Students] addStudent() success:', data);
+    return { data, error: null };
+  };
    
   // teacherTasks-* 전부 로드
   const loadAllTeacherTasks = () => {
@@ -361,7 +427,7 @@ function renderEventsStrip(containerId, options={}){
     toDateStrict, formatKoreanDate,
     getJSON, setJSON, normalizeDate,
     getDoneStore, setDoneStore,
-    loadStudentsCached, invalidateStudentsCache, loadStudents, sortStudents, loadAllTeacherTasks,
+    loadStudentsCached, invalidateStudentsCache, loadStudents, addStudentToSupabase, sortStudents, loadAllTeacherTasks,
     ensureHolidays,
     genUID, getTasks, setTasks, migrateToUIDOnce,
     occursOn, renderEventsStrip,
