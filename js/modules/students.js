@@ -1,3 +1,5 @@
+const { loadStudents, sortStudents, invalidateStudentsCache, pad2, addStudentToSupabase } = window;
+
 const getJSON = window.getJSON || ((key, fallback = null) => {
   try {
     const raw = localStorage.getItem(key);
@@ -9,15 +11,6 @@ const getJSON = window.getJSON || ((key, fallback = null) => {
 const setJSON = window.setJSON || ((key, value) => {
   localStorage.setItem(key, JSON.stringify(value));
 });
-
-const { loadStudents, sortStudents, invalidateStudentsCache, pad2 } = window;
-
-const getStudentsSorted = () => sortStudents(loadStudents());
-
-const saveStudents = (students) => {
-  setJSON('students', students);
-  invalidateStudentsCache?.();
-};
 
 const setGenderButtonState = (btn, gender) => {
   if (!btn) return;
@@ -35,8 +28,9 @@ const toggleGender = (btn) => {
   setGenderButtonState(btn, next);
 };
 
-const renderStudentList = () => {
-  const students = getStudentsSorted();
+const renderStudentList = async () => {
+  console.log('[Students] renderStudentList() start');
+  const students = sortStudents(await loadStudents());
   const showAll = document.getElementById('show-all-passwords')?.checked;
   const tbody = document.querySelector('#student-list tbody');
   if (!tbody) return;
@@ -74,6 +68,8 @@ const renderStudentList = () => {
     tbody.appendChild(tr);
     setGenderButtonState(tr.querySelector('.gender-toggle-btn'), gender);
   });
+
+  console.log('[Students] renderStudentList() end', { rows: students.length });
 };
 
 const toggleRowPw = (checkboxEl) => {
@@ -93,7 +89,9 @@ const toggleAllPw = (masterCheckbox) => {
     .forEach(cb => (cb.checked = show));
 };
 
-const addStudent = () => {
+const addStudent = async () => {
+  console.log('[Students] addStudent() click event triggered');
+  
   const id = document.getElementById('new-student-id').value.trim();
   const name = document.getElementById('new-student-name').value.trim();
   const password = document.getElementById('new-student-password').value.trim();
@@ -105,27 +103,38 @@ const addStudent = () => {
     return;
   }
 
-  const students = loadStudents();
-  if (students.some(s => s.id === id)) {
+  const students = await loadStudents();
+  if (students.some(s => String(s.id) === String(id))) {
     alert('이미 존재하는 번호입니다.');
     return;
   }
 
   const today = new Date();
   const joined = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
-  students.push({ id, name, password, joined, gender });
-  saveStudents(students);
+ 
+  const { error } = await addStudentToSupabase({ id, name, password, joined, gender });
+  if (error) {
+    alert(`학생 추가 실패: ${error.message || '알 수 없는 오류'}`);
+    return;
+  }
 
   document.getElementById('new-student-id').value = '';
   document.getElementById('new-student-name').value = '';
   document.getElementById('new-student-password').value = '';
   setGenderButtonState(genderBtn, '남자');
-  renderStudentList();
+
+  invalidateStudentsCache?.();
+  await renderStudentList();
   window.dispatchEvent(new Event('students:updated'));
   window.renderStudentStatus?.();
 };
 
-const saveStudentRow = (tr) => {
+const saveStudents = (students) => {
+  setJSON('students', students);
+  invalidateStudentsCache?.();
+};
+
+const saveStudentRow = async (tr) => {
   const newId = tr.querySelector('input[data-field="id"]').value.trim();
   const newName = tr.querySelector('input[data-field="name"]').value.trim();
   const newPw = tr.querySelector('input[data-field="password"]').value.trim();
@@ -137,7 +146,7 @@ const saveStudentRow = (tr) => {
     return;
   }
 
-  const students = loadStudents();
+  const students = await loadStudents();
   const oldId = tr.dataset.originalId;
   const oldName = tr.dataset.originalName;
   const idx = students.findIndex(s => String(s.id) === String(oldId) && s.name === oldName);
@@ -156,24 +165,24 @@ const saveStudentRow = (tr) => {
   students[idx] = { ...prev, id: newId, name: newName, password: newPw, gender: newGender, joined };
   saveStudents(students);
 
-  renderStudentList();
+  await renderStudentList();
   window.dispatchEvent(new Event('students:updated'));
   window.renderStudentStatus?.();
 };
 
-const deleteStudentByRow = (tr) => {
+const deleteStudentByRow = async (tr) => {
   if (!confirm('정말 삭제하시겠습니까?')) return;
 
   const id = tr.dataset.originalId;
   const name = tr.dataset.originalName;
-  const students = loadStudents();
+  const students = await loadStudents();
   const idx = students.findIndex(s => String(s.id) === String(id) && s.name === name);
 
   if (idx >= 0) {
     students.splice(idx, 1);
     saveStudents(students);
 
-    renderStudentList();
+    await renderStudentList();
     window.dispatchEvent(new Event('students:updated'));
     window.renderStudentStatus?.();
   }
@@ -184,7 +193,9 @@ const bindStudentEvents = () => {
   setGenderButtonState(genderBtn, genderBtn?.dataset.gender || '남자');
   genderBtn?.addEventListener('click', () => toggleGender(genderBtn));
 
-  document.getElementById('add-student-btn')?.addEventListener('click', addStudent);
+  const addButton = document.getElementById('add-student-btn');
+  console.log('[Students] bind add button:', addButton ? 'connected' : 'missing #add-student-btn');
+  addButton?.addEventListener('click', addStudent);
   document.getElementById('show-all-passwords')?.addEventListener('change', (event) => {
     toggleAllPw(event.target);
   });
@@ -216,8 +227,8 @@ const initStudents = () => {
   bindStudentEvents();
 };
 
-const showStudents = () => {
-  renderStudentList();
+const showStudents = async () => {
+  await renderStudentList();
 };
 
 export { initStudents, showStudents };
