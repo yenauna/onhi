@@ -577,6 +577,36 @@ Uses localStorage via helper functions from common.js.
     await renderChallengeList();
   }
 
+  function bindTeacherChallengeEventsFallback(){
+    const bindClick = (id, handler) => {
+      const el = document.getElementById(id);
+      if (!el || el.dataset.chBound === '1') return;
+      el.dataset.chBound = '1';
+      el.addEventListener('click', handler);
+    };
+    const bindInput = (id, type, handler) => {
+      const el = document.getElementById(id);
+      if (!el || el.dataset.chBound === '1') return;
+      el.dataset.chBound = '1';
+      el.addEventListener(type, handler);
+    };
+
+    bindClick('challenges-new-btn', () => openChallengeForm(null));
+    bindInput('chl-search', 'input', () => renderChallengeList());
+    bindInput('chl-sort', 'change', () => renderChallengeList());
+    bindClick('challenge-save-btn', () => saveChallengeFromForm());
+    bindClick('challenge-cancel-btn', () => cancelChallengeForm());
+    bindClick('challenge-back-btn', () => backToListFromStatus());
+    bindClick('challenge-bulk-done', () => bulkMarkStatus(true));
+    bindClick('challenge-bulk-undone', () => bulkMarkStatus(false));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindTeacherChallengeEventsFallback);
+  } else {
+    bindTeacherChallengeEventsFallback();
+  }
+
   window.addEventListener('onhi:cloud-sync-applied', () => {
     const currentStudent = localStorage.getItem('currentStudent');
     if (currentStudent && document.getElementById('challenges-container')) {
