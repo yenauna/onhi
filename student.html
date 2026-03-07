@@ -751,12 +751,13 @@ function buildInstancesOn(targetDate){
     renderTasks();
   };
 
-  window.onload = () => {
+  window.onload = async () => {
     if (typeof migrateToUIDOnce === 'function') migrateToUIDOnce();
     const savedStudent = localStorage.getItem('currentStudent');
     if (savedStudent) {
       currentStudent = savedStudent;
-      const stu = (loadStudents() || []).find(s => s.name === currentStudent) || null;
+      const students = await loadStudents();
+      const stu = (students || []).find(s => s.name === currentStudent) || null;
       joinDate = stu?.joined || '0000-00-00';
       joinDateObj = stu?.joined ? new Date(stu.joined) : new Date(0);
       joinDateObj.setHours(0,0,0,0);
