@@ -8,17 +8,20 @@ const OBS_TEMPLATES = {
     '친구에게 친절하게 도와줬어요.',
     '과제를 끝까지 집중해서 마무리했어요.',
   ],
+  '기록': [
+    '과제 미제출',
+    '수업 중 집중 어려움',
+    '지각으로 활동 일부 참여',
+  ],
   '조언': [
     '다음엔 질문 전에 손을 들어볼까요?',
     '활동 순서를 조금 더 천천히 따라가봐요.',
     '집중이 흐트러질 때는 잠깐 심호흡을 해봅시다.',
   ],
-  '기록(0점)': [
-    '과제 미제출',
-    '수업 중 집중 어려움',
-    '지각으로 활동 일부 참여',
-  ],
 };
+
+let selectedStudentIds = new Set();
+let editingObservationId = '';
 
 const getStudentsSorted = async () => sortStudents(await loadStudents());
 
@@ -28,11 +31,10 @@ const getTodayString = () => {
 };
 
 const initializeObservationDate = () => {
-  const startInput = document.getElementById('obs-date-start');
-  const endInput = document.getElementById('obs-date-end');
-  if (!startInput && !endInput) return;
+  const dateInput = document.getElementById('obs-date');
+  if (!dateInput) return;
   const today = getTodayString();
-  if (startInput && !startInput.value) startInput.value = today;
+  if (!dateInput.value) dateInput.value = today;
   if (endInput && !endInput.value) endInput.value = today;
 };
 
@@ -55,25 +57,38 @@ const renderObservationTemplates = () => {
   });
 };
 
-const renderObservationStudentOptions = async () => {
-  const formSelect = document.getElementById('obs-student');
+const setAddButtonLabel = () => {
+  const addBtn = document.getElementById('obs-add-btn');
+  if (!addBtn) return;
+  addBtn.textContent = editingObservationId ? '수정' : '저장';
+};
+
+const formBox = document.getElementById('obs-student');
+  const formBox = document.getElementById('obs-student');
   const filterSelect = document.getElementById('obs-filter-student');
   const students = await getStudentsSorted();
 
-  if (formSelect) {
-    formSelect.innerHTML = '';
+  if (formBox) {
+    formBox.innerHTML = '';
     if (students.length === 0) {
-      const option = document.createElement('option');
-      option.value = '';
-      option.textContent = '학생 없음';
-      formSelect.appendChild(option);
+      const empty = document.createElement('div');
+      empty.className = 'obs-card';
+      empty.textContent = '학생 없음';
+      formBox.appendChild(empty);
     } else {
+      selectedStudentIds = new Set(
+        [...selectedStudentIds].filter(id => students.some(stu => String(stu.id) === String(id))),
+      );
       students.forEach(stu => {
-        const option = document.createElement('option');
-        option.value = stu.id;
-        option.dataset.name = stu.name;
-        option.textContent = `${stu.id} ${stu.name}`;
-        formSelect.appendChild(option);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'obs-student-card';
+        button.dataset.id = stu.id;
+        button.dataset.name = stu.name;
+        button.textContent = stu.name;
+        button.title = `${stu.id} ${stu.name}`;
+        if (selectedStudentIds.has(String(stu.id))) button.classList.add('is-selected');
+        formBox.appendChild(button);
       });
     }
   }
@@ -108,8 +123,7 @@ const getMonthRange = (monthValue) => {
 };
 
 const getObservationFilters = () => ({
-  startDate: document.getElementById('obs-filter-start')?.value || '',
-  endDate: document.getElementById('obs-filter-end')?.value || '',
+  date: document.getElementById('obs-filter-start')?.value || '',
   month: document.getElementById('obs-filter-month')?.value || '',
   studentId: document.getElementById('obs-filter-student')?.value || '',
   type: document.getElementById('obs-filter-type')?.value || '',
@@ -123,15 +137,14 @@ const renderObservationList = () => {
   if (!listEl) return;
   const filters = getObservationFilters();
   const monthRange = getMonthRange(filters.month);
-  const rangeStart = monthRange?.start || filters.startDate;
-  const rangeEnd = monthRange?.end || filters.endDate;
+  const rangeStart = monthRange?.start || filters.date;
+  const rangeEnd = monthRange?.end || filters.date;
   const list = ObservationStorage.loadObservations()
     .slice()
     .filter(item => {
-      const recordStart = item.startDate || item.date || '';
-      const recordEnd = item.endDate || item.date || '';
-      if (rangeStart && String(recordEnd) < String(rangeStart)) return false;
-      if (rangeEnd && String(recordStart) > String(rangeEnd)) return false;
+      const recordDate = item.date || item.startDate || '';
+      if (rangeStart && String(recordDate) < String(rangeStart)) return false;
+      if (rangeEnd && String(recordDate) > String(rangeEnd)) return false;
       if (filters.studentId && String(item.studentId) !== String(filters.studentId)) return false;
       if (filters.type && item.type !== filters.type) return false;
       if (filters.ability && item.ability !== filters.ability) return false;
@@ -143,19 +156,17 @@ const renderObservationList = () => {
           item.type,
           item.ability,
           item.date,
-          item.startDate,
-          item.endDate,
         ].join(' ').toLowerCase();
         if (!haystack.includes(filters.search)) return false;
       }
       return true;
-      })
+    })
     .sort((a, b) => {
       if (filters.sort === 'input') {
         return String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
       }
-      const dateA = a.startDate || a.date || '';
-      const dateB = b.startDate || b.date || '';
+      const dateA = a.date || a.startDate || '';
+      const dateB = b.date || b.startDate || '';
       const dateDiff = String(dateB).localeCompare(String(dateA));
       if (dateDiff !== 0) return dateDiff;
       return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
@@ -173,88 +184,108 @@ const renderObservationList = () => {
   list.forEach(item => {
     const row = document.createElement('div');
     row.className = 'obs-item';
-    const memo = item.memo ? `<div class="meta">${escapeHTML(item.memo)}</div>` : '';
-    const startDate = item.startDate || item.date || '';
-    const endDate = item.endDate || item.date || '';
-    const formattedStart = formatKoreanDate?.(startDate) ?? startDate;
-    const formattedEnd = formatKoreanDate?.(endDate) ?? endDate;
-    const dateLabel = startDate && endDate && startDate !== endDate
-      ? `${formattedStart} ~ ${formattedEnd}`
-      : formattedStart || formattedEnd;
+    const recordDate = item.date || item.startDate || '';
+    const formattedDate = formatKoreanDate?.(recordDate) ?? recordDate;
+    const memoText = [item.template || '', item.memo || ''].filter(Boolean).join(' · ');
     const typeClass = item.type === '칭찬'
       ? 'type-praise'
       : item.type === '조언'
         ? 'type-advice'
         : 'type-record';
     row.innerHTML = `
-      <div class="meta">${escapeHTML(dateLabel)}</div>
-      <div class="note">
-        <div><strong>${escapeHTML(item.studentName || '')}</strong></div>
-        <div>${escapeHTML(item.template || '')}</div>
-        ${memo}
-      </div>
-      <div class="chip type-chip ${typeClass}">${escapeHTML(item.type || '')}</div>
-      <div class="chip">${escapeHTML(item.ability || '')}</div>
-      <button type="button" data-id="${escapeHTML(item.id)}">삭제</button>
+      <div class="meta">${escapeHTML(formattedDate)}</div>
+      <div><strong>${escapeHTML(item.studentName || '')}</strong></div>
+      <div class="obs-ability">${escapeHTML(item.ability || '')}</div>
+      <button type="button" data-id="${escapeHTML(item.id)}">수정</button>
+      <div class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</div>
+      <div class="note">${escapeHTML(memoText)}</div>
     `;
     listEl.appendChild(row);
   });
 };
 
 const addObservationRecord = () => {
-  const studentSelect = document.getElementById('obs-student');
   const typeSelect = document.getElementById('obs-type');
   const abilitySelect = document.getElementById('obs-ability');
   const templateSelect = document.getElementById('obs-template');
   const memoInput = document.getElementById('obs-memo');
-  const studentOptions = Array
-    .from(studentSelect?.selectedOptions || [])
-    .filter(option => String(option.value || '').trim() !== '');
   const type = typeSelect?.value || '';
   const ability = abilitySelect?.value || '';
   const template = templateSelect?.value || '';
   const memo = memoInput?.value.trim() || '';
-  const startDate = document.getElementById('obs-date-start')?.value || '';
-  const endDate = document.getElementById('obs-date-end')?.value || '';
+  const date = document.getElementById('obs-date')?.value || '';
 
-  if (studentOptions.length === 0) { alert('학생을 선택하세요.'); return; }
+  if (selectedStudentIds.size === 0) { alert('학생을 선택하세요.'); return; }
   if (!type) { alert('종류를 선택하세요.'); return; }
   if (!ability) { alert('능력치를 선택하세요.'); return; }
   if (!template) { alert('문장 템플릿을 선택하세요.'); return; }
-  if (!startDate || !endDate) { alert('기간을 선택하세요.'); return; }
-  if (String(endDate) < String(startDate)) { alert('기간 종료일이 시작일보다 빠릅니다.'); return; }
-  
-  studentOptions.forEach(option => {
-    const studentId = option.value || '';
-    const studentName = option.dataset.name || '';
-    const record = {
-      id: ObservationStorage.createObservationId(),
-      studentId,
-      studentName,
+  if (!date) { alert('날짜를 선택하세요.'); return; }
+
+  if (editingObservationId) {
+    const targetStudentId = [...selectedStudentIds][0];
+    const studentButton = document.querySelector(`.obs-student-card[data-id="${CSS.escape(String(targetStudentId))}"]`);
+    ObservationStorage.updateObservation(editingObservationId, {
+      studentId: targetStudentId,
+      studentName: studentButton?.dataset.name || '',
       type,
       ability,
       template,
       memo,
-      startDate,
-      endDate,
-      date: startDate,
-      createdAt: new Date().toISOString(),
-    };
-    ObservationStorage.addObservation(record);
-  });
+      date,
+      startDate: date,
+      endDate: date,
+    });
+    editingObservationId = '';
+  } else {
+    [...selectedStudentIds].forEach(studentId => {
+      const studentButton = document.querySelector(`.obs-student-card[data-id="${CSS.escape(String(studentId))}"]`);
+      const record = {
+        id: ObservationStorage.createObservationId(),
+        studentId,
+        studentName: studentButton?.dataset.name || '',
+        type,
+        ability,
+        template,
+        memo,
+        date,
+        startDate: date,
+        endDate: date,
+        createdAt: new Date().toISOString(),
+      };
+      ObservationStorage.addObservation(record);
+    });
+  }
   if (memoInput) memoInput.value = '';
+  selectedStudentIds = new Set();
+  document.querySelectorAll('.obs-student-card').forEach(el => el.classList.remove('is-selected'));
+  setAddButtonLabel();
   renderObservationList();
 };
 
 const bindObservationEvents = () => {
   document.getElementById('obs-type')?.addEventListener('change', renderObservationTemplates);
   document.getElementById('obs-add-btn')?.addEventListener('click', addObservationRecord);
-  document.getElementById('obs-filter-start')?.addEventListener('change', () => {
-    const monthInput = document.getElementById('obs-filter-month');
-    if (monthInput) monthInput.value = '';
-    renderObservationList();
+  document.getElementById('obs-student')?.addEventListener('click', (event) => {
+    const card = event.target.closest('.obs-student-card');
+    if (!card) return;
+    const id = String(card.dataset.id || '');
+    if (!id) return;
+    if (editingObservationId) {
+      selectedStudentIds = new Set([id]);
+      document.querySelectorAll('.obs-student-card').forEach(el => {
+        el.classList.toggle('is-selected', el === card);
+      });
+      return;
+    }
+    if (selectedStudentIds.has(id)) {
+      selectedStudentIds.delete(id);
+      card.classList.remove('is-selected');
+    } else {
+      selectedStudentIds.add(id);
+      card.classList.add('is-selected');
+    }
   });
-  document.getElementById('obs-filter-end')?.addEventListener('change', () => {
+  document.getElementById('obs-filter-start')?.addEventListener('change', () => {
     const monthInput = document.getElementById('obs-filter-month');
     if (monthInput) monthInput.value = '';
     renderObservationList();
@@ -263,11 +294,7 @@ const bindObservationEvents = () => {
     const monthInput = document.getElementById('obs-filter-month');
     const monthRange = getMonthRange(monthInput?.value || '');
     const startInput = document.getElementById('obs-filter-start');
-    const endInput = document.getElementById('obs-filter-end');
-    if (monthRange) {
-      if (startInput) startInput.value = monthRange.start;
-      if (endInput) endInput.value = monthRange.end;
-    }
+    if (monthRange && startInput) startInput.value = monthRange.start;
     renderObservationList();
   });
   document.getElementById('obs-filter-month-btn')?.addEventListener('click', () => {
@@ -283,9 +310,26 @@ const bindObservationEvents = () => {
     if (!btn) return;
     const id = btn.dataset.id;
     if (!id) return;
-    if (!confirm('해당 관찰 기록을 삭제할까요?')) return;
-    ObservationStorage.deleteObservation(id);
-    renderObservationList();
+    const target = ObservationStorage.loadObservations().find(item => item.id === id);
+    if (!target) return;
+
+    editingObservationId = id;
+    selectedStudentIds = new Set([String(target.studentId)]);
+    document.querySelectorAll('.obs-student-card').forEach(el => {
+      el.classList.toggle('is-selected', el.dataset.id === String(target.studentId));
+    });
+    const typeEl = document.getElementById('obs-type');
+    const abilityEl = document.getElementById('obs-ability');
+    const dateEl = document.getElementById('obs-date');
+    const memoEl = document.getElementById('obs-memo');
+    if (typeEl) typeEl.value = target.type || '칭찬';
+    renderObservationTemplates();
+    const templateEl = document.getElementById('obs-template');
+    if (templateEl) templateEl.value = target.template || '';
+    if (abilityEl) abilityEl.value = target.ability || '';
+    if (dateEl) dateEl.value = target.date || target.startDate || '';
+    if (memoEl) memoEl.value = target.memo || '';
+    setAddButtonLabel();
   });
 
   window.addEventListener('students:updated', async () => {
@@ -302,6 +346,7 @@ const showObservations = async () => {
   await renderObservationStudentOptions();
   initializeObservationDate();
   renderObservationTemplates();
+  setAddButtonLabel();
   renderObservationList();
 };
 
