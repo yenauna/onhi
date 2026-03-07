@@ -32,6 +32,7 @@ let viewYear = new Date().getFullYear();
 let viewMonth = new Date().getMonth();
 let editingVacIndex = null;
 let editingTaskId = null;
+let studentStatusRenderSeq = 0;
 
 const getStudentsSorted = async () => sortStudents(await loadStudents());
 const labelOf = (stu) => `${stu.id} ${stu.name}`;
@@ -819,11 +820,14 @@ const renderCalendar = async () => {
 const renderStudentStatus = async () => {
   const container = qs('#student-status-list');
   if (!container) return;
-  container.innerHTML = '';
+  const renderSeq = ++studentStatusRenderSeq;
 
   const all = getTasks();
   const today = normalizeDate(new Date());
   const students = await getStudentsSorted();
+  if (renderSeq !== studentStatusRenderSeq) return;
+
+  container.innerHTML = '';
   const showPE = localStorage.getItem('showPostponedExempt') !== 'no';
 
   const instances = [];
