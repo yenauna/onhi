@@ -577,6 +577,21 @@ Uses localStorage via helper functions from common.js.
     await renderChallengeList();
   }
 
+  window.addEventListener('onhi:cloud-sync-applied', () => {
+    const currentStudent = localStorage.getItem('currentStudent');
+    if (currentStudent && document.getElementById('challenges-container')) {
+      renderChallengesForStudent(currentStudent);
+    }
+    if (document.getElementById('challenge-list')) {
+      renderChallengeList();
+    }
+    const statusView = document.getElementById('challenge-status-view');
+    const challengeId = statusView?.dataset?.id;
+    if (challengeId && statusView?.style.display !== 'none') {
+      openChallengeStatus(challengeId);
+    }
+  });
+
   // 공개 API
   window.Challenges = {
     // 저장/조회
