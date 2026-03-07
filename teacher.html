@@ -529,8 +529,30 @@
     .obs-grid .full{
       grid-column: 1 / -1;
     }
-    .obs-grid select[multiple]{
-      min-height:120px;
+    .obs-student-cards{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      gap:6px;
+      max-height:180px;
+      overflow-y:auto;
+      padding:2px;
+    }
+    .obs-student-card{
+      border:1px solid #d9dde3;
+      border-radius:10px;
+      background:#fff;
+      font-size:13px;
+      padding:6px 4px;
+      text-align:center;
+      cursor:pointer;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .obs-student-card.is-selected{
+      background:#2e7d57;
+      border-color:#2e7d57;
+      color:#fff;
     }
     .obs-month{
       display:flex;
@@ -562,8 +584,8 @@
     }
     .obs-item{
       display:grid;
-      gap:8px;
-      grid-template-columns: 120px 1fr 120px 120px 140px;
+      gap:6px 12px;
+      grid-template-columns: 130px minmax(120px, 1fr) 90px 80px;
       align-items:center;
       border:1px solid #e6e8eb;
       border-radius:14px;
@@ -577,30 +599,18 @@
     .obs-item .note{
       font-size:14px;
       line-height:1.4;
+      grid-column: 2 / -1;
     }
-    .obs-item .chip{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid #e6e8eb;
-      font-size:12px;
-      background:#f6f7f8;
+    .obs-item .obs-type{
+      font-weight:700;
+      font-size:14px;
     }
-    .obs-item .chip.type-chip{
-      border-color:transparent;
-      color:#fff;
-      font-weight:600;
-    }
-    .obs-item .chip.type-praise{
-      background:#2563eb;
-    }
-    .obs-item .chip.type-advice{
-      background:#dc2626;
-    }
-    .obs-item .chip.type-record{
-      background:#111827;
+    .obs-item .obs-type.type-praise{ color:#2563eb; }
+    .obs-item .obs-type.type-advice{ color:#dc2626; }
+    .obs-item .obs-type.type-record{ color:#374151; }
+    .obs-item .obs-ability{
+      font-size:13px;
+      color:#374151;
     }
     .obs-item button{
       justify-self:end;
@@ -827,14 +837,14 @@
         <div class="obs-grid">
           <label class="full">
             학생 (복수 선택 가능)
-            <select id="obs-student" multiple size="4"></select>
+            <div id="obs-student" class="obs-student-cards"></div>
           </label>
           <label>
             종류
             <select id="obs-type">
               <option value="칭찬">칭찬</option>
+              <option value="기록">기록</option>
               <option value="조언">조언</option>
-              <option value="기록(0점)">기록(0점)</option>
             </select>
           </label>
           <label>
@@ -848,12 +858,8 @@
             </select>
           </label>
           <label>
-            기간 시작
-            <input type="date" id="obs-date-start" />
-          </label>
-          <label>
-            기간 종료
-            <input type="date" id="obs-date-end" />
+            날짜
+            <input type="date" id="obs-date" />
           </label>
           <label class="full">
             문장 템플릿
@@ -873,12 +879,8 @@
         <h3>관찰 기록 보기</h3>
         <div class="obs-grid">
           <label>
-            기간 시작
+            날짜
             <input type="date" id="obs-filter-start" />
-          </label>
-          <label>
-            기간 종료
-            <input type="date" id="obs-filter-end" />
           </label>
           <label>
             월
@@ -896,8 +898,8 @@
             <select id="obs-filter-type">
               <option value="">전체</option>
               <option value="칭찬">칭찬</option>
+              <option value="기록">기록</option>
               <option value="조언">조언</option>
-              <option value="기록(0점)">기록(0점)</option>
             </select>
           </label>
           <label>
