@@ -273,7 +273,7 @@ Uses localStorage via helper functions from common.js.
     const grid = document.getElementById('chf-student-selector');
     if (!grid) return;
     grid.innerHTML = '';
-    onst students = await getStudentsSortedAsync();
+    const students = await getStudentsSortedAsync();
     students.forEach(stu => {
       const card = document.createElement('div');
       card.className = 'student-card';
