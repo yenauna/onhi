@@ -1222,6 +1222,12 @@ const bindCalendarInteractions = () => {
     if (!date || !uid) return;
     selectTask(date, uid);
   });
+
+  window.addEventListener('onhi:cloud-sync-applied', () => {
+    renderEventsStrip?.('events-strip-teacher');
+    renderCalendar();
+    renderStudentStatus();
+  });
 };
 
 const bindTaskFormInteractions = () => {
