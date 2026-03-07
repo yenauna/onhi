@@ -92,16 +92,18 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
     const list = Array.isArray(value) ? value : [];
     return {
       list: list.map((stu) => {
-        const id = stu?.id ?? stu?.student_no ?? stu?.student_id ?? stu?.no ?? '';
+        const id = stu?.student_no ?? stu?.student_id ?? stu?.no ?? stu?.id ?? '';
         const name = stu?.name ?? stu?.student_name ?? '';
         const password = stu?.password ?? stu?.student_password ?? stu?.pw ?? '';
-        const joined = stu?.joined ?? stu?.created_at ?? null;
+         const joined = stu?.joined_date ?? stu?.joined ?? stu?.created_at ?? null;
         const gender = stu?.gender === '여자' ? '여자' : '남자';
         return { ...stu, id: String(id), name: String(name), password: String(password), joined, gender };
       }),
     };
   };
 
+  const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+  
   const detectStudentSource = async (client) => {
     if (_studentSource) return _studentSource;
 
@@ -203,7 +205,7 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
     }
 
     const base = {
-      id: student.id,
+      id: isUuid(student.id) ? student.id : undefined,
       student_no: student.id,
       name: student.name,
       student_name: student.name,
@@ -211,6 +213,7 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
       student_password: student.password,
       gender: student.gender,
       created_at: student.joined,
+      joined_date: student.joined,
       joined: student.joined,
     };
 
