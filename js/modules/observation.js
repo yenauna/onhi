@@ -3,21 +3,58 @@ import { ObservationStorage } from '../storage.js';
 const { pad2, escapeHTML, formatKoreanDate, sortStudents, loadStudents } = window;
 
 const OBS_TEMPLATES = {
-  '칭찬': [
-    '오늘 활동에 적극적으로 참여했어요.',
-    '친구에게 친절하게 도와줬어요.',
-    '과제를 끝까지 집중해서 마무리했어요.',
-  ],
-  '기록': [
-    '과제 미제출',
-    '수업 중 집중 어려움',
-    '지각으로 활동 일부 참여',
-  ],
-  '조언': [
-    '다음엔 질문 전에 손을 들어볼까요?',
-    '활동 순서를 조금 더 천천히 따라가봐요.',
-    '집중이 흐트러질 때는 잠깐 심호흡을 해봅시다.',
-  ],
+  '책임': {
+    '칭찬': [
+      '기한 내에 과제 제출.',
+      '맡은 일을 제대로 함.',
+    ],
+    '조언': [
+      '과제 미제출.',
+      '준비물을 챙기지 않음.',
+      '수업 시간에 떠들음.',
+      '복도에서 뜀.',
+    ],
+  },
+  '노력': {
+    '칭찬': [
+      '꾸준히 연습함.',
+      '주변에 도움을 요청하여 익히고 배움.',
+      '틀린 문제를 다시 풀어봄.',
+      '부정적인 감정을 스스로 조절함.',
+    ],
+    '조언': [
+      '시작을 미룸.',
+      '어려움을 느끼자마자 포기함.',
+      '집중하려는 시도 없이 계속 산만한 모습을 보임.',
+    ],
+  },
+  '성취': {
+    '칭찬': [
+      '시험 점수 상승함.',
+      '조건에 맞게 과제를 완성함.',
+      '문제 푸는 속도가 빨라짐.',
+      '과제 완성도가 높음.',
+    ],
+    '조언': [
+      '과제 조건에 맞추지 못함.',
+      '같은 유형으로 실수를 반복함.',
+    ],
+  },
+  '관계': {
+    '칭찬': [
+      '친구를 도와줌.',
+      '친절하게 말함.',
+      '대화로 갈등을 해결함.',
+      '모둠 활동에서 협력함.',
+      '친구에게 먼저 다가감.',
+    ],
+    '조언': [
+      '놀림.',
+      '험한 말을 함.',
+      '다른 사람의 물건을 허락 없이 만짐.',
+      '다른 친구의 참여를 막음.',
+    ],
+  },
 };
 
 let selectedStudentIds = new Set();
@@ -41,9 +78,11 @@ const initializeObservationDate = () => {
 const renderObservationTemplates = () => {
   const select = document.getElementById('obs-template');
   const typeSelect = document.getElementById('obs-type');
-  if (!select || !typeSelect) return;
+  const abilitySelect = document.getElementById('obs-ability');
+  if (!select || !typeSelect || !abilitySelect) return;
   const type = typeSelect.value || '칭찬';
-  const templates = OBS_TEMPLATES[type] || [];
+  const ability = abilitySelect.value || '책임';
+  const templates = OBS_TEMPLATES[ability]?.[type] || [];
   select.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
@@ -217,7 +256,7 @@ const addObservationRecord = () => {
 
   if (selectedStudentIds.size === 0) { alert('학생을 선택하세요.'); return; }
   if (!type) { alert('종류를 선택하세요.'); return; }
-  if (!ability) { alert('능력치를 선택하세요.'); return; }
+  if (!ability) { alert('경치를 선택하세요.'); return; }
   if (!template) { alert('문장 템플릿을 선택하세요.'); return; }
   if (!date) { alert('날짜를 선택하세요.'); return; }
 
@@ -264,6 +303,7 @@ const addObservationRecord = () => {
 
 const bindObservationEvents = () => {
   document.getElementById('obs-type')?.addEventListener('change', renderObservationTemplates);
+  document.getElementById('obs-ability')?.addEventListener('change', renderObservationTemplates);
   document.getElementById('obs-add-btn')?.addEventListener('click', addObservationRecord);
   document.getElementById('obs-student')?.addEventListener('click', (event) => {
     const card = event.target.closest('.obs-student-card');
