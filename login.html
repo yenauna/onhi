@@ -202,20 +202,14 @@
     <div class="footer">© 오늘 할 일 onhi</div>
   </div>
 
-  <!-- Supabase CDN -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script>
-    const { createClient } = supabase;
-    const SUPABASE_URL = "https://ytouzrchngqyuqafziad.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_WUrSn1U6sszhHrpEPOXwCA_ZQoJo6nW";
-    window.sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  </script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/common.js"></script>
   <script>
     /* =========================================
-       학생 목록 로드 (localStorage.students 지원)
+       학생 목록 로드
        ========================================= */
-    function populateStudents() {
-      const students = sortStudents(loadStudents());
+    async function populateStudents() {
+      const students = sortStudents(await loadStudents());
       const sel = document.getElementById("student-select-login");
       sel.innerHTML = '<option value="">-- 선택하세요 --</option>';
 
@@ -265,7 +259,7 @@
     /* =========================================
        로그인 처리
        ========================================= */
-    function login() {
+    async function login() {
       const name = document.getElementById("student-select-login").value;
       const pass = pw.value.trim();
 
@@ -278,12 +272,7 @@
         return;
       }
 
-      const raw = localStorage.getItem("students");
-      const students = raw
-        ? (Array.isArray(JSON.parse(raw))
-            ? JSON.parse(raw)
-            : (JSON.parse(raw).students || []))
-        : [];
+      const students = await loadStudents();
 
       const ok = students.find(s => s.name === name && s.password === pass);
 
@@ -298,9 +287,9 @@
     }
 
     // 폼 제출 핸들러
-    document.getElementById("login-form").addEventListener("submit", (e) => {
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      login();
+      await login();
     });
 
     // 초기화
