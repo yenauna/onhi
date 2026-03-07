@@ -33,6 +33,24 @@ Uses localStorage via helper functions from common.js.
     });
   }
 
+  async function loadAllStudentNames(){
+    const students = await loadStudents();
+    return students.map(s => s.name);
+  }
+
+  async function getStudentsSortedAsync(){
+    if (typeof getStudentsSorted === 'function') {
+      const maybe = getStudentsSorted();
+      if (Array.isArray(maybe)) return maybe;
+      if (maybe && typeof maybe.then === 'function') {
+        const resolved = await maybe;
+        return Array.isArray(resolved) ? resolved : [];
+      }
+    }
+    const students = await loadStudents();
+    return sortStudents(students);
+  }
+  
   function getChallengeStatusFor(student, id){
     const map = getJSON('challengeStatus-' + student, {}) || {};
     return map[id] || null; // {s:'d', ts:...}
@@ -148,7 +166,7 @@ Uses localStorage via helper functions from common.js.
         });
         card.appendChild(stepsBox);
       } else {
-        card.onclick = () => {
+        card.onclick = async () => {
           setChallengeDone(student, ch.id, !doneSimple);
        renderChallengesForStudent(student);
         };
@@ -162,34 +180,37 @@ Uses localStorage via helper functions from common.js.
   }
 
 
-  function renderChallengeList(){
+  async function renderChallengeList(){
     const box = document.getElementById('challenge-list');
     if (!box) return;
     const keyword = (document.getElementById('chl-search')?.value || '').trim();
     const sort = document.getElementById('chl-sort')?.value || 'name';
     box.innerHTML = '';
-    let list = getChallenges().map(ch => {
-      const students = (ch.students && !ch.students.includes('전체')) ? ch.students : loadStudents().map(s=>s.name);
+    let list = [];
+    for (const ch of getChallenges()) {
+      const students = (ch.students && !ch.students.includes('전체')) ? ch.students : await loadAllStudentNames();
       const steps = Array.isArray(ch.steps) ? ch.steps : [];
       const max = steps.length;
-      let doneCnt=0, progCnt=0, noneCnt=0, progSum=0;
-      students.forEach(name=>{
+      let doneCnt = 0, progCnt = 0, noneCnt = 0, progSum = 0;
+      students.forEach(name => {
         const status = getChallengeStatusFor(name, ch.id);
-        const doneSimple = status && status.s==='d';
+        const doneSimple = status && status.s === 'd';;
         const p = getChallengeProgressFor(name, ch.id);
-        const curr = Math.min(p.step||0, max);
-        const done = max>0 ? curr>=max : doneSimple;
-        if(done){ doneCnt++; progSum +=1; }
-        else if(curr>0){ progCnt++; progSum += (max>0?curr/max:0); }
+        const curr = Math.min(p.step || 0, max);
+        const done = max > 0 ? curr >= max : doneSimple;
+        if (done) { doneCnt++; progSum += 1; }
+        else if (curr > 0) { progCnt++; progSum += (max > 0 ? curr / max : 0); }
         else { noneCnt++; }
       });
-      const avg = students.length>0 ? Math.round((progSum/students.length)*100) : 0;
-      return { ...ch, stats:{done:doneCnt, prog:progCnt, none:noneCnt, avg:avg, total:students.length} };
-    }).filter(ch => {
+      const avg = students.length > 0 ? Math.round((progSum / students.length) * 100) : 0;
+      list.push({ ...ch, stats: { done: doneCnt, prog: progCnt, none: noneCnt, avg, total: students.length } });
+    }
+
+    list = list.filter(ch => {
       if (!keyword) return true;
       const txt = (ch.title || '') + ' ' + (ch.desc || '');
       return txt.includes(keyword);
-      });
+    });
 
     list.sort((a,b)=>{
       if (sort==='incomplete') return (b.stats.prog + b.stats.none) - (a.stats.prog + a.stats.none);
@@ -219,11 +240,11 @@ Uses localStorage via helper functions from common.js.
       };
       const delBtn = document.createElement('button');
       delBtn.textContent = '삭제';
-      delBtn.onclick = (event) => {
+      delBtn.onclick = async (event) => {
         event.stopPropagation();
         if (confirm('삭제할까요?')) {
           deleteChallenge(ch.id);
-          renderChallengeList();
+          await renderChallengeList();
         }
       };
       right.append(editBtn, delBtn);
@@ -248,11 +269,11 @@ Uses localStorage via helper functions from common.js.
     }
   }
 
-  function renderChallengeStudentSelector(selected=[]){
+  async function renderChallengeStudentSelector(selected=[]){
     const grid = document.getElementById('chf-student-selector');
     if (!grid) return;
     grid.innerHTML = '';
-    const students = (typeof getStudentsSorted === 'function') ? getStudentsSorted() : loadStudents();
+    onst students = await getStudentsSortedAsync();
     students.forEach(stu => {
       const card = document.createElement('div');
       card.className = 'student-card';
@@ -268,7 +289,7 @@ Uses localStorage via helper functions from common.js.
     };
   }
 
-  function openChallengeForm(id){
+  async function openChallengeForm(id){
     const listView = document.getElementById('challenge-list-view');
     const formView = document.getElementById('challenge-form');
     const statusView = document.getElementById('challenge-status-view');
@@ -320,7 +341,7 @@ Uses localStorage via helper functions from common.js.
       activeInput.checked = ch.active !== false;
       const roster = ch.students || ['전체'];
       targetSel.value = roster.includes('전체') ? 'all' : 'selected';
-      renderChallengeStudentSelector(roster.includes('전체') ? [] : roster);
+      await renderChallengeStudentSelector(roster.includes('전체') ? [] : roster);;
       const grid = document.getElementById('chf-student-selector');
       if (grid) grid.style.display = targetSel.value === 'selected' ? 'flex' : 'none';
     } else {
@@ -335,13 +356,13 @@ Uses localStorage via helper functions from common.js.
         updateStepFields(0);
       }
       if (targetSel) targetSel.value = 'all';
-      renderChallengeStudentSelector([]);
+      await renderChallengeStudentSelector([]);
       const grid = document.getElementById('chf-student-selector');
       if (grid) grid.style.display = 'none';
     }
   }
 
-  function saveChallengeFromForm(){
+  async function saveChallengeFromForm(){
     const formView = document.getElementById('challenge-form');
     const id = formView.dataset.id || null;
     const title = document.getElementById('chf-title').value.trim();
@@ -372,7 +393,7 @@ Uses localStorage via helper functions from common.js.
     else ch.steps = [];
     upsertChallenge(ch);
     cancelChallengeForm();
-    renderChallengeList();
+    await renderChallengeList();
   }
 
   // --- [추가] 학생별 도전 진행도 저장소 ---
@@ -408,7 +429,7 @@ Uses localStorage via helper functions from common.js.
     if (formView) formView.dataset.id = '';
   }
 
-  function openChallengeStatus(id){
+  async function openChallengeStatus(id){
   const listView = document.getElementById('challenge-list-view');
   const formView = document.getElementById('challenge-form');
   const statusView = document.getElementById('challenge-status-view');
@@ -440,7 +461,7 @@ Uses localStorage via helper functions from common.js.
   // 대상 학생
   const roster = (ch.students && !ch.students.includes('전체'))
     ? ch.students
-    : loadStudents().map(s=>s.name);
+    : await loadAllStudentNames();
 
   roster.forEach(name=>{
     // 기존(단일 완료) 상태
@@ -481,7 +502,7 @@ Uses localStorage via helper functions from common.js.
           <button type="button" class="to-zero">초기화</button>
         </div>`;
 
-      card.querySelector('.inc').onclick = ()=>{
+      card.querySelector('.inc').onclick = async ()=>{
         if (typeof incChallengeProgress === 'function') {
           incChallengeProgress(name, id, max);
         } else if (typeof setChallengeProgress === 'function') {
@@ -489,9 +510,9 @@ Uses localStorage via helper functions from common.js.
           const next = Math.min(curr+1, max);
           setChallengeProgress(name, id, next);
         }
-        openChallengeStatus(id);
+        await openChallengeStatus(id);
       };
-      card.querySelector('.dec').onclick = ()=>{
+      card.querySelector('.dec').onclick = async ()=>{
         if (typeof decChallengeProgress === 'function') {
           decChallengeProgress(name, id);
         } else if (typeof setChallengeProgress === 'function') {
@@ -499,15 +520,15 @@ Uses localStorage via helper functions from common.js.
           const next = Math.max(curr-1, 0);
           setChallengeProgress(name, id, next);
         }
-        openChallengeStatus(id);
+        await openChallengeStatus(id);
       };
-      card.querySelector('.to-max').onclick = ()=>{
+      card.querySelector('.to-max').onclick = async ()=>{
         if (typeof setChallengeProgress === 'function') setChallengeProgress(name, id, max);
-        openChallengeStatus(id);
+        await openChallengeStatus(id);
       };
-      card.querySelector('.to-zero').onclick = ()=>{
+      card.querySelector('.to-zero').onclick = async ()=>{
         if (typeof setChallengeProgress === 'function') setChallengeProgress(name, id, 0);
-        openChallengeStatus(id);
+        await openChallengeStatus(id);
       };
     } else {
       card.innerHTML = `
@@ -515,7 +536,7 @@ Uses localStorage via helper functions from common.js.
         <div class="ch-state">${done ? '✅ 완료' : '⭕ 미완료'}</div>`;
 
       card.style.cursor = 'pointer';
-      card.onclick = () => {
+      card.onclick = async () => {
         const mm = getJSON('challengeStatus-'+name, {}) || {};
         if(done) delete mm[id]; else mm[id]={s:'d', ts:new Date().toISOString()};
         setJSON('challengeStatus-'+name, mm);
@@ -526,7 +547,7 @@ Uses localStorage via helper functions from common.js.
   });
 }
 
-  function bulkMarkStatus(done){
+  async function bulkMarkStatus(done){
     if (done && !confirm('모두 완료로 바꾸시겠습니까?')) return;
     const id = document.getElementById('challenge-status-view').dataset.id;
     const ch = getChallenges().find(c=>c.id===id); if(!ch) return;
@@ -534,7 +555,7 @@ Uses localStorage via helper functions from common.js.
     const max = steps.length;
 
     const roster = (ch.students && !ch.students.includes('전체'))
-      ? ch.students : loadStudents().map(s=>s.name);
+      ? ch.students : await loadAllStudentNames();
 
     roster.forEach(name=>{
       if (max > 0){
@@ -545,15 +566,15 @@ Uses localStorage via helper functions from common.js.
         setJSON('challengeStatus-'+name, m);
       }
     });
-    openChallengeStatus(id);
+    await openChallengeStatus(id);
   }
   
-  function backToListFromStatus(){
+  async function backToListFromStatus(){
     const statusView = document.getElementById('challenge-status-view');
     const listView = document.getElementById('challenge-list-view');
     if(statusView) statusView.style.display='none';
     if(listView) listView.style.display='block';
-    renderChallengeList();
+    await renderChallengeList();
   }
 
   // 공개 API
