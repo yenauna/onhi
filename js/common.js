@@ -172,6 +172,24 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
 
   const loadStudents = async () => (await loadStudentsCached()).map(stu => ({ ...stu }));
 
+  const sortStudents = (list = []) => {
+    const students = Array.isArray(list) ? list.slice() : [];
+    return students.sort((a, b) => {
+      const aId = String(a?.id ?? '');
+      const bId = String(b?.id ?? '');
+      const aNum = Number(aId);
+      const bNum = Number(bId);
+      const bothNumeric = Number.isFinite(aNum) && Number.isFinite(bNum);
+
+      if (bothNumeric && aNum !== bNum) return aNum - bNum;
+      if (aId !== bId) return aId.localeCompare(bId, 'ko');
+
+      const aName = String(a?.name ?? '');
+      const bName = String(b?.name ?? '');
+      return aName.localeCompare(bName, 'ko');
+    });
+  };
+  
   const addStudentToSupabase = async (student) => {
     const client = await window.ensureSupabaseClient?.();
     if (!client) {
