@@ -751,6 +751,21 @@ function buildInstancesOn(targetDate){
     renderTasks();
   };
 
+  const refreshStudentViews = () => {
+    if (!currentStudent) return;
+    renderTasks();
+    if (calendarBox.style.display !== 'none') renderCalendar();
+  };
+
+  window.addEventListener('storage', (event) => {
+    if (!event.key) return;
+    if (event.key === 'tasksV2' || event.key === 'vacations' || event.key.startsWith('doneTasks-')) {
+      refreshStudentViews();
+    }
+  });
+
+  window.addEventListener('onhi:cloud-sync-applied', refreshStudentViews);
+  
   window.onload = async () => {
     if (typeof migrateToUIDOnce === 'function') migrateToUIDOnce();
     const savedStudent = localStorage.getItem('currentStudent');
