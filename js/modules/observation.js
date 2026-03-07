@@ -20,7 +20,7 @@ const OBS_TEMPLATES = {
   ],
 };
 
-const getStudentsSorted = () => sortStudents(loadStudents());
+const getStudentsSorted = async () => sortStudents(await loadStudents());
 
 const getTodayString = () => {
   const now = new Date();
@@ -55,10 +55,10 @@ const renderObservationTemplates = () => {
   });
 };
 
-const renderObservationStudentOptions = () => {
+const renderObservationStudentOptions = async () => {
   const formSelect = document.getElementById('obs-student');
   const filterSelect = document.getElementById('obs-filter-student');
-  const students = getStudentsSorted();
+  const students = await getStudentsSorted();
 
   if (formSelect) {
     formSelect.innerHTML = '';
@@ -207,7 +207,9 @@ const addObservationRecord = () => {
   const abilitySelect = document.getElementById('obs-ability');
   const templateSelect = document.getElementById('obs-template');
   const memoInput = document.getElementById('obs-memo');
-  const studentOptions = Array.from(studentSelect?.selectedOptions || []);
+  const studentOptions = Array
+    .from(studentSelect?.selectedOptions || [])
+    .filter(option => String(option.value || '').trim() !== '');
   const type = typeSelect?.value || '';
   const ability = abilitySelect?.value || '';
   const template = templateSelect?.value || '';
@@ -286,8 +288,8 @@ const bindObservationEvents = () => {
     renderObservationList();
   });
 
-  window.addEventListener('students:updated', () => {
-    renderObservationStudentOptions();
+  window.addEventListener('students:updated', async () => {
+    await renderObservationStudentOptions();
     renderObservationList();
   });
 };
@@ -296,8 +298,8 @@ const initObservations = () => {
   bindObservationEvents();
 };
 
-const showObservations = () => {
-  renderObservationStudentOptions();
+const showObservations = async () => {
+  await renderObservationStudentOptions();
   initializeObservationDate();
   renderObservationTemplates();
   renderObservationList();
