@@ -94,6 +94,19 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
   let _cloudSyncPendingTimer = null;
   let _cloudSyncReady = false;
   let _cloudSyncWriteMuted = false;
+  let _cloudSyncLastHash = '';
+  let _cloudSyncPullTimer = null;
+  let _cloudSyncPullRunning = false;
+
+  const stableStringify = (value) => {
+    if (value === null || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+    const keys = Object.keys(value).sort();
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(',')}}`;
+  };
+
+  const snapshotHash = (snapshot) => stableStringify(snapshot || {});
+
 
   const detectCloudSyncSource = async (client) => {
     if (_cloudSyncSource) return _cloudSyncSource;
@@ -158,7 +171,10 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
       _cloudSyncPendingTimer = null;
       const snapshot = collectLocalCloudSyncState();
       const ok = await saveCloudSyncSnapshot(snapshot);
-      if (ok) _cloudSyncSnapshot = { ...snapshot };
+      if (ok) {
+        _cloudSyncSnapshot = { ...snapshot };
+        _cloudSyncLastHash = snapshotHash(snapshot);
+      }
     }, 250);
   };
 
@@ -180,17 +196,52 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
     const snapshot = await readCloudSyncSnapshot();
     _cloudSyncReady = true;
     if (snapshot && Object.keys(snapshot).length > 0) {
-      _cloudSyncSnapshot = { ...snapshot };
+      _cloudSyncLastHash = snapshotHash(snapshot);;
       applyCloudSyncSnapshot(snapshot);
       return;
     }
     const local = collectLocalCloudSyncState();
     if (Object.keys(local).length > 0) {
       const ok = await saveCloudSyncSnapshot(local);
-      if (ok) _cloudSyncSnapshot = { ...local };
+      if (ok) {
+        _cloudSyncSnapshot = { ...local };
+        _cloudSyncLastHash = snapshotHash(local);
+      }
+      return;
+    }
+    _cloudSyncLastHash = snapshotHash({});
+  };
+
+  const pullCloudSyncSnapshot = async () => {
+    if (!_cloudSyncReady || _cloudSyncPullRunning) return;
+    _cloudSyncPullRunning = true;
+    try {
+      const snapshot = await readCloudSyncSnapshot();
+      if (!snapshot || typeof snapshot !== 'object') return;
+      const nextHash = snapshotHash(snapshot);
+      if (nextHash === _cloudSyncLastHash) return;
+      _cloudSyncSnapshot = { ...snapshot };
+      _cloudSyncLastHash = nextHash;
+      applyCloudSyncSnapshot(snapshot);
+    } finally {
+      _cloudSyncPullRunning = false;
     }
   };
 
+  const startCloudSyncPullLoop = () => {
+    if (_cloudSyncPullTimer) return;
+    _cloudSyncPullTimer = setInterval(() => {
+      pullCloudSyncSnapshot();
+    }, 2000);
+
+    window.addEventListener('focus', () => {
+      pullCloudSyncSnapshot();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') pullCloudSyncSnapshot();
+    });
+  };
+  
   if (!window.__onhiCloudSyncPatched) {
     const originalSetItem = localStorage.setItem.bind(localStorage);
     localStorage.setItem = (key, value) => {
@@ -205,7 +256,9 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
     window.__onhiCloudSyncPatched = true;
   }
 
-  initCloudStorageSync();
+  initCloudStorageSync().finally(() => {
+    startCloudSyncPullLoop();
+  });
   
   function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
   function setDoneStore(name, obj){ setJSON('doneTasks-'+name, obj || {}); }
