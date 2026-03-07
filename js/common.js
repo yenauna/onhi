@@ -72,6 +72,140 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
 
   const getJSON = (k, fb = null) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
   const setJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+  const CLOUD_SYNC_TABLES = ['onhi_shared_state', 'shared_state', 'app_state', 'onhi_app_state'];
+  const CLOUD_SYNC_SHAPES = [
+    { idCol: 'id', dataCol: 'payload' },
+    { idCol: 'key', dataCol: 'value' },
+    { idCol: 'name', dataCol: 'data' },
+  ];
+  const CLOUD_SYNC_ROW_ID = 'global';
+  const CLOUD_SYNC_PREFIXES = ['doneTasks-', 'challengeStatus-', 'challengeProgress-'];
+  const CLOUD_SYNC_KEYS = new Set(['tasksV2', 'challenges']);
+  const CLOUD_SYNC_EVENT = 'onhi:cloud-sync-applied';
+  const shouldCloudSync = (key) => {
+    if (!key) return false;
+    if (CLOUD_SYNC_KEYS.has(key)) return true;
+    return CLOUD_SYNC_PREFIXES.some(prefix => key.startsWith(prefix));
+  };
+
+  let _cloudSyncSource = null;
+  let _cloudSyncSnapshot = {};
+  let _cloudSyncPendingTimer = null;
+  let _cloudSyncReady = false;
+  let _cloudSyncWriteMuted = false;
+
+  const detectCloudSyncSource = async (client) => {
+    if (_cloudSyncSource) return _cloudSyncSource;
+    for (const table of CLOUD_SYNC_TABLES) {
+      for (const shape of CLOUD_SYNC_SHAPES) {
+        const selectCols = `${shape.idCol},${shape.dataCol}`;
+        const { error } = await client.from(table).select(selectCols).limit(1);
+        if (!error) {
+          _cloudSyncSource = { table, ...shape };
+          return _cloudSyncSource;
+        }
+      }
+    }
+    return null;
+  };
+
+  const readCloudSyncSnapshot = async () => {
+    const client = await window.ensureSupabaseClient?.();
+    if (!client) return null;
+    const source = await detectCloudSyncSource(client);
+    if (!source) return null;
+    const { table, idCol, dataCol } = source;
+    const { data, error } = await client
+      .from(table)
+      .select(`${idCol},${dataCol}`)
+      .eq(idCol, CLOUD_SYNC_ROW_ID)
+      .maybeSingle();
+    if (error) return null;
+    const payload = data?.[dataCol];
+    return payload && typeof payload === 'object' ? payload : {};
+  };
+
+  const collectLocalCloudSyncState = () => {
+    const payload = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!shouldCloudSync(key)) continue;
+      try {
+        payload[key] = JSON.parse(localStorage.getItem(key));
+      } catch {
+        payload[key] = localStorage.getItem(key);
+      }
+    }
+    return payload;
+  };
+
+  const saveCloudSyncSnapshot = async (payload) => {
+    const client = await window.ensureSupabaseClient?.();
+    if (!client) return false;
+    const source = await detectCloudSyncSource(client);
+    if (!source) return false;
+    const { table, idCol, dataCol } = source;
+    const row = { [idCol]: CLOUD_SYNC_ROW_ID, [dataCol]: payload || {} };
+    const { error } = await client.from(table).upsert(row, { onConflict: idCol });
+    return !error;
+  };
+
+  const queueCloudSyncPush = () => {
+    if (!_cloudSyncReady || _cloudSyncWriteMuted) return;
+    if (_cloudSyncPendingTimer) clearTimeout(_cloudSyncPendingTimer);
+    _cloudSyncPendingTimer = setTimeout(async () => {
+      _cloudSyncPendingTimer = null;
+      const snapshot = collectLocalCloudSyncState();
+      const ok = await saveCloudSyncSnapshot(snapshot);
+      if (ok) _cloudSyncSnapshot = { ...snapshot };
+    }, 250);
+  };
+
+  const applyCloudSyncSnapshot = (snapshot) => {
+    if (!snapshot || typeof snapshot !== 'object') return;
+    _cloudSyncWriteMuted = true;
+    try {
+      Object.entries(snapshot).forEach(([key, value]) => {
+        if (!shouldCloudSync(key)) return;
+        localStorage.setItem(key, JSON.stringify(value));
+      });
+    } finally {
+      _cloudSyncWriteMuted = false;
+    }
+    window.dispatchEvent(new Event(CLOUD_SYNC_EVENT));
+  };
+
+  const initCloudStorageSync = async () => {
+    const snapshot = await readCloudSyncSnapshot();
+    _cloudSyncReady = true;
+    if (snapshot && Object.keys(snapshot).length > 0) {
+      _cloudSyncSnapshot = { ...snapshot };
+      applyCloudSyncSnapshot(snapshot);
+      return;
+    }
+    const local = collectLocalCloudSyncState();
+    if (Object.keys(local).length > 0) {
+      const ok = await saveCloudSyncSnapshot(local);
+      if (ok) _cloudSyncSnapshot = { ...local };
+    }
+  };
+
+  if (!window.__onhiCloudSyncPatched) {
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = (key, value) => {
+      originalSetItem(key, value);
+      if (shouldCloudSync(key)) queueCloudSyncPush();
+    };
+    const originalRemoveItem = localStorage.removeItem.bind(localStorage);
+    localStorage.removeItem = (key) => {
+      originalRemoveItem(key);
+      if (shouldCloudSync(key)) queueCloudSyncPush();
+    };
+    window.__onhiCloudSyncPatched = true;
+  }
+
+  initCloudStorageSync();
   
   function getDoneStore(name){ return getJSON('doneTasks-'+name, {}) || {}; }
   function setDoneStore(name, obj){ setJSON('doneTasks-'+name, obj || {}); }
