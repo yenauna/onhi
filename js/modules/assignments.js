@@ -33,7 +33,7 @@ let viewMonth = new Date().getMonth();
 let editingVacIndex = null;
 let editingTaskId = null;
 
-const getStudentsSorted = () => sortStudents(loadStudents());
+const getStudentsSorted = async () => sortStudents(await loadStudents());
 const labelOf = (stu) => `${stu.id} ${stu.name}`;
 
 const dispatchTasksUpdated = () => {
@@ -159,11 +159,11 @@ const goToday = () => {
   hideActionUI();
 };
 
-const renderStudentSelector = () => {
+const renderStudentSelector = async () => {
   const grid = document.getElementById('student-selector');
   if (!grid) return;
   grid.innerHTML = '';
-  const students = getStudentsSorted();
+  const students = await getStudentsSorted();
   students.forEach(stu => {
     const card = document.createElement('div');
     card.className = 'student-card';
@@ -596,7 +596,7 @@ const calcBusinessDate = async (addDays) => {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
-const renderTaskCompletion = (uid) => {
+const renderTaskCompletion = async (uid) => {
   const container = document.getElementById('completion-list');
   container.innerHTML = '';
 
@@ -611,7 +611,7 @@ const renderTaskCompletion = (uid) => {
   h.textContent = `📌 ${task.text} (${task.date})`;
   container.appendChild(h);
 
-  let students = getStudentsSorted();
+  let students = await getStudentsSorted();
   if (!task.students.includes('전체')) {
     const set = new Set(task.students || []);
     students = students.filter(s => set.has(s.name));
@@ -689,8 +689,9 @@ const renderCalendar = async () => {
   const lastDate = new Date(year, month + 1, 0).getDate();
 
   const tasks = getTasks();
+  const studentsSorted = await getStudentsSorted();
   const joinMap = {};
-  loadStudents().forEach(s => {
+  studentsSorted.forEach(s => {
     joinMap[s.name] = s.joined || '0000-00-00';
   });
 
@@ -781,7 +782,7 @@ const renderCalendar = async () => {
         return `<div class="event-pill" data-uid="${inst.id}" data-date="${dateStr}" data-type="event" data-repeat="${task.repeat || 'none'}" draggable="true">${title}</div>`;
       }
 
-      let assignedNames = getStudentsSorted().map(s => s.name);
+      let assignedNames = studentsSorted.map(s => s.name);
       if (task && !task.students.includes('전체')) {
         const set = new Set(task.students);
         assignedNames = assignedNames.filter(n => set.has(n));
@@ -815,14 +816,14 @@ const renderCalendar = async () => {
   setCalLabel();
 };
 
-const renderStudentStatus = () => {
+const renderStudentStatus = async () => {
   const container = qs('#student-status-list');
   if (!container) return;
   container.innerHTML = '';
 
   const all = getTasks();
   const today = normalizeDate(new Date());
-  const students = getStudentsSorted();
+  const students = await getStudentsSorted();
   const showPE = localStorage.getItem('showPostponedExempt') !== 'no';
 
   const instances = [];
