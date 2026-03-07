@@ -1,35 +1,42 @@
 const getChallengesApi = () => window.Challenges;
 
+const bindOnce = (id, eventName, handler) => {
+  const el = document.getElementById(id);
+  if (!el || el.dataset.chBound === '1') return;
+  el.dataset.chBound = '1';
+  el.addEventListener(eventName, handler);
+};
+
 const bindChallengeEvents = () => {
-  document.getElementById('challenges-new-btn')?.addEventListener('click', () => {
+  bindOnce('challenges-new-btn', 'click', () => {
     getChallengesApi()?.openChallengeForm(null);
   });
 
-  document.getElementById('chl-search')?.addEventListener('input', () => {
+  bindOnce('chl-search', 'input', () => {
     getChallengesApi()?.renderChallengeList();
   });
 
-  document.getElementById('chl-sort')?.addEventListener('change', () => {
+  bindOnce('chl-sort', 'change', () => {
     getChallengesApi()?.renderChallengeList();
   });
 
-  document.getElementById('challenge-save-btn')?.addEventListener('click', () => {
+  bindOnce('challenge-save-btn', 'click', () => {
     getChallengesApi()?.saveChallengeFromForm();
   });
 
-  document.getElementById('challenge-cancel-btn')?.addEventListener('click', () => {
+  bindOnce('challenge-cancel-btn', 'click', () => {
     getChallengesApi()?.cancelChallengeForm();
   });
 
-  document.getElementById('challenge-back-btn')?.addEventListener('click', () => {
+  bindOnce('challenge-back-btn', 'click', () => {
     getChallengesApi()?.backToListFromStatus();
   });
 
-  document.getElementById('challenge-bulk-done')?.addEventListener('click', () => {
+  bindOnce('challenge-bulk-done', 'click', () => {
     getChallengesApi()?.bulkMarkStatus(true);
   });
 
-  document.getElementById('challenge-bulk-undone')?.addEventListener('click', () => {
+  bindOnce('challenge-bulk-undone', 'click', () => {
     getChallengesApi()?.bulkMarkStatus(false);
   });
 };
