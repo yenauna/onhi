@@ -200,11 +200,15 @@ const setupDatePicker = (sel, opts = {}) => {
     if (el) el.type = 'date';
     return null;
   }
+  const koLocale = window.flatpickr?.l10ns?.ko;
+  const locale = koLocale
+    ? { ...koLocale, firstDayOfWeek: 1 }
+    : 'ko';
   return flatpickr(sel, {
     dateFormat: 'Y-m-d',
     altInput: true,
     altFormat: 'n월 j일 (D)',
-    locale: { ...flatpickr.l10ns.ko, firstDayOfWeek: 1 },
+    locale,
     disableMobile: true,
     ...opts,
   });
