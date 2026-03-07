@@ -1,3 +1,5 @@
+window.teacherAppReady = true;
+
 import { initAssignments, showStatus, showAssignments, hideActionUI } from './modules/assignments.js';
 import { initObservations, showObservations } from './modules/observation.js';import { initStudents, showStudents } from './modules/students.js';
 import { initChallenges, showChallenges } from './modules/challenges.js';
@@ -124,6 +126,8 @@ const initTabs = () => {
 };
 
 const initTeacherApp = () => {
+  window.teacherAppReady = true;
+
   if (typeof window.migrateToUIDOnce === 'function') window.migrateToUIDOnce();
 
   initAssignments();
