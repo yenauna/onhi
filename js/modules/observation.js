@@ -266,8 +266,9 @@ const getYearRange = (yearValue) => {
   };
 };
 
-const getFilteredObservationList = () => {
-  if (filters.mode === 'range') {
+const getDateFilterRange = (filters) => {
+  if (filters.mode === 'month') return getMonthRange(filters.month);
+  if (filters.mode === 'year') return getYearRange(filters.year);  if (filters.mode === 'range') {
     const start = filters.rangeStart || '';
     const end = filters.rangeEnd || start;
     if (!start && !end) return null;
@@ -280,27 +281,7 @@ const getFilteredObservationList = () => {
   return { start: filters.day, end: filters.day };
 };
 
-const renderObservationDateFilterInputs = () => {
-  const mode = document.getElementById('obs-filter-mode')?.value || 'day';
-  const dayEl = document.getElementById('obs-filter-day');
-  const monthEl = document.getElementById('obs-filter-month');
-  const yearEl = document.getElementById('obs-filter-year');
-  const rangeStartEl = document.getElementById('obs-filter-range-start');
-  const rangeEndEl = document.getElementById('obs-filter-range-end');
-  const rangeSepEl = document.getElementById('obs-filter-range-sep');
-  if (!dayEl || !monthEl || !yearEl || !rangeStartEl || !rangeEndEl || !rangeSepEl) return;
-
-  dayEl.style.display = mode === 'day' ? '' : 'none';
-  monthEl.style.display = mode === 'month' ? '' : 'none';
-  yearEl.style.display = mode === 'year' ? '' : 'none';
-  rangeStartEl.style.display = mode === 'range' ? '' : 'none';
-  rangeEndEl.style.display = mode === 'range' ? '' : 'none';
-  rangeSepEl.style.display = mode === 'range' ? '' : 'none';
-};
-
-const renderObservationList = () => {
-  const listEl = document.getElementById('obs-list');
-  if (!listEl) return;
+const getFilteredObservationList = () => {
   const filters = getObservationFilters();
   const dateRange = getDateFilterRange(filters);
   const rangeStart = dateRange?.start || '';
@@ -338,7 +319,25 @@ const renderObservationList = () => {
       if (dateDiff !== 0) return dateDiff;
       return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
     });
-  };
+ };
+
+const renderObservationDateFilterInputs = () => {
+  const mode = document.getElementById('obs-filter-mode')?.value || 'day';
+  const dayEl = document.getElementById('obs-filter-day');
+  const monthEl = document.getElementById('obs-filter-month');
+  const yearEl = document.getElementById('obs-filter-year');
+  const rangeStartEl = document.getElementById('obs-filter-range-start');
+  const rangeEndEl = document.getElementById('obs-filter-range-end');
+  const rangeSepEl = document.getElementById('obs-filter-range-sep');
+  if (!dayEl || !monthEl || !yearEl || !rangeStartEl || !rangeEndEl || !rangeSepEl) return;
+
+  dayEl.style.display = mode === 'day' ? '' : 'none';
+  monthEl.style.display = mode === 'month' ? '' : 'none';
+  yearEl.style.display = mode === 'year' ? '' : 'none';
+  rangeStartEl.style.display = mode === 'range' ? '' : 'none';
+  rangeEndEl.style.display = mode === 'range' ? '' : 'none';
+  rangeSepEl.style.display = mode === 'range' ? '' : 'none';
+};
 
 const renderObservationList = () => {
   const listEl = document.getElementById('obs-list');
