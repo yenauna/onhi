@@ -573,6 +573,54 @@ function occursOn(t, dateObj){
   return base.getTime() === d0.getTime();
 }
 
+  const EXP_ABILITIES = ['책임', '노력', '성취', '관계'];
+
+function calculateStudentExpScores(studentName, options = {}){
+  const source = Array.isArray(options.source)
+    ? options.source
+    : getJSON('observationRecords:v1', []);
+  const list = Array.isArray(source) ? source : [];
+  const scores = { total: 0, responsibility: 0, effort: 0, achievement: 0, relationship: 0 };
+  if (!studentName) return scores;
+
+  list.forEach((item) => {
+    if (!item || typeof item !== 'object') return;
+    if (String(item.studentName || '') !== String(studentName)) return;
+
+    const type = String(item.type || '').trim();
+    const delta = type === '칭찬' ? 1 : (type === '조언' ? -1 : 0);
+    if (delta === 0) return; // '기록' 포함, 점수에 반영하지 않음
+
+    const ability = String(item.ability || '').trim();
+    if (!EXP_ABILITIES.includes(ability)) return;
+
+    scores.total += delta;
+    if (ability === '책임') scores.responsibility += delta;
+    else if (ability === '노력') scores.effort += delta;
+    else if (ability === '성취') scores.achievement += delta;
+    else if (ability === '관계') scores.relationship += delta;
+  });
+
+  return scores;
+}
+
+function renderExpScoreHTML(scores = {}, options = {}){
+  const totalClass = options.boxed ? ' exp-score__total--boxed' : '';
+  const total = Number(scores.total || 0);
+  const responsibility = Number(scores.responsibility || 0);
+  const effort = Number(scores.effort || 0);
+  const achievement = Number(scores.achievement || 0);
+  const relationship = Number(scores.relationship || 0);
+
+  return `<div class="exp-score">
+    <span class="exp-score__total${totalClass}">전체 ${total}</span>
+    <span class="exp-score__responsibility">책임${responsibility}</span>
+    <span class="exp-score__effort">노력${effort}</span>
+    <span class="exp-score__achievement">성취${achievement}</span>
+    <span class="exp-score__relationship">관계${relationship}</span>
+  </div>`;
+}
+  
 // 공통 일정 스트립 렌더
 // - containerId: 붙일 엘리먼트 id
 // - options.editable: teacher(오늘 할 일)에서만 true
@@ -639,6 +687,7 @@ function renderEventsStrip(containerId, options={}){
     ensureHolidays,
     genUID, getTasks, setTasks, migrateToUIDOnce,
     occursOn, renderEventsStrip,
+    calculateStudentExpScores, renderExpScoreHTML,
   });
 })(window);
 
