@@ -1,32 +1,73 @@
-// 읽기: { s:"d"|"p"|"e"|"", du:"YYYY-MM-DD"|null, note:"" }  (없으면 null)
+const ASSIGNMENT_STATUS = {
+  IN_PROGRESS: '진행중',
+  DONE: '완료',
+  LATE_DONE: '늦게완료',
+  NOT_DONE: '안함',
+  EXEMPT: '면제',
+};
+
+const STATUS_ALIASES = {
+  '': ASSIGNMENT_STATUS.IN_PROGRESS,
+  d: ASSIGNMENT_STATUS.DONE,
+  e: ASSIGNMENT_STATUS.EXEMPT,
+  p: ASSIGNMENT_STATUS.NOT_DONE,
+  진행중: ASSIGNMENT_STATUS.IN_PROGRESS,
+  '진행 중': ASSIGNMENT_STATUS.IN_PROGRESS,
+  완료: ASSIGNMENT_STATUS.DONE,
+  늦게완료: ASSIGNMENT_STATUS.LATE_DONE,
+  '늦게 완료': ASSIGNMENT_STATUS.LATE_DONE,
+  안함: ASSIGNMENT_STATUS.NOT_DONE,
+  '안 함': ASSIGNMENT_STATUS.NOT_DONE,
+  면제: ASSIGNMENT_STATUS.EXEMPT,
+};
+
+const normalizeAssignmentStatus = (raw) => {
+  const key = String(raw ?? '').replace(/\s+/g, '').trim();
+  return STATUS_ALIASES[key] || ASSIGNMENT_STATUS.IN_PROGRESS;
+};
+
+// 읽기: { s:"진행중"|"완료"|"늦게완료"|"안함"|"면제", note:"" }  (없으면 null)
 function getStatusFor(name, uid){
   const s = getDoneStore(name);
   const v = s[uid];
-  if (v === true) return { s:'d', du:null, note:'' }; // 하위호환(true = done)
+  if (v === true) return { s: ASSIGNMENT_STATUS.DONE, note:'' }; // 하위호환(true = done)
   if (!v) return null;                                // pending
-  const st = { s:'', du:null, note:'' , ...v };
-  return st;
+  const st = { s: ASSIGNMENT_STATUS.IN_PROGRESS, note:'' , ...v };
+  return {
+    ...st,
+    s: normalizeAssignmentStatus(st.s),
+  };
 }
 
 // 쓰기(부분 업데이트 허용)
 function setStatusFor(name, uid, patch){
   const s = getDoneStore(name);
-  const cur = getStatusFor(name, uid) || { s:'', du:null, note:'' };
-  s[uid] = { ...cur, ...patch };
+  const cur = getStatusFor(name, uid) || { s: ASSIGNMENT_STATUS.IN_PROGRESS, note:'' };
+  s[uid] = {
+    ...cur,
+    ...patch,
+    s: normalizeAssignmentStatus(patch?.s ?? cur.s),
+    note: String((patch?.note ?? cur.note ?? '') || ''),
+  };
   setDoneStore(name, s);
 }
 
 // 단축: 상태 설정
 function setDone(name, uid, done){
-  setStatusFor(name, uid, { s: done ? 'd' : '' , du: done ? null : null });
+  setStatusFor(name, uid, { s: done ? ASSIGNMENT_STATUS.DONE : ASSIGNMENT_STATUS.IN_PROGRESS });
 }
 // 단축: 면제
 function setExempt(name, uid, note=''){
-  setStatusFor(name, uid, { s:'e', du:null, note: String(note||'') });
+  setStatusFor(name, uid, { s: ASSIGNMENT_STATUS.EXEMPT, note: String(note||'') });
 }
-// 단축: 미룸
-function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
-  setStatusFor(name, uid, { s:'p', du: newDate || null });
+// 단축: 안함
+function setNotDone(name, uid, note=''){
+  setStatusFor(name, uid, { s: ASSIGNMENT_STATUS.NOT_DONE, note: String(note || '') });
+}
+
+// 단축: 늦게완료
+function setLateDone(name, uid, note=''){
+  setStatusFor(name, uid, { s: ASSIGNMENT_STATUS.LATE_DONE, note: String(note || '') });
 }
 
 /* ====== 공통 헬퍼들을 전역(window)에 노출 ====== */
@@ -697,7 +738,7 @@ function renderEventsStrip(containerId, options={}){
     qs, qsa, pad2, dayNames, escapeHTML,
     toDateStrict, formatKoreanDate,
     getJSON, setJSON, normalizeDate,
-    getDoneStore, setDoneStore,
+    ASSIGNMENT_STATUS, normalizeAssignmentStatus,
     loadStudentsCached, invalidateStudentsCache, loadStudents, addStudentToSupabase, sortStudents, loadAllTeacherTasks,
     ensureHolidays,
     genUID, getTasks, setTasks, migrateToUIDOnce,
