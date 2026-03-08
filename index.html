@@ -51,7 +51,8 @@
       background:#fff; border:1px solid #e6e8eb; border-radius:16px;
       padding:12px; box-shadow:0 4px 10px rgba(0,0,0,.04);
     }
-    .card .title{ font-weight:600; margin-bottom:8px; }
+    .card .title{ font-weight:600; margin-bottom:2px; }
+    .card .exp-score{ font-size:16px; margin-bottom:8px; }
 
     .chip{
       border:1px solid #e6e8eb; border-radius:12px; padding:8px;
@@ -401,6 +402,16 @@ function buildInstancesFromTasks(){
         title.textContent = `${stu.id} ${stu.name}`;
         card.appendChild(title);
 
+        const expScores = (typeof calculateStudentExpScores === 'function')
+          ? calculateStudentExpScores(stu.name)
+          : { total:0, responsibility:0, effort:0, achievement:0, relationship:0 };
+        const expLine = document.createElement('div');
+        expLine.innerHTML = (typeof renderExpScoreHTML === 'function')
+          ? renderExpScoreHTML(expScores, { boxed: true })
+          : '';
+        if (expLine.firstElementChild) card.appendChild(expLine.firstElementChild);
+
+
         let any = false;
 
         instances.forEach(inst=>{
@@ -481,7 +492,7 @@ function buildInstancesFromTasks(){
     });
 
     window.addEventListener('storage', (e) => {
-      if (e.key === 'tasksV2' || e.key === 'showEvents' || e.key === 'boardMode') renderBoard();
+      if (e.key === 'tasksV2' || e.key === 'showEvents' || e.key === 'boardMode' || e.key === 'observationRecords:v1') renderBoard();
       if (e.key === 'showEvents') applyShowEventsBtn();
        if (e.key === 'boardMode') window.applyBoardModeToButton?.();
     });
