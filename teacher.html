@@ -526,9 +526,64 @@
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       align-items:end;
     }
+    .obs-inline-row{
+      grid-column: 1 / -1;
+      display:grid;
+      gap:10px;
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
+      align-items:end;
+    }
     .obs-grid .full{
       grid-column: 1 / -1;
     }
+    .obs-template-picker{
+      position:relative;
+    }
+    .obs-template-trigger{
+      width:100%;
+      height:36px;
+      border-radius:10px;
+      border:1px solid var(--card-line);
+      background:#fff;
+      text-align:left;
+      padding:0 10px;
+      cursor:pointer;
+      font-size:13px;
+      color:#1f2937;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .obs-template-menu{
+      display:none;
+      position:absolute;
+      top:40px;
+      left:0;
+      right:0;
+      z-index:40;
+      border:1px solid #d9dde3;
+      border-radius:10px;
+      background:#fff;
+      box-shadow:0 10px 24px rgba(0,0,0,.12);
+      max-height:220px;
+      overflow:auto;
+      padding:6px;
+    }
+    .obs-template-menu.is-open{ display:block; }
+    .obs-template-item{
+      width:100%;
+      text-align:left;
+      border:0;
+      background:transparent;
+      border-radius:8px;
+      padding:8px;
+      cursor:pointer;
+      font-size:13px;
+    }
+    .obs-template-item:hover{ background:#f3f4f6; }
+    .obs-type-select.type-praise{ color:#2563eb; font-weight:700; }
+    .obs-type-select.type-advice{ color:#dc2626; font-weight:700; }
+    .obs-type-select.type-record{ color:#374151; font-weight:700; }
     .obs-student-cards{
       display:grid;
       grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
@@ -554,20 +609,16 @@
       border-color:#2e7d57;
       color:#fff;
     }
-    .obs-month{
+    .obs-date-filter{
       display:flex;
       gap:8px;
       align-items:center;
+      flex-wrap:wrap;
     }
-    .obs-month button{
-      height:36px;
-      padding:0 10px;
-      border-radius:10px;
-      border:1px solid var(--card-line);
-      background:#f3f4f6;
-      cursor:pointer;
-    }
-    .obs-month input[type="month"]{
+    .obs-date-filter input[type="date"],
+    .obs-date-filter input[type="month"],
+    .obs-date-filter input[type="number"],
+    .obs-date-filter select{
       height:36px;
     }
     .obs-card{
@@ -596,10 +647,11 @@
       font-size:13px;
       color:#555;
     }
+    .obs-item .student{ font-size:14px; }
     .obs-item .note{
       font-size:14px;
       line-height:1.4;
-      grid-column: 2 / -1;
+      grid-column: auto;
     }
     .obs-item .obs-type{
       font-weight:700;
@@ -621,6 +673,7 @@
       justify-content:flex-end;
     }
     @media (max-width: 720px){
+      .obs-inline-row{ grid-template-columns: 1fr; }
       .obs-item{
         grid-template-columns: 1fr;
         align-items:flex-start;
@@ -844,32 +897,38 @@
             학생 (복수 선택 가능)
             <div id="obs-student" class="obs-student-cards"></div>
           </label>
-          <label>
-            종류
-            <select id="obs-type">
-              <option value="칭찬">칭찬</option>
-              <option value="기록">기록</option>
-              <option value="조언">조언</option>
-            </select>
-          </label>
-          <label>
-            경험치
-            <select id="obs-ability">
-              <option value="책임">책임</option>
-              <option value="노력">노력</option>
-              <option value="성취">성취</option>
-              <option value="관계">관계</option>
-              <option value="">선택 안 함</option>
-            </select>
-          </label>
-          <label>
-            날짜
-            <input type="date" id="obs-date" />
-          </label>
-          <label class="full">
-            문장 템플릿
-            <select id="obs-template"></select>
-          </label>
+          <div class="obs-inline-row">
+            <label>
+              종류
+              <select id="obs-type" class="obs-type-select">
+                <option value="칭찬">칭찬</option>
+                <option value="기록">기록</option>
+                <option value="조언">조언</option>
+              </select>
+            </label>
+            <label>
+              경험치
+              <select id="obs-ability">
+                <option value="책임">책임</option>
+                <option value="노력">노력</option>
+                <option value="성취">성취</option>
+                <option value="관계">관계</option>
+                <option value="">선택 안 함</option>
+              </select>
+            </label>
+            <label>
+              날짜
+              <input type="date" id="obs-date" />
+            </label>
+            <label>
+              문장 템플릿
+              <div class="obs-template-picker">
+                <button type="button" id="obs-template-trigger" class="obs-template-trigger">문장템플릿</button>
+                <div id="obs-template-menu" class="obs-template-menu"></div>
+              </div>
+              <input type="hidden" id="obs-template" value="" />
+            </label>
+          </div>
           <label class="full">
             자유 메모 (선택)
             <textarea id="obs-memo" rows="3" class="task-desc" placeholder="보충 설명이나 상황을 적어주세요."></textarea>
@@ -883,15 +942,21 @@
       <section class="obs-filters" style="margin-top:20px;">
         <h3>관찰 기록 보기</h3>
         <div class="obs-grid">
-          <label>
+          <label class="full">
             날짜
-            <input type="date" id="obs-filter-start" />
-          </label>
-          <label>
-            월
-            <div class="obs-month">
-              <button type="button" id="obs-filter-month-btn">월 선택</button>
-              <input type="month" id="obs-filter-month" aria-label="월 선택" />
+            <div class="obs-date-filter">
+              <select id="obs-filter-mode" aria-label="날짜 조회 방식">
+                <option value="day">일(특정 날짜)</option>
+                <option value="month">월</option>
+                <option value="year">년</option>
+                <option value="range">기간</option>
+              </select>
+              <input type="date" id="obs-filter-day" aria-label="특정 날짜" />
+              <input type="month" id="obs-filter-month" aria-label="특정 월" style="display:none;" />
+              <input type="number" id="obs-filter-year" aria-label="특정 년도" min="2000" max="2100" placeholder="예: 2026" style="display:none; width:120px;" />
+              <input type="date" id="obs-filter-range-start" aria-label="시작 날짜" style="display:none;" />
+              <span id="obs-filter-range-sep" style="display:none;">~</span>
+              <input type="date" id="obs-filter-range-end" aria-label="종료 날짜" style="display:none;" />
             </div>
           </label>
           <label>
