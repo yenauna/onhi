@@ -5,6 +5,7 @@ import {
   getVacations,
   setVacations,
   migrateLegacyDoneToUIDOnce,
+  ObservationStorage
 } from '../storage.js';
 
 const {
@@ -39,6 +40,94 @@ const labelOf = (stu) => `${stu.id} ${stu.name}`;
 
 const dispatchTasksUpdated = () => {
   window.dispatchEvent(new Event('tasks:updated'));
+};
+
+const getTodayText = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+};
+
+const getTaskExtraAbilitiesFromForm = () => {
+  return Array.from(document.querySelectorAll('#task-exp-box input[type="checkbox"][value]'))
+    .filter((el) => !el.disabled && el.checked)
+    .map((el) => el.value)
+    .filter((ability) => ['노력', '성취', '관계'].includes(ability));
+};
+
+const applyTaskExpFormValue = (abilities = []) => {
+  const set = new Set(Array.isArray(abilities) ? abilities : []);
+  document.querySelectorAll('#task-exp-box input[type="checkbox"][value]').forEach((el) => {
+    if (el.disabled) return;
+    el.checked = set.has(el.value);
+  });
+};
+
+const addTaskObservationRecord = async ({ studentName, uid, type, ability, memo }) => {
+  if (!studentName || !uid || !type) return;
+  const task = getTasks().find((item) => item.id === uid);
+  if (!task || task.type !== 'assignment') return;
+
+  const students = await getStudentsSorted();
+  const student = students.find((stu) => String(stu.name) === String(studentName));
+  const date = getTodayText();
+  const record = {
+    id: ObservationStorage.createObservationId(),
+    studentId: student?.id || '',
+    studentName,
+    type,
+    ability: type === '기록' ? '' : ability,
+    template: `과제: ${task.text || ''}`,
+    memo: memo || '',
+    date,
+    startDate: date,
+    endDate: date,
+    createdAt: new Date().toISOString(),
+  };
+  ObservationStorage.addObservation(record);
+};
+
+const logAssignmentStatusChange = async ({ studentName, uid, previousStatus, nextStatus }) => {
+  if (!studentName || !uid || previousStatus === nextStatus) return;
+  const task = getTasks().find((item) => item.id === uid);
+  if (!task || task.type !== 'assignment') return;
+
+  if (nextStatus === 'e') return; // 면제는 기록하지 않음
+
+  if (nextStatus === 'd') {
+    await addTaskObservationRecord({ studentName, uid, type: '칭찬', ability: '책임', memo: '과제 제때 완료 (+1)' });
+    const extras = Array.isArray(task.expAbilitiesExtra) ? task.expAbilitiesExtra : [];
+    for (const ability of extras) {
+      if (!['노력', '성취', '관계'].includes(ability)) continue;
+      await addTaskObservationRecord({ studentName, uid, type: '칭찬', ability, memo: `과제 완료 보너스 (+1)` });
+    }
+    return;
+  }
+
+  if (nextStatus === 'p') {
+    await addTaskObservationRecord({ studentName, uid, type: '기록', ability: '', memo: '과제 늦게 완료 (0)' });
+    return;
+  }
+
+  if (!nextStatus) {
+    await addTaskObservationRecord({ studentName, uid, type: '조언', ability: '책임', memo: '과제 미완료 (-1)' });
+  }
+};
+
+const updateAssignmentStatus = ({ studentName, uid, nextStatus, note = '', dueDate = null }) => {
+  const prev = getStatusFor?.(studentName, uid);
+  const previousStatus = prev?.s || '';
+
+  if (nextStatus === 'd') {
+    setDone(studentName, uid, true);
+  } else if (nextStatus === 'e') {
+    setExempt(studentName, uid, note);
+  } else if (nextStatus === 'p') {
+    setPostponed(studentName, uid, dueDate);
+  } else {
+    setDone(studentName, uid, false);
+  }
+
+  logAssignmentStatusChange({ studentName, uid, previousStatus, nextStatus });
 };
 
 const clearCalendarDragState = () => {
@@ -233,6 +322,7 @@ const saveAssignment = () => {
   const repeat = document.getElementById('repeat').value;
   const target = document.getElementById('target').value;
   const desc = (document.getElementById('task-desc')?.value || '').trim();
+  const expAbilitiesExtra = getTaskExtraAbilitiesFromForm();
 
   const newTasks = Array.from(document.querySelectorAll('#task-list input'))
     .map(i => i.value.trim())
@@ -296,6 +386,7 @@ const saveAssignment = () => {
       repeatStart: repeatStart || null,
       repeatEnd: repeatEnd || null,
       students: students.slice(),
+      expAbilitiesExtra: expAbilitiesExtra.slice(),
     };
   } else {
     newTasks.forEach(text => {
@@ -309,6 +400,7 @@ const saveAssignment = () => {
         repeatStart: repeatStart || null,
         repeatEnd: repeatEnd || null,
         students: students.slice(),
+        expAbilitiesExtra: expAbilitiesExtra.slice(),
       });
     });
   }
@@ -316,6 +408,7 @@ const saveAssignment = () => {
   dispatchTasksUpdated();
 
   resetTaskForm(repeat);
+  applyTaskExpFormValue([]);
   alert(wasEditing ? '수정되었습니다!' : '저장되었습니다!');
   editingTaskId = null;
   renderCalendar();
@@ -361,6 +454,8 @@ const editTask = () => {
     });
   }
 
+  applyTaskExpFormValue(task.expAbilitiesExtra || []);
+  
   const rs = document.getElementById('task-start');
   const re = document.getElementById('task-end');
   if (rs) rs.value = task.repeatStart || '';
@@ -531,13 +626,13 @@ const ensureStatusModal = () => {
   modal.querySelector('#statusModalClose').addEventListener('click', closeStatusModal);
   modal.querySelector('#statusDoneBtn').addEventListener('click', () => {
     if (!statusStudent) return;
-    setDone(statusStudent, statusUID, true);
+    updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: 'd' });
     refreshStatusUI(statusUID);
     closeStatusModal();
   });
   modal.querySelector('#statusUndoneBtn').addEventListener('click', () => {
     if (!statusStudent) return;
-    setDone(statusStudent, statusUID, false);
+    updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: '' });
     refreshStatusUI(statusUID);
     closeStatusModal();
   });
@@ -554,7 +649,7 @@ const ensureStatusModal = () => {
       }
       if (!days || days <= 0) return;
       const newDate = await calcBusinessDate(days);
-      setPostponed(statusStudent, statusUID, newDate);
+      updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: 'p', dueDate: newDate });
       refreshStatusUI(statusUID);
       closeStatusModal();
     });
@@ -562,7 +657,7 @@ const ensureStatusModal = () => {
   modal.querySelector('#statusExemptBtn').addEventListener('click', () => {
     if (!statusStudent) return;
     const reason = modal.querySelector('#exemptReason').value;
-    setExempt(statusStudent, statusUID, reason);
+    updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: 'e', note: reason });
     refreshStatusUI(statusUID);
     closeStatusModal();
   });
@@ -651,7 +746,7 @@ const renderTaskCompletion = async (uid) => {
       const currentUid = chip.dataset.uid;
       const st = getStatusFor?.(student, currentUid);
       const isDoneNow = !!(st && st.s === 'd');
-      setDone(student, currentUid, !isDoneNow);
+      updateAssignmentStatus({ studentName: student, uid: currentUid, nextStatus: isDoneNow ? '' : 'd' });
       renderTaskCompletion(currentUid);
       renderCalendar();
       renderStudentStatus();
@@ -1107,8 +1202,10 @@ const applyTypeEffects = () => {
   const dateBox = document.getElementById('task-date')?.closest('.task-row');
   const tgtSel = document.getElementById('target');
   const stuGrid = document.getElementById('student-selector');
+  const expBox = document.getElementById('task-exp-box');
 
   if (type === 'event') {
+    if (expBox) expBox.style.display = 'none';
     dateBox?.classList.remove('hidden');
     repeatSel.disabled = true;
     repeatSel.value = 'none';
@@ -1117,6 +1214,7 @@ const applyTypeEffects = () => {
     tgtSel.disabled = true;
     stuGrid.style.display = 'none';
   } else if (type === 'challenge') {
+    if (expBox) expBox.style.display = 'none';
     repeatSel.disabled = true;
     repeatSel.value = 'none';
     rangeBox.style.display = 'none';
@@ -1126,6 +1224,7 @@ const applyTypeEffects = () => {
       document.getElementById('student-selector').style.display = 'flex';
     }
   } else {
+    if (expBox) expBox.style.display = 'flex';
     dateBox?.classList.remove('hidden');
     repeatSel.disabled = false;
     tgtSel.disabled = false;
@@ -1204,7 +1303,7 @@ const bindStudentStatusInteractions = () => {
       const student = chip.dataset.student;
       const uid = chip.dataset.uid;
       const nowIsDone = !chip.classList.contains('missed');
-      setDone(student, uid, !nowIsDone);
+      updateAssignmentStatus({ studentName: student, uid, nextStatus: nowIsDone ? '' : 'd' });
       chip.classList.toggle('missed', nowIsDone);
       schedule();
     }, TAP_DELAY);
@@ -1345,6 +1444,7 @@ const initAssignments = () => {
   setupDatePicker('#task-end');
   applyTypeEffects();
 
+  applyTaskExpFormValue([]);
   bindTaskFormInteractions();
   bindVacationInteractions();
   bindCalendarInteractions();
