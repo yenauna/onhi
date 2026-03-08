@@ -47,14 +47,14 @@ const getTodayText = () => {
   return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
 };
 
-const getTaskExtraAbilitiesFromForm = () => {
+const getTaskAbilitiesFromForm = () => {
   return Array.from(document.querySelectorAll('#task-exp-box input[type="checkbox"][value]'))
     .filter((el) => !el.disabled && el.checked)
     .map((el) => el.value)
-    .filter((ability) => ['노력', '성취', '관계'].includes(ability));
+    .filter((ability) => ['책임', '노력', '성취', '관계'].includes(ability));
 };
 
-const applyTaskExpFormValue = (abilities = []) => {
+const applyTaskExpFormValue = (abilities = ['책임']) => {
   const set = new Set(Array.isArray(abilities) ? abilities : []);
   document.querySelectorAll('#task-exp-box input[type="checkbox"][value]').forEach((el) => {
     if (el.disabled) return;
@@ -62,55 +62,81 @@ const applyTaskExpFormValue = (abilities = []) => {
   });
 };
 
-const addTaskObservationRecord = async ({ studentName, uid, type, ability, memo }) => {
-  if (!studentName || !uid || !type) return;
+const getTaskConfiguredAbilities = (task) => {
+  if (Array.isArray(task?.expAbilities)) {
+    return [...new Set(task.expAbilities.filter((ability) => ['책임', '노력', '성취', '관계'].includes(ability)))];
+  }
+  const extras = Array.isArray(task?.expAbilitiesExtra) ? task.expAbilitiesExtra : [];
+  return [...new Set(['책임', ...extras.filter((ability) => ['노력', '성취', '관계'].includes(ability))])];
+};
+
+const syncAssignmentObservationRecord = async ({ studentName, uid, nextStatus }) => {
+  if (!studentName || !uid) return;
   const task = getTasks().find((item) => item.id === uid);
   if (!task || task.type !== 'assignment') return;
 
+  const observations = ObservationStorage.loadObservations();
+  const existing = observations.find((item) => (
+    item?.source === 'assignment-status'
+    && String(item.taskId) === String(uid)
+    && String(item.studentName) === String(studentName)
+  ));
+
+  if (nextStatus === 'e') {
+    if (existing) ObservationStorage.deleteObservation(existing.id);
+    return;
+  }
+
+  const configuredAbilities = getTaskConfiguredAbilities(task);
+  const title = task.text || '';
+  let type = '';
+  let memo = '';
+  let abilities = [];
+
+  if (nextStatus === 'd') {
+    type = configuredAbilities.length ? '칭찬' : '기록';
+    abilities = configuredAbilities;
+    memo = `과제(${title}) 기한 내 완료함.`;
+  } else if (nextStatus === 'p') {
+    type = '기록';
+    memo = `과제(${title}) 기한 이후 완료함.`;
+  } else {
+    type = configuredAbilities.length ? '조언' : '기록';
+    abilities = configuredAbilities;
+    memo = `과제(${title}) 하지 않음.`;
+  }
+  
   const students = await getStudentsSorted();
   const student = students.find((stu) => String(stu.name) === String(studentName));
   const date = getTodayText();
   const record = {
-    id: ObservationStorage.createObservationId(),
+    id: existing?.id || ObservationStorage.createObservationId(),
     studentId: student?.id || '',
     studentName,
     type,
-    ability: type === '기록' ? '' : ability,
-    template: `과제: ${task.text || ''}`,
-    memo: memo || '',
+    ability: abilities[0] || '',
+    abilities,
+    template: '',
+    memo,
     date,
     startDate: date,
     endDate: date,
-    createdAt: new Date().toISOString(),
+    createdAt: existing?.createdAt || new Date().toISOString(),
+    source: 'assignment-status',
+    taskId: uid,
   };
-  ObservationStorage.addObservation(record);
+  if (existing) {
+    ObservationStorage.updateObservation(existing.id, record);
+  } else {
+    ObservationStorage.addObservation(record);
+  }
 };
 
 const logAssignmentStatusChange = async ({ studentName, uid, previousStatus, nextStatus }) => {
   if (!studentName || !uid || previousStatus === nextStatus) return;
   const task = getTasks().find((item) => item.id === uid);
   if (!task || task.type !== 'assignment') return;
-
-  if (nextStatus === 'e') return; // 면제는 기록하지 않음
-
-  if (nextStatus === 'd') {
-    await addTaskObservationRecord({ studentName, uid, type: '칭찬', ability: '책임', memo: '과제 제때 완료 (+1)' });
-    const extras = Array.isArray(task.expAbilitiesExtra) ? task.expAbilitiesExtra : [];
-    for (const ability of extras) {
-      if (!['노력', '성취', '관계'].includes(ability)) continue;
-      await addTaskObservationRecord({ studentName, uid, type: '칭찬', ability, memo: `과제 완료 보너스 (+1)` });
-    }
-    return;
-  }
-
-  if (nextStatus === 'p') {
-    await addTaskObservationRecord({ studentName, uid, type: '기록', ability: '', memo: '과제 늦게 완료 (0)' });
-    return;
-  }
-
-  if (!nextStatus) {
-    await addTaskObservationRecord({ studentName, uid, type: '조언', ability: '책임', memo: '과제 미완료 (-1)' });
-  }
+  await syncAssignmentObservationRecord({ studentName, uid, nextStatus });
 };
 
 const updateAssignmentStatus = ({ studentName, uid, nextStatus, note = '', dueDate = null }) => {
@@ -322,7 +348,7 @@ const saveAssignment = () => {
   const repeat = document.getElementById('repeat').value;
   const target = document.getElementById('target').value;
   const desc = (document.getElementById('task-desc')?.value || '').trim();
-  const expAbilitiesExtra = getTaskExtraAbilitiesFromForm();
+  const expAbilities = getTaskAbilitiesFromForm();
 
   const newTasks = Array.from(document.querySelectorAll('#task-list input'))
     .map(i => i.value.trim())
@@ -386,7 +412,8 @@ const saveAssignment = () => {
       repeatStart: repeatStart || null,
       repeatEnd: repeatEnd || null,
       students: students.slice(),
-      expAbilitiesExtra: expAbilitiesExtra.slice(),
+      expAbilities: expAbilities.slice(),
+      expAbilitiesExtra: expAbilities.filter((ability) => ability !== '책임'),
     };
   } else {
     newTasks.forEach(text => {
@@ -400,7 +427,8 @@ const saveAssignment = () => {
         repeatStart: repeatStart || null,
         repeatEnd: repeatEnd || null,
         students: students.slice(),
-        expAbilitiesExtra: expAbilitiesExtra.slice(),
+        expAbilities: expAbilities.slice(),
+        expAbilitiesExtra: expAbilities.filter((ability) => ability !== '책임'),
       });
     });
   }
@@ -408,7 +436,7 @@ const saveAssignment = () => {
   dispatchTasksUpdated();
 
   resetTaskForm(repeat);
-  applyTaskExpFormValue([]);
+  applyTaskExpFormValue(['책임']);
   alert(wasEditing ? '수정되었습니다!' : '저장되었습니다!');
   editingTaskId = null;
   renderCalendar();
@@ -454,7 +482,7 @@ const editTask = () => {
     });
   }
 
-  applyTaskExpFormValue(task.expAbilitiesExtra || []);
+  applyTaskExpFormValue(getTaskConfiguredAbilities(task));
   
   const rs = document.getElementById('task-start');
   const re = document.getElementById('task-end');
@@ -1444,7 +1472,7 @@ const initAssignments = () => {
   setupDatePicker('#task-end');
   applyTypeEffects();
 
-  applyTaskExpFormValue([]);
+  applyTaskExpFormValue(['책임']);
   bindTaskFormInteractions();
   bindVacationInteractions();
   bindCalendarInteractions();
