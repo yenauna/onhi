@@ -4,6 +4,11 @@
   --text:#1f2a33; --muted:#6f7d8c;
   --brand:#2e7d57; --btn-shadow:rgba(46,125,87,.26);
   --accent:#4caf7d;
+  --exp-total:#111827;
+  --exp-responsibility:#c45353;
+  --exp-effort:#cf7a3b;
+  --exp-achievement:#c89c2e;
+  --exp-relationship:#4f8f4f;
 }
 
 /* 스크롤바 공간을 항상 확보해 레이아웃 흔들림 방지 */
@@ -165,11 +170,20 @@ body{
   padding:12px;
 }
 
+.status-card__head{
+  display:flex;
+  flex-direction:column;
+}
+
 .status-card__title{
   font-weight:600;
   display:flex;
   gap:6px;
   align-items:center;
+}
+
+.status-card .exp-score{
+  font-size:inherit;
 }
 
 .status-card__list{
@@ -250,3 +264,26 @@ body.compact-view .status-chip__label{
 body.compact-view .status-chip__date{
   font-size:9px;
 }
+
+.exp-score{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:8px;
+  margin-top:4px;
+  font-size:inherit;
+  line-height:1.35;
+}
+
+.exp-score span{ white-space:nowrap; }
+
+.exp-score__total--boxed{
+  border:1px solid #d9dee6;
+  border-radius:8px;
+  padding:2px 8px;
+}
+
+.exp-score__total{ color:var(--exp-total); font-weight:600; }
+.exp-score__responsibility{ color:var(--exp-responsibility); }
+.exp-score__effort{ color:var(--exp-effort); }
+.exp-score__achievement{ color:var(--exp-achievement); }
+.exp-score__relationship{ color:var(--exp-relationship); }
