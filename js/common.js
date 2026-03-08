@@ -601,14 +601,19 @@ function calculateStudentExpScores(studentName, options = {}){
     const delta = type === '칭찬' ? 1 : (type === '조언' ? -1 : 0);
     if (delta === 0) return; // '기록' 포함, 점수에 반영하지 않음
 
-    const ability = String(item.ability || '').trim();
-    if (!EXP_ABILITIES.includes(ability)) return;
+    const abilityList = Array.isArray(item.abilities)
+      ? [...new Set(item.abilities.map((ability) => String(ability || '').trim()))]
+      : [String(item.ability || '').trim()];
+    const validAbilities = abilityList.filter((ability) => EXP_ABILITIES.includes(ability));
+    if (validAbilities.length === 0) return;
 
-    scores.total += delta;
-    if (ability === '책임') scores.responsibility += delta;
-    else if (ability === '노력') scores.effort += delta;
-    else if (ability === '성취') scores.achievement += delta;
-    else if (ability === '관계') scores.relationship += delta;
+    validAbilities.forEach((ability) => {
+      scores.total += delta;
+      if (ability === '책임') scores.responsibility += delta;
+      else if (ability === '노력') scores.effort += delta;
+      else if (ability === '성취') scores.achievement += delta;
+      else if (ability === '관계') scores.relationship += delta;
+    });
   });
 
   return scores;
