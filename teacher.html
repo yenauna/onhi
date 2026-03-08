@@ -584,6 +584,11 @@
     .obs-type-select.type-praise{ color:#2563eb; font-weight:700; }
     .obs-type-select.type-advice{ color:#dc2626; font-weight:700; }
     .obs-type-select.type-record{ color:#374151; font-weight:700; }
+    .obs-ability-select.ability-responsibility{ color:var(--exp-responsibility); font-weight:700; }
+    .obs-ability-select.ability-effort{ color:var(--exp-effort); font-weight:700; }
+    .obs-ability-select.ability-achievement{ color:var(--exp-achievement); font-weight:700; }
+    .obs-ability-select.ability-relationship{ color:var(--exp-relationship); font-weight:700; }
+    .obs-ability-select.ability-none{ color:#6b7280; font-weight:700; }
     .obs-student-cards{
       display:grid;
       grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
@@ -636,22 +641,34 @@
     .obs-item{
       display:grid;
       gap:6px 12px;
-      grid-template-columns: 130px minmax(120px, 1fr) 90px 80px;
+      grid-template-columns: 96px minmax(220px, 1fr) 80px;
       align-items:center;
       border:1px solid #e6e8eb;
       border-radius:14px;
       padding:10px 12px;
       background:#fff;
     }
+    .obs-item.type-praise{ background:#eef7ff; }
+    .obs-item.type-advice{ background:#ffefef; }
     .obs-item .meta{
       font-size:13px;
       color:#555;
     }
     .obs-item .student{ font-size:14px; }
+    .obs-item .main{ min-width:0; }
+    .obs-item .headline{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:2px;
+      flex-wrap:wrap;
+      font-size:14px;
+    }
     .obs-item .note{
       font-size:14px;
       line-height:1.4;
-      grid-column: auto;
+      color:#1f2937;
+      word-break:break-word;
     }
     .obs-item .obs-type{
       font-weight:700;
@@ -662,8 +679,12 @@
     .obs-item .obs-type.type-record{ color:#374151; }
     .obs-item .obs-ability{
       font-size:13px;
-      color:#374151;
+      font-weight:700;
     }
+    .obs-item .obs-ability.ability-responsibility{ color:var(--exp-responsibility); }
+    .obs-item .obs-ability.ability-effort{ color:var(--exp-effort); }
+    .obs-item .obs-ability.ability-achievement{ color:var(--exp-achievement); }
+    .obs-item .obs-ability.ability-relationship{ color:var(--exp-relationship); }
     .obs-item button{
       justify-self:end;
     }
@@ -783,6 +804,16 @@
             <option value="all">전체 학생</option>
             <option value="selected">특정 학생 지정</option>
           </select>
+
+          <label id="task-exp-box" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            🎯 경험치
+            <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <label><input type="checkbox" value="책임" checked disabled> 책임(기본)</label>
+              <label><input type="checkbox" id="task-exp-effort" value="노력"> 노력</label>
+              <label><input type="checkbox" id="task-exp-achievement" value="성취"> 성취</label>
+              <label><input type="checkbox" id="task-exp-relationship" value="관계"> 관계</label>
+            </span>
+          </label>
           
           <button type="button" class="btn-primary" id="task-save-btn">💾 저장하기</button>
         </div>
@@ -901,19 +932,19 @@
             <label>
               종류
               <select id="obs-type" class="obs-type-select">
-                <option value="칭찬">칭찬</option>
-                <option value="기록">기록</option>
-                <option value="조언">조언</option>
+                <option value="칭찬" style="color:#2563eb;">칭찬</option>
+                <option value="기록" style="color:#374151;">기록</option>
+                <option value="조언" style="color:#dc2626;">조언</option>
               </select>
             </label>
             <label>
               경험치
-              <select id="obs-ability">
-                <option value="책임">책임</option>
-                <option value="노력">노력</option>
-                <option value="성취">성취</option>
-                <option value="관계">관계</option>
-                <option value="">선택 안 함</option>
+              <select id="obs-ability" class="obs-ability-select">
+                <option value="책임" style="color:var(--exp-responsibility);">책임</option>
+                <option value="노력" style="color:var(--exp-effort);">노력</option>
+                <option value="성취" style="color:var(--exp-achievement);">성취</option>
+                <option value="관계" style="color:var(--exp-relationship);">관계</option>
+                <option value="" id="obs-ability-none" hidden>선택 안 함</option>
               </select>
             </label>
             <label>
@@ -940,7 +971,10 @@
       </section>
 
       <section class="obs-filters" style="margin-top:20px;">
-        <h3>관찰 기록 보기</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <h3 style="margin:0;">관찰 기록 보기</h3>
+          <button type="button" id="obs-export-btn">추출</button>
+        </div>
         <div class="obs-grid">
           <label class="full">
             날짜
