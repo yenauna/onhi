@@ -883,14 +883,27 @@ const renderStudentStatus = async () => {
     const card = document.createElement('div');
     card.className = 'status-card';
 
+    const head = document.createElement('div');
+    head.className = 'status-card__head';
+    
     const title = document.createElement('div');
     title.className = 'status-card__title';
     title.textContent = ` ${labelOf(stu)}`;
+    head.appendChild(title);
+
+    const expScores = (typeof calculateStudentExpScores === 'function')
+      ? calculateStudentExpScores(stu.name)
+      : { total:0, responsibility:0, effort:0, achievement:0, relationship:0 };
+    if (typeof renderExpScoreHTML === 'function') {
+      const expLine = document.createElement('div');
+      expLine.innerHTML = renderExpScoreHTML(expScores, { boxed: true });
+      if (expLine.firstElementChild) head.appendChild(expLine.firstElementChild);
+    }
 
     const listBox = document.createElement('div');
     listBox.className = 'status-card__list';
 
-    card.append(title, listBox);
+    card.append(head, listBox);
 
     instances.forEach(inst => {
       const assigned = inst.students.includes('전체') || inst.students.includes(stu.name);
@@ -1209,7 +1222,7 @@ const bindStudentStatusInteractions = () => {
 
   window.addEventListener('storage', (e) => {
     if (!e.key) return;
-    if (e.key.startsWith('doneTasks-') || e.key === 'tasksV2') schedule();
+    if (e.key.startsWith('doneTasks-') || e.key === 'tasksV2' || e.key === 'observationRecords:v1') schedule();
   });
 
   window.addEventListener('tasks:updated', schedule);
