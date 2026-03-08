@@ -195,13 +195,16 @@ function isDoneUID(name, uid){
   const v = store[uid];
   if (v === true) return true; // legacy true
   if (v && typeof v === 'object') {
-    return v.s === 'd' || v.s === 'e';
+    const normalized = (typeof normalizeAssignmentStatus === 'function')
+      ? normalizeAssignmentStatus(v.s)
+      : String(v.s || '');
+    return normalized === '완료' || normalized === '면제' || normalized === '늦게완료' || normalized === '안함';
   }
   return false;
 }
 function setDoneUID(name, uid, done){
   if (typeof setStatusFor === 'function') {
-    setStatusFor(name, uid, { s: done ? 'd' : '', du: null });
+    setStatusFor(name, uid, { s: done ? '완료' : '진행중' });
     return;
   }
   const s = getDoneStore(name);
@@ -421,17 +424,27 @@ function buildInstancesFromTasks(){
           const joined = stu.joined || '0000-00-00';
           if (inst.date < joined) return;
           
-          const done   = isDone(stu.name, inst.uid);   // ✅ UID로 체크
+          const st = (typeof getStatusFor === 'function') ? getStatusFor(stu.name, inst.uid) : null;
+          const status = (typeof normalizeAssignmentStatus === 'function')
+            ? normalizeAssignmentStatus(st?.s)
+            : (st?.s || '진행중');
           const isPast = inst.dateObj < today;
-          if (done) return; // 완료는 숨김
+          const isToday = inst.dateObj.getTime() === today.getTime();
+          const visible = isPast
+            ? status === '진행중'
+            : (isToday && (status === '진행중' || status === '완료'));
+          if (!visible) return;
 
           any = true;
           const chip = document.createElement('div');
-          chip.className = 'chip ' + (isPast ? 'missed-past' : 'missed-today');
+          const chipClass = isPast
+            ? 'missed-past'
+            : (status === '완료' ? '' : 'missed-today');
+          chip.className = `chip ${chipClass}`;
           chip.dataset.student = stu.name;
           chip.dataset.uid = inst.uid;                 // UID 보관
           chip.innerHTML = `
-          <span>${escapeHTML(inst.text)}</span>
+          <span>${escapeHTML(inst.text)} · ${status}</span>
           <span class="date">${formatKoreanDate(inst.dateObj)}</span>
           `;
           
@@ -439,8 +452,13 @@ function buildInstancesFromTasks(){
             chip.style.cursor='pointer';
             chip.addEventListener('click', (e)=>{
               e.stopPropagation();
-              setDone(stu.name, inst.uid, true);       // UID로 저장
-              chip.remove();
+              const nextStatus = status === '완료' ? '진행중' : (isPast ? '늦게완료' : '완료');
+              if (typeof setStatusFor === 'function') {
+                setStatusFor(stu.name, inst.uid, { s: nextStatus });
+              } else {
+                setDone(stu.name, inst.uid, nextStatus === '완료');
+              }
+              renderBoard();
             });
           }
           card.appendChild(chip);
