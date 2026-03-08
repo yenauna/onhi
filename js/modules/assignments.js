@@ -22,7 +22,11 @@ const {
   getStatusFor,
   setDone,
   setExempt,
-  setPostponed,
+  setStatusFor,
+  setNotDone,
+  setLateDone,
+  normalizeAssignmentStatus,
+  ASSIGNMENT_STATUS,
 } = window;
 
 let selectedDate = null;
@@ -70,6 +74,24 @@ const getTaskConfiguredAbilities = (task) => {
   return [...new Set(['책임', ...extras.filter((ability) => ['노력', '성취', '관계'].includes(ability))])];
 };
 
+const getStatusValue = (raw) => normalizeAssignmentStatus?.(raw) || ASSIGNMENT_STATUS?.IN_PROGRESS || '진행중';
+
+const getDisplayDateInfo = (dateStr) => {
+  const today = normalizeDate(new Date());
+  const target = normalizeDate(dateStr);
+  const diff = Math.floor((target - today) / 86400000);
+  return { isToday: diff === 0, isPast: diff < 0 };
+};
+
+const shouldShowOnStatusBoard = ({ dateStr, status, isTeacherView = false }) => {
+  const { isToday, isPast } = getDisplayDateInfo(dateStr);
+  if (isPast) return status === ASSIGNMENT_STATUS.IN_PROGRESS;
+  if (!isToday) return false;
+  if (status === ASSIGNMENT_STATUS.IN_PROGRESS || status === ASSIGNMENT_STATUS.DONE) return true;
+  if (isTeacherView && (status === ASSIGNMENT_STATUS.EXEMPT || status === ASSIGNMENT_STATUS.NOT_DONE || status === ASSIGNMENT_STATUS.LATE_DONE)) return true;
+  return false;
+};
+
 const syncAssignmentObservationRecord = async ({ studentName, uid, nextStatus }) => {
   if (!studentName || !uid) return;
   const task = getTasks().find((item) => item.id === uid);
@@ -82,28 +104,33 @@ const syncAssignmentObservationRecord = async ({ studentName, uid, nextStatus })
     && String(item.studentName) === String(studentName)
   ));
 
-  if (nextStatus === 'e') {
+  const resolvedStatus = getStatusValue(nextStatus);
+  const configuredAbilities = getTaskConfiguredAbilities(task);
+  if (!configuredAbilities.length) {
     if (existing) ObservationStorage.deleteObservation(existing.id);
     return;
   }
 
-  const configuredAbilities = getTaskConfiguredAbilities(task);
   const title = task.text || '';
   let type = '';
   let memo = '';
   let abilities = [];
 
-  if (nextStatus === 'd') {
-    type = configuredAbilities.length ? '칭찬' : '기록';
+  if (resolvedStatus === ASSIGNMENT_STATUS.DONE) {
+    type = '칭찬';
     abilities = configuredAbilities;
     memo = `과제(${title}) 기한 내 완료함.`;
-  } else if (nextStatus === 'p') {
+  } else if (resolvedStatus === ASSIGNMENT_STATUS.LATE_DONE) {
     type = '기록';
+    abilities = configuredAbilities;
     memo = `과제(${title}) 기한 이후 완료함.`;
-  } else {
-    type = configuredAbilities.length ? '조언' : '기록';
+  } else if (resolvedStatus === ASSIGNMENT_STATUS.NOT_DONE) {
+    type = '조언';
     abilities = configuredAbilities;
     memo = `과제(${title}) 하지 않음.`;
+    } else {
+    if (existing) ObservationStorage.deleteObservation(existing.id);
+    return;
   }
   
   const students = await getStudentsSorted();
@@ -139,21 +166,36 @@ const logAssignmentStatusChange = async ({ studentName, uid, previousStatus, nex
   await syncAssignmentObservationRecord({ studentName, uid, nextStatus });
 };
 
-const updateAssignmentStatus = ({ studentName, uid, nextStatus, note = '', dueDate = null }) => {
+const updateAssignmentStatus = ({ studentName, uid, nextStatus, note = '', viaManual = false }) => {
   const prev = getStatusFor?.(studentName, uid);
-  const previousStatus = prev?.s || '';
+  const previousStatus = getStatusValue(prev?.s);
 
-  if (nextStatus === 'd') {
+  const task = getTasks().find((item) => item.id === uid);
+  const dueDate = task?.date || '';
+  const { isPast } = getDisplayDateInfo(dueDate);
+  let resolved = getStatusValue(nextStatus);
+
+  if (!viaManual && resolved === ASSIGNMENT_STATUS.DONE && isPast) {
+    resolved = ASSIGNMENT_STATUS.LATE_DONE;
+  }
+
+  if (resolved === ASSIGNMENT_STATUS.DONE) {
     setDone(studentName, uid, true);
-  } else if (nextStatus === 'e') {
+  } else if (resolved === ASSIGNMENT_STATUS.LATE_DONE) {
+    setLateDone(studentName, uid, note);
+  } else if (resolved === ASSIGNMENT_STATUS.EXEMPT) {
     setExempt(studentName, uid, note);
-  } else if (nextStatus === 'p') {
-    setPostponed(studentName, uid, dueDate);
+  } else if (resolved === ASSIGNMENT_STATUS.NOT_DONE) {
+    setNotDone(studentName, uid, note);
   } else {
     setDone(studentName, uid, false);
   }
 
-  logAssignmentStatusChange({ studentName, uid, previousStatus, nextStatus });
+  if (note && typeof setStatusFor === 'function' && resolved !== ASSIGNMENT_STATUS.EXEMPT && resolved !== ASSIGNMENT_STATUS.NOT_DONE && resolved !== ASSIGNMENT_STATUS.LATE_DONE) {
+    setStatusFor(studentName, uid, { note });
+  }
+
+  logAssignmentStatusChange({ studentName, uid, previousStatus, nextStatus: resolved });
 };
 
 const clearCalendarDragState = () => {
@@ -631,61 +673,29 @@ const ensureStatusModal = () => {
         <h3 style="margin:0; font-size:18px;">상태 변경</h3>
         <button type="button" id="statusModalClose" style="all:unset; cursor:pointer; font-size:20px;">×</button>
       </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-        <button type="button" id="statusDoneBtn" class="btn-primary">완료</button>
-        <button type="button" id="statusUndoneBtn">미완료</button>
-      </div>
       <div style="margin-bottom:12px;">
-        <div style="margin-bottom:4px;">미룸</div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button type="button" class="postponeBtn" data-add="1">+1</button>
-          <button type="button" class="postponeBtn" data-add="2">+2</button>
-          <button type="button" class="postponeBtn" data-add="3">+3</button>
-          <button type="button" class="postponeBtn" data-add="custom">직접입력</button>
-        </div>
+        <div style="margin-bottom:4px;">상태</div>
+        <select id="statusSelect" style="width:100%; height:38px; border:1px solid #dcdfe4; border-radius:10px; padding:0 10px; font:inherit;">
+          <option value="진행중">진행중</option>
+          <option value="완료">완료</option>
+          <option value="늦게완료">늦게완료</option>
+          <option value="안함">안함</option>
+          <option value="면제">면제</option>
+        </select>
       </div>
-      <div style="display:flex; gap:6px; align-items:center;">
-        <input type="text" id="exemptReason" placeholder="면제 사유(선택)" style="flex:1; height:38px; border:1px solid #dcdfe4; border-radius:10px; padding:0 10px; font:inherit;">
-        <button type="button" id="statusExemptBtn">면제</button>
+      <div style="display:flex; gap:6px; align-items:center; margin-bottom:12px;">
+        <input type="text" id="statusNote" placeholder="과제 관련 특이사항 메모(선택)" style="flex:1; height:38px; border:1px solid #dcdfe4; border-radius:10px; padding:0 10px; font:inherit;">
       </div>
+      <button type="button" id="statusSaveBtn" class="btn-primary" style="width:100%;">저장</button>
     </div>`;
   document.body.appendChild(modal);
   modal.querySelector('.modal-backdrop').addEventListener('click', closeStatusModal);
   modal.querySelector('#statusModalClose').addEventListener('click', closeStatusModal);
-  modal.querySelector('#statusDoneBtn').addEventListener('click', () => {
+  modal.querySelector('#statusSaveBtn').addEventListener('click', () => {
     if (!statusStudent) return;
-    updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: 'd' });
-    refreshStatusUI(statusUID);
-    closeStatusModal();
-  });
-  modal.querySelector('#statusUndoneBtn').addEventListener('click', () => {
-    if (!statusStudent) return;
-    updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: '' });
-    refreshStatusUI(statusUID);
-    closeStatusModal();
-  });
-  modal.querySelectorAll('.postponeBtn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!statusStudent) return;
-      let add = btn.dataset.add;
-      let days = 0;
-      if (add === 'custom') {
-        const v = prompt('+며칠 미룰까요?');
-        days = parseInt(v, 10);
-      } else {
-        days = parseInt(add, 10);
-      }
-      if (!days || days <= 0) return;
-      const newDate = await calcBusinessDate(days);
-      updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: 'p', dueDate: newDate });
-      refreshStatusUI(statusUID);
-      closeStatusModal();
-    });
-  });
-  modal.querySelector('#statusExemptBtn').addEventListener('click', () => {
-    if (!statusStudent) return;
-    const reason = modal.querySelector('#exemptReason').value;
-    updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: 'e', note: reason });
+    const status = modal.querySelector('#statusSelect').value;
+    const note = modal.querySelector('#statusNote').value;
+    updateAssignmentStatus({ studentName: statusStudent, uid: statusUID, nextStatus: status, note, viaManual: true });
     refreshStatusUI(statusUID);
     closeStatusModal();
   });
@@ -698,26 +708,9 @@ const openStatusModal = (student, uid) => {
   statusStudent = student;
   statusUID = uid;
   statusModal.style.display = 'block';
-  statusModal.querySelector('#exemptReason').value = '';
-};
-
-const calcBusinessDate = async (addDays) => {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const holidaysCache = {};
-  let d = new Date(start);
-  let count = 0;
-  while (count < addDays) {
-    d.setDate(d.getDate() + 1);
-    const year = d.getFullYear();
-    if (!holidaysCache[year]) holidaysCache[year] = await ensureHolidays(year);
-    const dateStr = `${year}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-    const isHoliday = !!holidaysCache[year][dateStr];
-    if (isWeekend || isHoliday) continue;
-    count++;
-  }
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const st = getStatusFor?.(student, uid);
+  statusModal.querySelector('#statusSelect').value = getStatusValue(st?.s);
+  statusModal.querySelector('#statusNote').value = st?.note || '';
 };
 
 const renderTaskCompletion = async (uid) => {
@@ -747,15 +740,16 @@ const renderTaskCompletion = async (uid) => {
 
   students.forEach(stu => {
     const st = getStatusFor?.(stu.name, uid);
-    const statusCode = st?.s || '';
-    const isExempt = statusCode === 'e';
-    const done = statusCode === 'd';
+    const statusCode = getStatusValue(st?.s);
+    const isExempt = statusCode === ASSIGNMENT_STATUS.EXEMPT;
+    const done = statusCode === ASSIGNMENT_STATUS.DONE || statusCode === ASSIGNMENT_STATUS.LATE_DONE;
+    const isNotDone = statusCode === ASSIGNMENT_STATUS.NOT_DONE;
     const chip = document.createElement('div');
-    chip.className = `student-chip${isExempt ? ' exempt' : (done ? '' : ' missed')}`;
+    chip.className = `student-chip${isExempt ? ' exempt' : ((done || isNotDone) ? '' : ' missed')}`;
     chip.dataset.student = stu.name;
     chip.dataset.uid = uid;
     chip.style.cursor = 'pointer';
-    chip.textContent = `${stu.id} ${stu.name}${isExempt ? ' 🚫' : ''}`;
+    chip.textContent = `${stu.id} ${stu.name}${isExempt ? ' 🚫' : ''}${statusCode === ASSIGNMENT_STATUS.NOT_DONE ? ' ⭕안함' : ''}`;
     grid.appendChild(chip);
   });
 
@@ -773,8 +767,9 @@ const renderTaskCompletion = async (uid) => {
       const student = chip.dataset.student;
       const currentUid = chip.dataset.uid;
       const st = getStatusFor?.(student, currentUid);
-      const isDoneNow = !!(st && st.s === 'd');
-      updateAssignmentStatus({ studentName: student, uid: currentUid, nextStatus: isDoneNow ? '' : 'd' });
+      const statusNow = getStatusValue(st?.s);
+      const isDoneNow = statusNow === ASSIGNMENT_STATUS.DONE || statusNow === ASSIGNMENT_STATUS.LATE_DONE;
+      updateAssignmentStatus({ studentName: student, uid: currentUid, nextStatus: isDoneNow ? ASSIGNMENT_STATUS.IN_PROGRESS : ASSIGNMENT_STATUS.DONE });
       renderTaskCompletion(currentUid);
       renderCalendar();
       renderStudentStatus();
@@ -914,12 +909,8 @@ const renderCalendar = async () => {
       assignedNames = assignedNames.filter(n => (joinMap[n] || '0000-00-00') <= dateStr);
       const anyIncomplete = assignedNames.some(name => {
         const st = getStatusFor?.(name, inst.id);
-        if (st && st.s === 'e') return false;
-        if (st && st.s === 'p') {
-          if (st.du && st.du !== dateStr) return false;
-        }
-        if (st && st.s === 'd') return false;
-        return true;
+        const status = getStatusValue(st?.s);
+        return status === ASSIGNMENT_STATUS.IN_PROGRESS;
       });
 
       const pillClass = anyIncomplete ? 'task-pill pending' : 'task-pill done';
@@ -951,8 +942,7 @@ const renderStudentStatus = async () => {
   if (renderSeq !== studentStatusRenderSeq) return;
 
   container.innerHTML = '';
-  const showPE = localStorage.getItem('showPostponedExempt') !== 'no';
-
+  
   const instances = [];
   all.forEach(task => {
     if (task.type === 'event') return;
@@ -1035,79 +1025,72 @@ const renderStudentStatus = async () => {
       if (inst.date < joined) return;
 
       const st = getStatusFor?.(stu.name, inst.uid);
-      const statusCode = st?.s || '';
-      const postponedTo = st?.du || null;
-      const isExempt = statusCode === 'e';
-      const done = statusCode === 'd';
-      const isPostponed = statusCode === 'p';
-      const isPast = inst.dateObj < today;
+      const statusCode = getStatusValue(st?.s);
+      if (!shouldShowOnStatusBoard({ dateStr: inst.date, status: statusCode, isTeacherView: true })) return;
 
-      if (isPast && (isPostponed || isExempt)) return;
-      if (!showPE && (isPostponed || isExempt)) return;
-      if (!isExempt && done && isPast) return;
-
+      const { isPast, isToday } = getDisplayDateInfo(inst.date);
+      const isDone = statusCode === ASSIGNMENT_STATUS.DONE;
+      
       let bg = '#f6c1c1';
       let borderColor = '#e6e8eb';
       let textColor = '#000';
       let dateColor = '#666';
 
-      if (isPostponed) {
-        bg = '#fddf7f';
-        borderColor = '#f0c24c';
-        textColor = '#604400';
-      }
-
-      if (isExempt) {
+      if (statusCode === ASSIGNMENT_STATUS.EXEMPT || statusCode === ASSIGNMENT_STATUS.NOT_DONE || statusCode === ASSIGNMENT_STATUS.LATE_DONE) {
         bg = '#E5E7EB';
         borderColor = '#D1D5DB';
         textColor = '#374151';
         dateColor = '#374151';
-      } else if (isPast && !done) {
+      } else if (isPast && statusCode === ASSIGNMENT_STATUS.IN_PROGRESS) {
         bg = '#c0392b';
         borderColor = '#b23326';
         textColor = '#fff';
         dateColor = '#fff';
-      } else if (!isPast && done) {
+      } else if (isToday && isDone) {
         bg = 'white';
       }
 
       const chip = document.createElement('div');
       let cls = 'student-chip status-chip';
-      if (!done && !isPostponed && !isExempt) cls += ' missed';
-      if (isPostponed) cls += ' postponed';
-      if (isExempt) cls += ' exempt';
+      if (statusCode === ASSIGNMENT_STATUS.IN_PROGRESS) cls += ' missed';
+      if (statusCode === ASSIGNMENT_STATUS.EXEMPT) cls += ' exempt';
       chip.className = cls;
       chip.dataset.student = stu.name;
       chip.dataset.uid = inst.uid;
 
       let dateLabel = formatKoreanDate?.(inst.dateObj) ?? inst.date;
-      if (isPostponed && postponedTo) {
-        const postponedLabel = formatKoreanDate?.(postponedTo) ?? postponedTo;
-        dateLabel += ` → ${postponedLabel}`;
-      }
-
+      
       const labelSpan = document.createElement('span');
       labelSpan.className = 'status-chip__label';
-      labelSpan.textContent = inst.text;
+      labelSpan.textContent = `${inst.text} · ${statusCode}`;
 
       const contentWrap = document.createElement('div');
       contentWrap.className = 'status-chip__content';
       contentWrap.appendChild(labelSpan);
 
-      if (isExempt) {
+      if (statusCode === ASSIGNMENT_STATUS.EXEMPT) {
         const iconSpan = document.createElement('span');
         iconSpan.className = 'status-chip__icon';
         iconSpan.textContent = '🚫';
         contentWrap.appendChild(iconSpan);
       }
 
-      const exemptNote = isExempt ? (st?.note || '').trim() : '';
-      if (exemptNote) {
+      const statusNote = (st?.note || '').trim();
+      if (statusNote) {
         const noteSpan = document.createElement('span');
         noteSpan.className = 'status-chip__note';
-        noteSpan.textContent = exemptNote;
+        noteSpan.textContent = statusNote;
         contentWrap.appendChild(noteSpan);
       }
+
+      const menuBtn = document.createElement('button');
+      menuBtn.type = 'button';
+      menuBtn.className = 'status-chip__menu';
+      menuBtn.textContent = '⋯';
+      menuBtn.title = '상태 변경';
+      menuBtn.dataset.action = 'open-status-modal';
+      contentWrap.appendChild(menuBtn);
+
 
       const dateSpan = document.createElement('span');
       dateSpan.className = 'status-chip__date';
@@ -1282,26 +1265,6 @@ const toggleShowEvents = () => {
   applyShowEventsBtn();
 };
 
-const applyPeBtn = () => {
-  const btn = document.getElementById('peToggleBtn');
-  if (!btn) return;
-  let pref = localStorage.getItem('showPostponedExempt');
-  if (pref !== 'yes' && pref !== 'no') {
-    pref = 'yes';
-    localStorage.setItem('showPostponedExempt', pref);
-  }
-  const show = pref !== 'no';
-  btn.innerHTML = show ? '면제<br>숨김' : '면제<br>표시';
-  btn.setAttribute('aria-pressed', String(show));
-};
-
-const toggleShowPe = () => {
-  const show = localStorage.getItem('showPostponedExempt') !== 'no';
-  localStorage.setItem('showPostponedExempt', show ? 'no' : 'yes');
-  renderStudentStatus();
-  applyPeBtn();
-};
-
 const bindStudentStatusInteractions = () => {
   const container = document.getElementById('student-status-list');
   if (!container) return;
@@ -1322,17 +1285,28 @@ const bindStudentStatusInteractions = () => {
   const TAP_DELAY = 250;
 
   container.addEventListener('click', (e) => {
+    const menuBtn = e.target.closest('.status-chip__menu');
+    if (menuBtn) {
+      const chipForMenu = menuBtn.closest('.student-chip');
+      if (!chipForMenu || !container.contains(chipForMenu)) return;
+      e.stopPropagation();
+      openStatusModal(chipForMenu.dataset.student, chipForMenu.dataset.uid);
+      return;
+    }
+
     const chip = e.target.closest('.student-chip');
-    if (!chip || !container.contains(chip) || chip.classList.contains('exempt')) return;
+    if (!chip || !container.contains(chip)) return;
 
     if (tapTimer) clearTimeout(tapTimer);
     tapTimer = setTimeout(() => {
       tapTimer = null;
       const student = chip.dataset.student;
       const uid = chip.dataset.uid;
-      const nowIsDone = !chip.classList.contains('missed');
-      updateAssignmentStatus({ studentName: student, uid, nextStatus: nowIsDone ? '' : 'd' });
-      chip.classList.toggle('missed', nowIsDone);
+     const statusNow = getStatusValue(getStatusFor?.(student, uid)?.s);
+      const nextStatus = (statusNow === ASSIGNMENT_STATUS.DONE || statusNow === ASSIGNMENT_STATUS.LATE_DONE)
+        ? ASSIGNMENT_STATUS.IN_PROGRESS
+        : ASSIGNMENT_STATUS.DONE;
+      updateAssignmentStatus({ studentName: student, uid, nextStatus });
       schedule();
     }, TAP_DELAY);
   }, false);
@@ -1449,18 +1423,12 @@ const bindVacationInteractions = () => {
 
 const bindEventToggles = () => {
   applyShowEventsBtn();
-  applyPeBtn();
   document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
-  document.getElementById('peToggleBtn')?.addEventListener('click', toggleShowPe);
   window.addEventListener('storage', (e) => {
     if (e.key === 'showEvents') {
       renderEventsStrip?.('events-strip-teacher');
       renderStudentStatus();
       applyShowEventsBtn();
-    }
-    if (e.key === 'showPostponedExempt') {
-      renderStudentStatus();
-      applyPeBtn();
     }
   });
 };
