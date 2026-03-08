@@ -591,7 +591,7 @@
     .obs-ability-select.ability-none{ color:#6b7280; font-weight:700; }
     .obs-student-cards{
       display:grid;
-      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
       gap:6px;
       max-height:180px;
       overflow-y:auto;
@@ -657,7 +657,11 @@
       flex-direction:column;
       gap:2px;
     }
-    .obs-item .student{ font-size:14px; }
+    .obs-item .student-meta{
+      color:#1f2937;
+      font-size:14px;
+      font-weight:500;
+    }
     .obs-item .main{ min-width:0; }
     .obs-item .headline{
       display:flex;
@@ -690,6 +694,11 @@
     .obs-item .obs-ability.ability-relationship{ color:var(--exp-relationship); }
     .obs-item button{
       justify-self:end;
+    }
+    .obs-actions button[data-action="edit"]{
+      font-size:12px;
+      padding:4px 8px;
+      min-height:28px;
     }
     .obs-actions{
       display:flex;
@@ -855,7 +864,7 @@
           <label id="task-exp-box" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             🎯 경험치
             <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <label><input type="checkbox" id="task-exp-responsibility" value="책임" checked> 책임(기본)</label>
+              <<label><input type="checkbox" id="task-exp-responsibility" value="책임" checked> 책임</label>
               <label><input type="checkbox" id="task-exp-effort" value="노력"> 노력</label>
               <label><input type="checkbox" id="task-exp-achievement" value="성취"> 성취</label>
               <label><input type="checkbox" id="task-exp-relationship" value="관계"> 관계</label>
