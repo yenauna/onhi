@@ -126,6 +126,9 @@ const initTabs = () => {
 };
 
 const initTeacherApp = () => {
+  // [잠금 기능 추가] teacher_auth 인증 완료 전에는 교사용 앱 초기화 지연
+  if (sessionStorage.getItem('teacher_auth') !== 'ok') return;
+  
   window.teacherAppReady = true;
 
   if (typeof window.migrateToUIDOnce === 'function') window.migrateToUIDOnce();
@@ -143,3 +146,4 @@ const initTeacherApp = () => {
 };
 
 document.addEventListener('DOMContentLoaded', initTeacherApp);
+window.addEventListener('onhi:teacher-unlocked', initTeacherApp, { once: true });
