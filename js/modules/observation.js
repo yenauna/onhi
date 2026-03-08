@@ -398,6 +398,7 @@ const renderObservationList = () => {
     row.classList.add(typeClass);
     row.innerHTML = `
       <div class="meta"><div>${escapeHTML(formattedDate)}</div><div class="student-meta">${escapeHTML(`${item.studentId || ''} ${item.studentName || ''}`.trim())}</div></div>
+      <div class="main">
         <div class="headline">
         <span class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</span>
           <span class="obs-ability ${abilityClass}">${escapeHTML(abilityText)}</span>
