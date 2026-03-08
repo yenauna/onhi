@@ -270,6 +270,7 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
   let _studentsCache = null;
   let _studentSource = null;
   const STUDENT_TABLE_CANDIDATES = ['students', 'student', 'student_directory', 'onhi_students'];
+  const LOCAL_STUDENTS_KEY = 'students';
 
   const isRlsError = (error) => {
     const message = String(error?.message || '').toLowerCase();
@@ -289,6 +290,15 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
     };
   };
 
+  const loadLocalStudents = () => {
+    const { list } = normalizeStudentsList(getJSON(LOCAL_STUDENTS_KEY, []));
+    return list;
+  };
+
+  const saveLocalStudents = (list) => {
+    setJSON(LOCAL_STUDENTS_KEY, Array.isArray(list) ? list : []);
+  };
+  
   const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
   
   const detectStudentSource = async (client) => {
@@ -325,7 +335,7 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
       return _studentsCache;
     }
 
-  const client = await window.ensureSupabaseClient?.();
+    const client = await window.ensureSupabaseClient?.();
     if (!client) {
       console.error('[Students] Supabase client unavailable. URL/KEY 값을 확인하세요.');
       _studentsCache = [];
