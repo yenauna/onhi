@@ -105,11 +105,6 @@
      background:#f05555;
      color:#fff;
     }
-    .task-box.postponed{
-     background:#fddf7f;
-     color:#000;
-     border-color:#f0c24c;
-    }
     .task-name{ flex:1; min-width:0; text-align:left;
      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } /* 긴 제목 말줄임 */
 
@@ -552,21 +547,16 @@ async function renderCalendar(){
       } else {
         
         // 과제 pill (면제/완료/미완료)
-        let statusCode = '';
-        let postponedTo = null;
+        let statusCode = '진행중';
         if (typeof getStatusFor === 'function') {
-          const st = getStatusFor(currentStudent, inst.id); // {s:'e'|'d'|'p'|'' ...}
-          statusCode = st?.s || '';
-          postponedTo = st?.du || null;
+          const st = getStatusFor(currentStudent, inst.id);
+          statusCode = (typeof normalizeAssignmentStatus === 'function')
+            ? normalizeAssignmentStatus(st?.s)
+            : (st?.s || '진행중');
         }
 
-        // 미룬 날짜 셀에서는 1회만 표시(중복 방지). 원래 날짜는 그대로 표시.
-        if (statusCode === 'p' && postponedTo && postponedTo === dateStr) {
-          // 그대로 진행(한 번만 렌더)
-        }
-        
-        const isExempt = statusCode === 'e';
-        const done = statusCode === 'd';
+       const isExempt = statusCode === '면제';
+        const done = statusCode === '완료' || statusCode === '늦게완료';
         const pillCls = isExempt ? 'task-pill exempt' : (done ? 'task-pill done' : 'task-pill pending');
         const icon    = isExempt ? ' 🚫' : '';
         return `<div class="${pillCls}">${escapeHTML(inst.text)}${icon}</div>`;
@@ -595,7 +585,7 @@ async function renderCalendar(){
   setCalLabel();
 }
 
-  // targetDate 하루치만 계산. '미룸' 날짜면 한 번만, 원래/반복 날짜도 그대로 보이게.
+  // targetDate 하루치만 계산.
 function buildInstancesOn(targetDate){
   const tasks = getTasks();
   const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
@@ -629,21 +619,7 @@ function buildInstancesOn(targetDate){
     const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
     if (!assigned) return;
 
-    // 상태 조회
-    const st  = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, t.id) : null;
-    const code = st?.s || '';     // '', 'd', 'p', 'e'
-    const du   = st?.du || null;
-
-    let pushedByPostpone = false;
-
-    // ① 미룬 날짜면 여기서 1회만 푸시(중복 방지)
-    if (code === 'p' && du === dateStr) {
-      pushOne(t);
-      pushedByPostpone = true;
-    }
-
-    // ② 원래/반복 날짜 판단 (미룬 날짜에서 이미 넣었으면 중복 방지)
-    if (!pushedByPostpone && inRangeOn(t)) {
+    if (inRangeOn(t)) {
       const rpt = t.repeat || 'none';
       if (rpt === 'daily') {
         pushOne(t);
@@ -702,8 +678,15 @@ function buildInstancesOn(targetDate){
       const list = buildInstancesOn(d);
       list.forEach(inst => {
         const st = (typeof getStatusFor === 'function') ? getStatusFor(currentStudent, inst.uid) : null;
-        const statusCode = st?.s || '';
-        if (statusCode === '') instances.push(inst);
+        const statusCode = (typeof normalizeAssignmentStatus === 'function')
+          ? normalizeAssignmentStatus(st?.s)
+          : (st?.s || '진행중');
+        const isToday = inst.date === `${currDate0.getFullYear()}-${pad2(currDate0.getMonth()+1)}-${pad2(currDate0.getDate())}`;
+        const isPast = inst.dateObj < today0;
+        const visible = isPast
+          ? statusCode === '진행중'
+          : (isToday && (statusCode === '진행중' || statusCode === '완료'));
+        if (visible) instances.push({ ...inst, statusCode });
       });
     }
 
@@ -726,10 +709,13 @@ function buildInstancesOn(targetDate){
         <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
       `;
       
-      if (isPast) {
+      if (isPast && inst.statusCode === '진행중') {
         box.style.backgroundColor = "#f05555";
         box.style.color = "#fff";
         box.classList.add('past');
+        } else if (!isPast && inst.statusCode === '완료') {
+        box.style.backgroundColor = "#fff";
+        box.style.color = "#000";
       } else {
         box.style.backgroundColor = "#f6c1c1";
         box.style.color = "#000";
@@ -737,7 +723,13 @@ function buildInstancesOn(targetDate){
      }
 
       box.onclick = () => {
-        setDone(currentStudent, inst.uid, true);
+        const nextStatus = inst.statusCode === '완료' ? '진행중' : '완료';
+        if (typeof setStatusFor === 'function') {
+          const shouldLate = nextStatus === '완료' && isPast;
+          setStatusFor(currentStudent, inst.uid, { s: shouldLate ? '늦게완료' : nextStatus });
+        } else {
+          setDone(currentStudent, inst.uid, nextStatus === '완료');
+        }
         renderTasks();
       };
       
