@@ -67,6 +67,8 @@
     }
 
     /* 날짜 네비게이션 버튼 */
+    #student-exp-strip{ display:flex; justify-content:center; margin-bottom:10px; font-size:16px; }
+    #student-exp-strip .exp-score{ margin-top:0; }
     #date-nav{ margin-bottom: 8px; text-align:center; }
     #date-nav button{
       margin: 0 8px;
@@ -296,6 +298,8 @@
   <!-- ▼▼ 오늘 일정 스트립: 여기 추가 -->
   <div id="events-strip" class="event-grid"></div>
 
+  <div id="student-exp-strip"></div>
+
   <div id="date-nav">
     <button id="prev-day">◀ 이전날</button>
     <button id="next-day">다음날 ▶</button>
@@ -358,6 +362,7 @@
   const prevDayBtn = document.getElementById("prev-day");
   const nextDayBtn = document.getElementById("next-day");
   const calendarBox = document.getElementById("calendar-box");
+  const studentExpStrip = document.getElementById("student-exp-strip");
 
   function formatDate(d) {
     const yyyy = d.getFullYear();
@@ -660,11 +665,20 @@ function buildInstancesOn(targetDate){
   return dedup;
 }
 
-
+  function renderStudentExp(){
+    if (!studentExpStrip) return;
+    const scores = (typeof calculateStudentExpScores === "function")
+      ? calculateStudentExpScores(currentStudent)
+      : { total:0, responsibility:0, effort:0, achievement:0, relationship:0 };
+    studentExpStrip.innerHTML = (typeof renderExpScoreHTML === "function")
+      ? renderExpScoreHTML(scores, { boxed: true })
+      : '';
+  }
   
   // 공통 헬퍼 사용  
   function renderTasks() {
     renderEventsStrip('events-strip', { studentName: currentStudent }); // 오늘 일정 먼저
+    renderStudentExp();
     todoContainer.innerHTML = "";
     todayDate.textContent = displayDate(currentDate);
     
@@ -759,8 +773,7 @@ function buildInstancesOn(targetDate){
 
   window.addEventListener('storage', (event) => {
     if (!event.key) return;
-    if (event.key === 'tasksV2' || event.key === 'vacations' || event.key.startsWith('doneTasks-')) {
-      refreshStudentViews();
+    if (event.key === 'tasksV2' || event.key === 'vacations' || event.key === 'observationRecords:v1' || event.key.startsWith('doneTasks-')) {
     }
   });
 
