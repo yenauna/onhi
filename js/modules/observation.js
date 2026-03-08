@@ -82,6 +82,14 @@ const getAbilityClass = (ability) => (ability === '책임'
         ? 'ability-relationship'
         : 'ability-none');
 
+const getObservationAbilities = (item) => {
+  if (Array.isArray(item?.abilities)) {
+    return item.abilities.filter((ability) => ['책임', '노력', '성취', '관계'].includes(ability));
+  }
+  if (item?.ability) return [item.ability];
+  return [];
+};
+
 const updateTypeSelectColor = () => {
   const typeSelect = document.getElementById('obs-type');
   if (!typeSelect) return;
@@ -295,14 +303,17 @@ const getFilteredObservationList = () => {
       if (rangeEnd && String(recordDate) > String(rangeEnd)) return false;
       if (filters.studentId && String(item.studentId) !== String(filters.studentId)) return false;
       if (filters.type && item.type !== filters.type) return false;
-      if (filters.ability && item.ability !== filters.ability) return false;
+      if (filters.ability) {
+        const abilities = getObservationAbilities(item);
+        if (!abilities.includes(filters.ability)) return false;
+      }
       if (filters.search) {
         const haystack = [
           item.studentName,
           item.template,
           item.memo,
           item.type,
-          item.ability,
+          getObservationAbilities(item).join(' '),
           item.date,
         ].join(' ').toLowerCase();
         if (!haystack.includes(filters.search)) return false;
@@ -360,8 +371,10 @@ const renderObservationList = () => {
     const recordDate = item.date || item.startDate || '';
     const formattedDate = formatKoreanDate?.(recordDate) ?? recordDate;
     const memoText = [item.template || '', item.memo || ''].filter(Boolean).join(' · ');
+    const abilities = getObservationAbilities(item);
+    const abilityText = abilities.length ? abilities.join(', ') : '-';
     const typeClass = getTypeClass(item.type);
-    const abilityClass = getAbilityClass(item.ability || '');
+   const abilityClass = getAbilityClass(abilities[0] || '');
     const isEditing = expandedObservationActionId === item.id;
     const actionButtons = isEditing
       ? `<button type="button" data-action="save" data-id="${escapeHTML(item.id)}">적용</button>
@@ -384,12 +397,11 @@ const renderObservationList = () => {
       : '';
     row.classList.add(typeClass);
     row.innerHTML = `
-      <div class="meta"><div>${escapeHTML(formattedDate)}</div><div>${escapeHTML(item.studentId || '')}</div></div>
+      <div class="meta"><div>${escapeHTML(formattedDate)}</div><div>${escapeHTML(`${item.studentId || ''} ${item.studentName || ''}`.trim())}</div></div>
       <div class="main">
         <div class="headline">
-          <strong>${escapeHTML(item.studentName || '')}</strong>
-          <span class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</span>
-          <span class="obs-ability ${abilityClass}">${escapeHTML(item.ability || '-')}</span>
+        <span class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</span>
+          <span class="obs-ability ${abilityClass}">${escapeHTML(abilityText)}</span>
         </div>
         <div class="note">${escapeHTML(memoText || '-')}</div>
       </div>
@@ -425,6 +437,7 @@ const addObservationRecord = () => {
       studentName: studentButton?.dataset.name || '',
       type,
       ability: type === '기록' ? '' : ability,
+      abilities: type === '기록' ? [] : [ability],
       template,
       memo,
       date,
@@ -498,7 +511,7 @@ const bindObservationEvents = () => {
       item.date || item.startDate || '',
       item.studentName || '',
       item.type || '',
-      item.ability || '',
+      getObservationAbilities(item).join(', '),
       [item.template || '', item.memo || ''].filter(Boolean).join(' · '),
     ]);
 
@@ -578,6 +591,7 @@ const bindObservationEvents = () => {
       ObservationStorage.updateObservation(id, {
         type,
         ability: type === '기록' ? '' : ability,
+        abilities: type === '기록' ? [] : [ability],
         date,
         startDate: date,
         endDate: date,
