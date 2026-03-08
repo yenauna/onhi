@@ -209,7 +209,7 @@ const renderObservationStudentOptions = async () => {
         button.className = 'obs-student-card';
         button.dataset.id = stu.id;
         button.dataset.name = stu.name;
-        button.textContent = stu.name;
+        button.textContent = `${stu.id} ${stu.name}`;
         button.title = `${stu.id} ${stu.name}`;
         if (selectedStudentIds.has(String(stu.id))) button.classList.add('is-selected');
         formBox.appendChild(button);
@@ -397,8 +397,7 @@ const renderObservationList = () => {
       : '';
     row.classList.add(typeClass);
     row.innerHTML = `
-      <div class="meta"><div>${escapeHTML(formattedDate)}</div><div>${escapeHTML(`${item.studentId || ''} ${item.studentName || ''}`.trim())}</div></div>
-      <div class="main">
+      <div class="meta"><div>${escapeHTML(formattedDate)}</div><div class="student-meta">${escapeHTML(`${item.studentId || ''} ${item.studentName || ''}`.trim())}</div></div>
         <div class="headline">
         <span class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</span>
           <span class="obs-ability ${abilityClass}">${escapeHTML(abilityText)}</span>
