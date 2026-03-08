@@ -81,7 +81,7 @@ function setPostponed(name, uid, newDate /*"YYYY-MM-DD"*/){
   ];
   const CLOUD_SYNC_ROW_ID = 'global';
   const CLOUD_SYNC_PREFIXES = ['doneTasks-', 'challengeStatus-', 'challengeProgress-'];
-  const CLOUD_SYNC_KEYS = new Set(['tasksV2', 'challenges']);
+  const CLOUD_SYNC_KEYS = new Set(['tasksV2', 'challenges', 'observationRecords:v1']);
   const CLOUD_SYNC_EVENT = 'onhi:cloud-sync-applied';
   const shouldCloudSync = (key) => {
     if (!key) return false;
