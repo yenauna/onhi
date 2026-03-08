@@ -641,8 +641,8 @@
     .obs-item{
       display:grid;
       gap:6px 12px;
-      grid-template-columns: 150px minmax(320px, 1fr) 72px;
-      align-items:center;
+      grid-template-columns: 160px minmax(0, 1fr) auto;
+      align-items:start;
       border:1px solid #e6e8eb;
       border-radius:14px;
       padding:10px 12px;
@@ -662,7 +662,12 @@
       font-size:14px;
       font-weight:500;
     }
-    .obs-item .main{ min-width:0; }
+    .obs-item .main{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
     .obs-item .headline{
       display:flex;
       align-items:center;
@@ -704,6 +709,8 @@
       display:flex;
       gap:6px;
       justify-content:flex-end;
+      justify-self:end;
+      align-self:start;
     }
     /* ================================
        [잠금 기능 추가] 교사용 비밀번호 인증 UI
