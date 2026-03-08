@@ -693,6 +693,41 @@
       gap:6px;
       justify-content:flex-end;
     }
+    /* ================================
+       [잠금 기능 추가] 교사용 비밀번호 인증 UI
+       ================================ */
+    #teacher-auth-gate{
+      width:100%;
+      max-width:420px;
+      margin:0 auto;
+    }
+    .teacher-auth-card{
+      background:#fff;
+      border:1px solid var(--card-line);
+      border-radius:18px;
+      box-shadow:0 12px 28px rgba(0,0,0,.08);
+      padding:24px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .teacher-auth-card h3{
+      margin:0;
+      text-align:center;
+      font-size:22px;
+    }
+    .teacher-auth-error{
+      min-height:20px;
+      color:#b42318;
+      font-size:14px;
+      margin:0;
+    }
+    body.teacher-auth-ok #teacher-auth-gate{ display:none; }
+    body:not(.teacher-auth-ok) .topbar,
+    body:not(.teacher-auth-ok) #main-box,
+    body:not(.teacher-auth-ok) #challenges-box{
+      display:none !important;
+    }
     @media (max-width: 720px){
       .obs-inline-row{ grid-template-columns: 1fr; }
       .obs-item{
@@ -703,13 +738,21 @@
         justify-self:start;
       }
     }
-
-    
-
-    
+   
   </style>
 </head>
 <body data-role="teacher" class="teacher-page">
+  <!-- [잠금 기능 추가] 인증 전에는 이 비밀번호 입력 UI만 표시 -->
+  <div id="teacher-auth-gate">
+    <div class="teacher-auth-card">
+      <h3>교사용 페이지</h3>
+      <p style="margin:0; color:#475467;">비밀번호를 입력하세요.</p>
+      <input type="password" id="teacher-password-input" placeholder="비밀번호" autocomplete="current-password">
+      <button type="button" class="btn-primary" id="teacher-password-submit">확인</button>
+      <p id="teacher-auth-error" class="teacher-auth-error"></p>
+    </div>
+  </div>
+  
   <!-- 상단 풀바(칩 버튼형) -->
   <header class="topbar">
     <div class="logo-area">
@@ -724,6 +767,7 @@
       <button id="tab-student">학생</button>
     </nav>
     <div class="right-tools">
+      <button type="button" id="teacher-logout-btn" class="mode-btn">로그아웃</button>
       <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false">일정숨김</button>
       <button type="button" id="compactBtn" class="mode-btn" aria-pressed="false"></button>
       <button type="button" id="peToggleBtn" class="mode-btn" aria-pressed="false"></button>
@@ -1093,6 +1137,83 @@
   </section>
 </div>
 
+  <script src="js/supabaseClient.js"></script>
+<script>
+  // [잠금 기능 추가] 교사용 비밀번호 잠금/해제 로직
+  (function () {
+    const AUTH_KEY = 'teacher_auth';
+
+    const setAuthState = (isAuth) => {
+      document.body.classList.toggle('teacher-auth-ok', !!isAuth);
+      if (!isAuth) {
+        document.getElementById('teacher-auth-error').textContent = '';
+        document.getElementById('teacher-password-input').value = '';
+      }
+    };
+
+    const fetchTeacherPassword = async () => {
+      const client = await window.ensureSupabaseClient?.();
+      if (!client) throw new Error('Supabase 연결 실패');
+
+      const { data, error } = await client
+        .from('settings')
+        .select('value')
+        .eq('key', 'teacher_password')
+        .maybeSingle();
+
+      if (error) throw error;
+      return String(data?.value || '');
+    };
+
+    const checkPassword = async () => {
+      const inputEl = document.getElementById('teacher-password-input');
+      const errorEl = document.getElementById('teacher-auth-error');
+      const typed = String(inputEl.value || '').trim();
+
+      if (!typed) {
+        errorEl.textContent = '비밀번호를 입력하세요.';
+        return;
+      }
+
+      errorEl.textContent = '';
+      try {
+        const savedPassword = await fetchTeacherPassword();
+        if (typed === savedPassword) {
+          sessionStorage.setItem(AUTH_KEY, 'ok');
+          setAuthState(true);
+          window.dispatchEvent(new Event('onhi:teacher-unlocked'));
+          return;
+        }
+        errorEl.textContent = '비밀번호가 올바르지 않습니다.';
+      } catch (err) {
+        console.error('[TeacherAuth] 비밀번호 확인 실패:', err);
+        errorEl.textContent = '비밀번호 확인 중 오류가 발생했습니다.';
+      }
+    };
+
+    const lockTeacherPage = () => {
+      sessionStorage.removeItem(AUTH_KEY);
+      setAuthState(false);
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const submitBtn = document.getElementById('teacher-password-submit');
+      const inputEl = document.getElementById('teacher-password-input');
+      const logoutBtn = document.getElementById('teacher-logout-btn');
+
+      const isAuth = sessionStorage.getItem(AUTH_KEY) === 'ok';
+      setAuthState(isAuth);
+
+      if (!isAuth) inputEl.focus();
+
+      submitBtn?.addEventListener('click', checkPassword);
+      inputEl?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') checkPassword();
+      });
+      logoutBtn?.addEventListener('click', lockTeacherPage);
+    });
+  })();
+</script>
 <script type="module" src="js/teacher-app.js"></script>
   <script>
   (function () {
@@ -1219,8 +1340,6 @@
     }
   })();
 </script>
-
-  <script src="js/supabaseClient.js"></script>
 
 </body>
 </html>
