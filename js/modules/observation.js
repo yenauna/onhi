@@ -525,4 +525,10 @@ const showObservations = async () => {
   renderObservationList();
 };
 
+window.addEventListener('onhi:cloud-sync-applied', () => {
+  if (!document.getElementById('observation-management')) return;
+  renderObservationStudentOptions();
+  renderObservationList();
+});
+
 export { initObservations, showObservations };
