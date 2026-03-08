@@ -72,11 +72,28 @@ const getTypeClassForSelect = (type) => (type === '칭찬'
     ? 'type-advice'
     : 'type-record');
 
+const getAbilityClass = (ability) => (ability === '책임'
+  ? 'ability-responsibility'
+  : ability === '노력'
+    ? 'ability-effort'
+    : ability === '성취'
+      ? 'ability-achievement'
+      : ability === '관계'
+        ? 'ability-relationship'
+        : 'ability-none');
+
 const updateTypeSelectColor = () => {
   const typeSelect = document.getElementById('obs-type');
   if (!typeSelect) return;
   typeSelect.classList.remove('type-praise', 'type-advice', 'type-record');
   typeSelect.classList.add(getTypeClassForSelect(typeSelect.value || '기록'));
+};
+
+const updateAbilitySelectColor = () => {
+  const abilitySelect = document.getElementById('obs-ability');
+  if (!abilitySelect) return;
+  abilitySelect.classList.remove('ability-responsibility', 'ability-effort', 'ability-achievement', 'ability-relationship', 'ability-none');
+  abilitySelect.classList.add(getAbilityClass(abilitySelect.value || ''));
 };
 
 const getStudentsSorted = async () => sortStudents(await loadStudents());
@@ -98,12 +115,27 @@ const applyObservationTypeRules = () => {
   const abilitySelect = document.getElementById('obs-ability');
   if (!abilitySelect) return;
 
+  const noneOption = abilitySelect.querySelector("option[value='']");
+  
   if (type === '기록') {
+    if (noneOption) {
+      noneOption.hidden = false;
+      noneOption.disabled = false;
+    }
     abilitySelect.value = '';
     abilitySelect.required = false;
-  } else if (!abilitySelect.value) {
-    abilitySelect.value = '책임';
+  } else {
+    if (noneOption) {
+      noneOption.hidden = true;
+      noneOption.disabled = true;
+    }
+    if (!abilitySelect.value || abilitySelect.value === '') {
+      abilitySelect.value = '책임';
+    }
+    abilitySelect.required = true;
   }
+
+  updateAbilitySelectColor();
 };
 
 const renderObservationTemplates = () => {
@@ -128,7 +160,7 @@ const renderObservationTemplates = () => {
   clearBtn.type = 'button';
   clearBtn.className = 'obs-template-item';
   clearBtn.dataset.value = '';
-  clearBtn.textContent = type === '기록' ? '직접 작성' : '선택 안 함';
+  clearBtn.textContent = type === '기록' ? '직접 작성' : '문장 비우기';
   menu.appendChild(clearBtn);
  
   templates.forEach((text) => {
@@ -234,9 +266,7 @@ const getYearRange = (yearValue) => {
   };
 };
 
-const getDateFilterRange = (filters) => {
-  if (filters.mode === 'month') return getMonthRange(filters.month);
-  if (filters.mode === 'year') return getYearRange(filters.year);
+const getFilteredObservationList = () => {
   if (filters.mode === 'range') {
     const start = filters.rangeStart || '';
     const end = filters.rangeEnd || start;
@@ -276,7 +306,7 @@ const renderObservationList = () => {
   const rangeStart = dateRange?.start || '';
   const rangeEnd = dateRange?.end || '';
   
-  const list = ObservationStorage.loadObservations()
+  return ObservationStorage.loadObservations()
     .slice()
     .filter((item) => {
       const recordDate = item.date || item.startDate || '';
@@ -308,6 +338,13 @@ const renderObservationList = () => {
       if (dateDiff !== 0) return dateDiff;
       return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
     });
+  };
+
+const renderObservationList = () => {
+  const listEl = document.getElementById('obs-list');
+  if (!listEl) return;
+
+  const list = getFilteredObservationList();
 
   listEl.innerHTML = '';
   if (list.length === 0) {
@@ -325,6 +362,7 @@ const renderObservationList = () => {
     const formattedDate = formatKoreanDate?.(recordDate) ?? recordDate;
     const memoText = [item.template || '', item.memo || ''].filter(Boolean).join(' · ');
     const typeClass = getTypeClass(item.type);
+    const abilityClass = getAbilityClass(item.ability || '');
     const isEditing = expandedObservationActionId === item.id;
     const actionButtons = isEditing
       ? `<button type="button" data-action="save" data-id="${escapeHTML(item.id)}">적용</button>
@@ -345,10 +383,17 @@ const renderObservationList = () => {
            <input type="text" data-role="edit-memo" value="${escapeHTML(item.memo || '')}" placeholder="메모(선택)" style="grid-column:1 / -1;" />
          </div>`
       : '';
+    row.classList.add(typeClass);
     row.innerHTML = `
-      <div class="meta">${escapeHTML(formattedDate)}</div>
-      <div class="student"><strong>${escapeHTML(item.studentName || '')}</strong><div class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</div></div>
-      <div class="obs-ability">${escapeHTML(item.ability || '-')}<div class="note">${escapeHTML(memoText)}</div></div>
+      <div class="meta"><div>${escapeHTML(formattedDate)}</div><div>${escapeHTML(item.studentId || '')}</div></div>
+      <div class="main">
+        <div class="headline">
+          <strong>${escapeHTML(item.studentName || '')}</strong>
+          <span class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</span>
+          <span class="obs-ability ${abilityClass}">${escapeHTML(item.ability || '-')}</span>
+        </div>
+        <div class="note">${escapeHTML(memoText || '-')}</div>
+      </div>
       <div class="obs-actions">${actionButtons}</div>
       ${editBlock}
     `;
@@ -407,7 +452,10 @@ const bindObservationEvents = () => {
     updateTypeSelectColor();
     renderObservationTemplates();
   });
-  document.getElementById('obs-ability')?.addEventListener('change', renderObservationTemplates);
+  document.getElementById('obs-ability')?.addEventListener('change', () => {
+    updateAbilitySelectColor();
+    renderObservationTemplates();
+  });
   document.getElementById('obs-add-btn')?.addEventListener('click', addObservationRecord);
   
   document.getElementById('obs-student')?.addEventListener('click', (event) => {
@@ -440,6 +488,38 @@ const bindObservationEvents = () => {
   document.getElementById('obs-filter-sort')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-search')?.addEventListener('input', renderObservationList);
 
+  document.getElementById('obs-export-btn')?.addEventListener('click', () => {
+    const list = getFilteredObservationList();
+    if (!list.length) {
+      alert('추출할 관찰 기록이 없습니다.');
+      return;
+    }
+
+    const rows = list.map((item) => [
+      item.date || item.startDate || '',
+      item.studentName || '',
+      item.type || '',
+      item.ability || '',
+      [item.template || '', item.memo || ''].filter(Boolean).join(' · '),
+    ]);
+
+    const header = ['날짜', '이름', '종류', '경험치', '메모'];
+    const toCell = (v) => String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const tableRows = [header, ...rows]
+      .map((cols) => `<tr>${cols.map((col) => `<td>${toCell(col)}</td>`).join('')}</tr>`)
+      .join('');
+    const html = `<!doctype html><html><head><meta charset="utf-8"></head><body><table border="1">${tableRows}</table></body></html>`;
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const today = getTodayString();
+    a.download = `관찰기록_${today}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  });
+  
   document.getElementById('obs-template-trigger')?.addEventListener('click', () => {
     document.getElementById('obs-template-menu')?.classList.toggle('is-open');
   });
@@ -451,6 +531,12 @@ const bindObservationEvents = () => {
     const triggerEl = document.getElementById('obs-template-trigger');
     if (templateEl) templateEl.value = value;
     if (triggerEl) triggerEl.textContent = value || '문장템플릿';
+    const memoEl = document.getElementById('obs-memo');
+    if (memoEl && value) {
+      memoEl.value = value;
+      memoEl.focus();
+      memoEl.setSelectionRange(memoEl.value.length, memoEl.value.length);
+    }
     document.getElementById('obs-template-menu')?.classList.remove('is-open');
   });
   document.addEventListener('click', (event) => {
@@ -519,6 +605,7 @@ const showObservations = async () => {
   initializeObservationDate();
   applyObservationTypeRules();
   updateTypeSelectColor();
+  updateAbilitySelectColor();
   renderObservationTemplates();
   renderObservationDateFilterInputs();
   setAddButtonLabel();
