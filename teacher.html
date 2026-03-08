@@ -641,7 +641,7 @@
     .obs-item{
       display:grid;
       gap:6px 12px;
-      grid-template-columns: 96px minmax(220px, 1fr) 80px;
+      grid-template-columns: 150px minmax(320px, 1fr) 72px;
       align-items:center;
       border:1px solid #e6e8eb;
       border-radius:14px;
@@ -653,6 +653,9 @@
     .obs-item .meta{
       font-size:13px;
       color:#555;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
     }
     .obs-item .student{ font-size:14px; }
     .obs-item .main{ min-width:0; }
@@ -852,7 +855,7 @@
           <label id="task-exp-box" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             🎯 경험치
             <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <label><input type="checkbox" value="책임" checked disabled> 책임(기본)</label>
+              <label><input type="checkbox" id="task-exp-responsibility" value="책임" checked> 책임(기본)</label>
               <label><input type="checkbox" id="task-exp-effort" value="노력"> 노력</label>
               <label><input type="checkbox" id="task-exp-achievement" value="성취"> 성취</label>
               <label><input type="checkbox" id="task-exp-relationship" value="관계"> 관계</label>
