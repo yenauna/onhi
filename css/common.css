@@ -124,13 +124,6 @@ body{
   text-decoration: line-through;
 }
 
-/* 미룸 상태 */
-.task-box.postponed{
-  background:#fddf7f;
-  border-color:#f0c24c;
-  color:#000;
-}
-
 /* 배지 */
 .tag{
   display:inline-block;
@@ -141,14 +134,8 @@ body{
   vertical-align:middle;
 }
 .tag-exempt{    background:#eef2f6; color:#586172; }
-.tag-postpone{  background:#ffe7b3; color:#8a5d00; }
 
 /* 상태별 칩 색 (기존 .missed 있음) */
-.student-chip.postponed{
-  background:#fddf7f;
-  border-color:#f0c24c;
-  color:#604400;
-}
 .student-chip.exempt{
   background:#E5E7EB;
   border-color:#D1D5DB;
@@ -234,6 +221,17 @@ body{
   font-size:10px;
   color:#666;
   flex-shrink:0;
+}
+
+.status-chip__menu{
+  margin-left:auto;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  color:inherit;
+  font-size:16px;
+  line-height:1;
+  padding:0 2px;
 }
 
 body.compact-view #student-status-list{
