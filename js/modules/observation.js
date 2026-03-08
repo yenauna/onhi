@@ -58,8 +58,26 @@ const OBS_TEMPLATES = {
 };
 
 let selectedStudentIds = new Set();
-let editingObservationId = '';
 let expandedObservationActionId = '';
+
+const getTypeClass = (type) => (type === '칭찬'
+  ? 'type-praise'
+  : type === '조언'
+    ? 'type-advice'
+    : 'type-record');
+
+const getTypeClassForSelect = (type) => (type === '칭찬'
+  ? 'type-praise'
+  : type === '조언'
+    ? 'type-advice'
+    : 'type-record');
+
+const updateTypeSelectColor = () => {
+  const typeSelect = document.getElementById('obs-type');
+  if (!typeSelect) return;
+  typeSelect.classList.remove('type-praise', 'type-advice', 'type-record');
+  typeSelect.classList.add(getTypeClassForSelect(typeSelect.value || '기록'));
+};
 
 const getStudentsSorted = async () => sortStudents(await loadStudents());
 
@@ -90,9 +108,11 @@ const applyObservationTypeRules = () => {
 
 const renderObservationTemplates = () => {
   const select = document.getElementById('obs-template');
+  const trigger = document.getElementById('obs-template-trigger');
+  const menu = document.getElementById('obs-template-menu');
   const typeSelect = document.getElementById('obs-type');
   const abilitySelect = document.getElementById('obs-ability');
-  if (!select || !typeSelect || !abilitySelect) return;
+  if (!select || !typeSelect || !abilitySelect || !trigger || !menu) return;
   
   const type = typeSelect.value || '칭찬';
   const ability = abilitySelect.value || '';
@@ -100,24 +120,31 @@ const renderObservationTemplates = () => {
     ? []
     : (OBS_TEMPLATES[ability]?.[type] || []);
   
-  select.innerHTML = '';
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = type === '기록' ? '직접 작성' : '템플릿 선택';
-  select.appendChild(placeholder);
+  const selectedText = select.value || '';
+  trigger.textContent = selectedText || '문장템플릿';
+  menu.innerHTML = '';
+
+  const clearBtn = document.createElement('button');
+  clearBtn.type = 'button';
+  clearBtn.className = 'obs-template-item';
+  clearBtn.dataset.value = '';
+  clearBtn.textContent = type === '기록' ? '직접 작성' : '선택 안 함';
+  menu.appendChild(clearBtn);
  
   templates.forEach((text) => {
-    const option = document.createElement('option');
-    option.value = text;
-    option.textContent = text;
-    select.appendChild(option);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'obs-template-item';
+    button.dataset.value = text;
+    button.textContent = text;
+    menu.appendChild(button);
   });
 };
 
 const setAddButtonLabel = () => {
   const addBtn = document.getElementById('obs-add-btn');
   if (!addBtn) return;
-  addBtn.textContent = editingObservationId ? '수정' : '저장';
+  addBtn.textContent = '저장';
 };
 
 const renderObservationStudentOptions = async () => {
@@ -185,8 +212,12 @@ const getMonthRange = (monthValue) => {
 };
 
 const getObservationFilters = () => ({
-  date: document.getElementById('obs-filter-start')?.value || '',
+  mode: document.getElementById('obs-filter-mode')?.value || 'day',
+  day: document.getElementById('obs-filter-day')?.value || '',
   month: document.getElementById('obs-filter-month')?.value || '',
+  year: document.getElementById('obs-filter-year')?.value || '',
+  rangeStart: document.getElementById('obs-filter-range-start')?.value || '',
+  rangeEnd: document.getElementById('obs-filter-range-end')?.value || '',
   studentId: document.getElementById('obs-filter-student')?.value || '',
   type: document.getElementById('obs-filter-type')?.value || '',
   ability: document.getElementById('obs-filter-ability')?.value || '',
@@ -194,13 +225,56 @@ const getObservationFilters = () => ({
   search: document.getElementById('obs-filter-search')?.value.trim().toLowerCase() || '',
 });
 
+const getYearRange = (yearValue) => {
+  const year = Number(yearValue);
+  if (!year || year < 1) return null;
+  return {
+    start: `${year}-01-01`,
+    end: `${year}-12-31`,
+  };
+};
+
+const getDateFilterRange = (filters) => {
+  if (filters.mode === 'month') return getMonthRange(filters.month);
+  if (filters.mode === 'year') return getYearRange(filters.year);
+  if (filters.mode === 'range') {
+    const start = filters.rangeStart || '';
+    const end = filters.rangeEnd || start;
+    if (!start && !end) return null;
+    return {
+      start: start || end,
+      end: end || start,
+    };
+  }
+  if (!filters.day) return null;
+  return { start: filters.day, end: filters.day };
+};
+
+const renderObservationDateFilterInputs = () => {
+  const mode = document.getElementById('obs-filter-mode')?.value || 'day';
+  const dayEl = document.getElementById('obs-filter-day');
+  const monthEl = document.getElementById('obs-filter-month');
+  const yearEl = document.getElementById('obs-filter-year');
+  const rangeStartEl = document.getElementById('obs-filter-range-start');
+  const rangeEndEl = document.getElementById('obs-filter-range-end');
+  const rangeSepEl = document.getElementById('obs-filter-range-sep');
+  if (!dayEl || !monthEl || !yearEl || !rangeStartEl || !rangeEndEl || !rangeSepEl) return;
+
+  dayEl.style.display = mode === 'day' ? '' : 'none';
+  monthEl.style.display = mode === 'month' ? '' : 'none';
+  yearEl.style.display = mode === 'year' ? '' : 'none';
+  rangeStartEl.style.display = mode === 'range' ? '' : 'none';
+  rangeEndEl.style.display = mode === 'range' ? '' : 'none';
+  rangeSepEl.style.display = mode === 'range' ? '' : 'none';
+};
+
 const renderObservationList = () => {
   const listEl = document.getElementById('obs-list');
   if (!listEl) return;
   const filters = getObservationFilters();
-  const monthRange = getMonthRange(filters.month);
-  const rangeStart = monthRange?.start || filters.date;
-  const rangeEnd = monthRange?.end || filters.date;
+  const dateRange = getDateFilterRange(filters);
+  const rangeStart = dateRange?.start || '';
+  const rangeEnd = dateRange?.end || '';
   
   const list = ObservationStorage.loadObservations()
     .slice()
@@ -250,22 +324,33 @@ const renderObservationList = () => {
     const recordDate = item.date || item.startDate || '';
     const formattedDate = formatKoreanDate?.(recordDate) ?? recordDate;
     const memoText = [item.template || '', item.memo || ''].filter(Boolean).join(' · ');
-    const typeClass = item.type === '칭찬'
-      ? 'type-praise'
-      : item.type === '조언'
-        ? 'type-advice'
-        : 'type-record';
-    const actionButtons = expandedObservationActionId === item.id
-      ? `<button type="button" data-action="save" data-id="${escapeHTML(item.id)}">저장</button>
+    const typeClass = getTypeClass(item.type);
+    const isEditing = expandedObservationActionId === item.id;
+    const actionButtons = isEditing
+      ? `<button type="button" data-action="save" data-id="${escapeHTML(item.id)}">적용</button>
          <button type="button" data-action="delete" data-id="${escapeHTML(item.id)}">삭제</button>`
       : `<button type="button" data-action="edit" data-id="${escapeHTML(item.id)}">수정</button>`;
+    const editTypeOptions = ['칭찬', '기록', '조언']
+      .map(type => `<option value="${type}"${item.type === type ? ' selected' : ''}>${type}</option>`)
+      .join('');
+    const editAbilityOptions = ['책임', '노력', '성취', '관계']
+      .map(ability => `<option value="${ability}"${item.ability === ability ? ' selected' : ''}>${ability}</option>`)
+      .join('');
+    const editBlock = isEditing
+      ? `<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;">
+           <select data-role="edit-type">${editTypeOptions}</select>
+           <select data-role="edit-ability"><option value="">선택 안 함</option>${editAbilityOptions}</select>
+           <input type="date" data-role="edit-date" value="${escapeHTML(recordDate)}" />
+           <input type="text" data-role="edit-template" value="${escapeHTML(item.template || '')}" placeholder="문장 템플릿(선택)" />
+           <input type="text" data-role="edit-memo" value="${escapeHTML(item.memo || '')}" placeholder="메모(선택)" style="grid-column:1 / -1;" />
+         </div>`
+      : '';
     row.innerHTML = `
       <div class="meta">${escapeHTML(formattedDate)}</div>
-      <div><strong>${escapeHTML(item.studentName || '')}</strong></div>
-     <div class="obs-ability">${escapeHTML(item.ability || '-')}</div>
+      <div class="student"><strong>${escapeHTML(item.studentName || '')}</strong><div class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</div></div>
+      <div class="obs-ability">${escapeHTML(item.ability || '-')}<div class="note">${escapeHTML(memoText)}</div></div>
       <div class="obs-actions">${actionButtons}</div>
-      <div class="obs-type ${typeClass}">${escapeHTML(item.type || '')}</div>
-      <div class="note">${escapeHTML(memoText)}</div>
+      ${editBlock}
     `;
     listEl.appendChild(row);
   });
@@ -285,15 +370,14 @@ const addObservationRecord = () => {
   if (selectedStudentIds.size === 0) { alert('학생을 선택하세요.'); return; }
   if (!type) { alert('종류를 선택하세요.'); return; }
   if (type !== '기록' && !ability) { alert('경험치를 선택하세요.'); return; }
-  if (type !== '기록' && !template) { alert('문장 템플릿을 선택하세요.'); return; }
   if (!date) { alert('날짜를 선택하세요.'); return; }
-   if (!template && !memo) { alert('기록 내용(템플릿 또는 메모)을 입력하세요.'); return; }
+  if (!template && !memo) { alert('기록 내용(템플릿 또는 메모)을 입력하세요.'); return; }
 
-  if (editingObservationId) {
-    const targetStudentId = [...selectedStudentIds][0];
-    const studentButton = document.querySelector(`.obs-student-card[data-id="${CSS.escape(String(targetStudentId))}"]`);
-    ObservationStorage.updateObservation(editingObservationId, {
-      studentId: targetStudentId,
+ [...selectedStudentIds].forEach((studentId) => {
+    const studentButton = document.querySelector(`.obs-student-card[data-id="${CSS.escape(String(studentId))}"]`);
+    const record = {
+      id: ObservationStorage.createObservationId(),
+      studentId,
       studentName: studentButton?.dataset.name || '',
       type,
       ability: type === '기록' ? '' : ability,
@@ -302,27 +386,10 @@ const addObservationRecord = () => {
       date,
       startDate: date,
       endDate: date,
-    });
-    editingObservationId = '';
-  } else {
-    [...selectedStudentIds].forEach((studentId) => {
-      const studentButton = document.querySelector(`.obs-student-card[data-id="${CSS.escape(String(studentId))}"]`);
-      const record = {
-        id: ObservationStorage.createObservationId(),
-        studentId,
-        studentName: studentButton?.dataset.name || '',
-        type,
-        ability: type === '기록' ? '' : ability,
-        template,
-        memo,
-        date,
-        startDate: date,
-        endDate: date,
-        createdAt: new Date().toISOString(),
-      };
-      ObservationStorage.addObservation(record);
-    });
-  }
+      createdAt: new Date().toISOString(),
+    };
+    ObservationStorage.addObservation(record);
+  });
   
   if (memoInput) memoInput.value = '';
   const templateEl = document.getElementById('obs-template');
@@ -337,6 +404,7 @@ const addObservationRecord = () => {
 const bindObservationEvents = () => {
   document.getElementById('obs-type')?.addEventListener('change', () => {
     applyObservationTypeRules();
+    updateTypeSelectColor();
     renderObservationTemplates();
   });
   document.getElementById('obs-ability')?.addEventListener('change', renderObservationTemplates);
@@ -347,15 +415,7 @@ const bindObservationEvents = () => {
     if (!card) return;
     const id = String(card.dataset.id || '');
     if (!id) return;
-    
-    if (editingObservationId) {
-      selectedStudentIds = new Set([id]);
-      document.querySelectorAll('.obs-student-card').forEach((el) => {
-        el.classList.toggle('is-selected', el === card);
-      });
-      return;
-    }
-    
+        
     if (selectedStudentIds.has(id)) {
       selectedStudentIds.delete(id);
       card.classList.remove('is-selected');
@@ -364,28 +424,39 @@ const bindObservationEvents = () => {
       card.classList.add('is-selected');
     }
   });
-  
-  document.getElementById('obs-filter-start')?.addEventListener('change', () => {
-    const monthInput = document.getElementById('obs-filter-month');
-    if (monthInput) monthInput.value = '';
+
+  document.getElementById('obs-filter-mode')?.addEventListener('change', () => {
+    renderObservationDateFilterInputs();
     renderObservationList();
   });
-  document.getElementById('obs-filter-month')?.addEventListener('change', () => {
-    const monthInput = document.getElementById('obs-filter-month');
-    const monthRange = getMonthRange(monthInput?.value || '');
-    const startInput = document.getElementById('obs-filter-start');
-    if (monthRange && startInput) startInput.value = monthRange.start;
-    renderObservationList();
-  });
-  document.getElementById('obs-filter-month-btn')?.addEventListener('click', () => {
-    document.getElementById('obs-filter-month')?.showPicker?.();
-    document.getElementById('obs-filter-month')?.focus();
-  });
+  document.getElementById('obs-filter-day')?.addEventListener('change', renderObservationList);
+  document.getElementById('obs-filter-month')?.addEventListener('change', renderObservationList);
+  document.getElementById('obs-filter-year')?.addEventListener('input', renderObservationList);
+  document.getElementById('obs-filter-range-start')?.addEventListener('change', renderObservationList);
+  document.getElementById('obs-filter-range-end')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-student')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-type')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-ability')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-sort')?.addEventListener('change', renderObservationList);
   document.getElementById('obs-filter-search')?.addEventListener('input', renderObservationList);
+
+  document.getElementById('obs-template-trigger')?.addEventListener('click', () => {
+    document.getElementById('obs-template-menu')?.classList.toggle('is-open');
+  });
+  document.getElementById('obs-template-menu')?.addEventListener('click', (event) => {
+    const item = event.target.closest('.obs-template-item');
+    if (!item) return;
+    const value = item.dataset.value || '';
+    const templateEl = document.getElementById('obs-template');
+    const triggerEl = document.getElementById('obs-template-trigger');
+    if (templateEl) templateEl.value = value;
+    if (triggerEl) triggerEl.textContent = value || '문장템플릿';
+    document.getElementById('obs-template-menu')?.classList.remove('is-open');
+  });
+  document.addEventListener('click', (event) => {
+    const picker = event.target.closest('.obs-template-picker');
+    if (!picker) document.getElementById('obs-template-menu')?.classList.remove('is-open');
+  });
   
   document.getElementById('obs-list')?.addEventListener('click', (event) => {
     const btn = event.target.closest('button[data-id][data-action]');
@@ -399,40 +470,37 @@ const bindObservationEvents = () => {
 
     if (action === 'delete') {
       ObservationStorage.deleteObservation(id);
-      if (editingObservationId === id) editingObservationId = '';
       expandedObservationActionId = '';
       setAddButtonLabel();
       renderObservationList();
       return;
     }
 
-    editingObservationId = id;
-    expandedObservationActionId = id;
-    selectedStudentIds = new Set([String(target.studentId)]);
-   document.querySelectorAll('.obs-student-card').forEach((el) => {
-      el.classList.toggle('is-selected', el.dataset.id === String(target.studentId));
-    });
-    
-    const typeEl = document.getElementById('obs-type');
-    const abilityEl = document.getElementById('obs-ability');
-    const dateEl = document.getElementById('obs-date');
-    const memoEl = document.getElementById('obs-memo');
-    
-    if (typeEl) typeEl.value = target.type || '칭찬';
-    if (abilityEl) abilityEl.value = target.ability || '';
-    applyObservationTypeRules();
-    renderObservationTemplates();
-    
-    const templateEl = document.getElementById('obs-template');
-    if (templateEl) templateEl.value = target.template || '';
-    if (dateEl) dateEl.value = target.date || target.startDate || '';
-    if (memoEl) memoEl.value = target.memo || '';
-    
-    setAddButtonLabel();
     if (action === 'edit') {
+      expandedObservationActionId = id;
       renderObservationList();
     } else if (action === 'save') {
-      addObservationRecord();
+      const row = btn.closest('.obs-item');
+      const type = row?.querySelector('[data-role="edit-type"]')?.value || '';
+      const ability = row?.querySelector('[data-role="edit-ability"]')?.value || '';
+      const date = row?.querySelector('[data-role="edit-date"]')?.value || '';
+      const template = row?.querySelector('[data-role="edit-template"]')?.value?.trim() || '';
+      const memo = row?.querySelector('[data-role="edit-memo"]')?.value?.trim() || '';
+      if (!type) { alert('종류를 선택하세요.'); return; }
+      if (type !== '기록' && !ability) { alert('경험치를 선택하세요.'); return; }
+      if (!date) { alert('날짜를 선택하세요.'); return; }
+      if (!template && !memo) { alert('기록 내용(템플릿 또는 메모)을 입력하세요.'); return; }
+      ObservationStorage.updateObservation(id, {
+        type,
+        ability: type === '기록' ? '' : ability,
+        date,
+        startDate: date,
+        endDate: date,
+        template,
+        memo,
+      });
+      expandedObservationActionId = '';
+      renderObservationList();
     }
   });
 
@@ -450,7 +518,9 @@ const showObservations = async () => {
   await renderObservationStudentOptions();
   initializeObservationDate();
   applyObservationTypeRules();
+  updateTypeSelectColor();
   renderObservationTemplates();
+  renderObservationDateFilterInputs();
   setAddButtonLabel();
   renderObservationList();
 };
