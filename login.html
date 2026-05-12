@@ -30,10 +30,7 @@
       margin:0;
       font-family:'SUIT', sans-serif; /* 본문/버튼 */
       color:var(--text);
-      background:
-        radial-gradient(900px 360px at 12% -8%, var(--bg-yellow), transparent 60%),
-        radial-gradient(820px 340px at 108% 0%, var(--bg-mint), transparent 62%),
-        linear-gradient(180deg, var(--bg-base), var(--bg-base));
+      background:#f7f8fa;
       display:grid; place-items:center;
       padding:22px 14px;
     }
@@ -41,13 +38,7 @@
     /* 구름 레이어 */
     .clouds{
       position:fixed; inset:0; pointer-events:none; z-index:-1; opacity:.9;
-      background:
-        radial-gradient(200px 80px  at 16% 30%, #fff 60%, transparent 61%),
-        radial-gradient(150px 60px  at 27% 26%, #fff 60%, transparent 61%),
-        radial-gradient(180px 70px  at 77% 28%, #fff 60%, transparent 61%),
-        radial-gradient(140px 60px  at 88% 35%, #fff 60%, transparent 61%),
-        radial-gradient(120px 50px  at 12% 52%, #fff 60%, transparent 61%),
-        radial-gradient(110px 45px  at 92% 56%, #fff 60%, transparent 61%);
+      display:none;
     }
 
     /* ===============================
@@ -57,11 +48,11 @@
 
     .card{
       width:min(92vw, 680px);
-      background:var(--card);
-      border:1px solid var(--card-line);
-      border-radius:26px;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:16px;
       padding:24px 28px;
-      box-shadow:0 16px 40px rgba(0,0,0,.10);
+      box-shadow:none;
       text-align:center;
     }
 
@@ -73,8 +64,8 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      background:#fff; border:3px solid #cfeee0; border-radius:16px;
-      box-shadow:0 10px 24px rgba(0,0,0,.08);
+      background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+      box-shadow:none;
     }
     #logo{
       display:block;
@@ -103,7 +94,7 @@
       background:var(--input-bg);
       border:2px solid var(--input-line);
       border-radius:18px; padding:16px 16px; outline:none;
-      box-shadow:0 2px 0 rgba(0,0,0,.02) inset; appearance:none;
+      box-shadow:none; appearance:none;
       transition:border-color .12s ease, box-shadow .12s ease;
     }
     select:focus{
@@ -144,7 +135,7 @@
       width:100%; border:0; border-radius:22px;
       padding:18px 18px; font-size:20px; color:#fff;
       background:var(--btn);
-      box-shadow:0 12px 28px var(--btn-shadow);
+      box-shadow:none;
       cursor:pointer;
       font-family:'SUIT',sans-serif;
     }
