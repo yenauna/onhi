@@ -272,6 +272,14 @@
     .challenge-card.expanded .ch-steps{ display:flex; }
     .challenge-card .ch-step{ padding:6px 8px; text-align:left; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; cursor:pointer; }
     .challenge-card .ch-step.done{ background:#e0f2f1; text-decoration:line-through; color:#2e7d57; }
+
+    body{background:#f7f8fa !important;}
+    body::before{display:none !important;}
+    .container{background:#fff !important; border:1px solid #e5e7eb !important; box-shadow:none !important; border-radius:16px !important;}
+    .topbar{box-shadow:none !important; border-bottom:1px solid #e5e7eb;}
+    .topbar .menu button,.topbar .menu-area button{border-radius:10px !important; box-shadow:none !important;}
+    .task-box{width:100% !important; margin-bottom:10px; border:1px solid #e5e7eb !important; border-radius:12px !important; box-shadow:none !important;}
+    #date-nav button, #logout-btn, #logout-btn-exp{box-shadow:none !important; border-radius:10px !important;}
     
   </style>
 </head>
@@ -285,6 +293,7 @@
     <nav class="menu-area" aria-label="주요 메뉴">
       <button id="tab-todo" class="active" onclick="showTodo()">오늘 할 일</button>
       <button id="tab-calendar" onclick="showCalendar()">달력</button>
+      <button id="tab-exp" onclick="showExp()">내 경험치</button>
     </nav>
     <div class="right-tools"></div>
   </header>
@@ -305,19 +314,28 @@
       <h2 id="today-date"></h2>
       <div id="todo-container"></div>
     </section>
-    <aside id="right-col">
-      <h3 class="sec-title">🎯 오늘의 도전 <span id="ch-progress-avg"></span></h3>
-      <select id="ch-sort" onchange="Challenges.renderChallengesForStudent(currentStudent)" style="margin-bottom:8px;">
-        <option value="name">이름 순</option>
-        <option value="low">진행률 낮은 순</option>
-        <option value="high">진행률 높은 순</option>
-      </select>
-      <div id="challenges-container"></div>
-    </aside>
   </div>
   <button id="logout-btn">로그아웃</button>
 </div>
 
+  <div class="container" id="exp-box" style="display:none;">
+  <section>
+    <h2 style="text-align:left; font-size:24px; margin-bottom:12px;">내 경험치</h2>
+    <div id="student-exp-panel"></div>
+  </section>
+  <section style="margin-top:20px;">
+    <h3 class="sec-title">오늘의 도전 <span id="ch-progress-avg"></span></h3>
+    <select id="ch-sort" onchange="Challenges.renderChallengesForStudent(currentStudent)" style="margin-bottom:8px;">
+      <option value="name">이름 순</option>
+      <option value="low">진행률 낮은 순</option>
+      <option value="high">진행률 높은 순</option>
+    </select>
+    <div id="challenges-container"></div>
+  </section>
+  <button id="logout-btn-exp">로그아웃</button>
+</div>
+
+<div class="container" id="calendar-box" style="display:none;">
   <div class="container" id="calendar-box" style="display:none;">
   <section class="calendar" style="display:block;">
     <div id="cal-controls" style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;">
@@ -357,6 +375,8 @@
   const prevDayBtn = document.getElementById("prev-day");
   const nextDayBtn = document.getElementById("next-day");
   const calendarBox = document.getElementById("calendar-box");
+  const expBox = document.getElementById("exp-box");
+  const studentExpPanel = document.getElementById("student-exp-panel");
   const studentExpStrip = document.getElementById("student-exp-strip");
 
   function formatDate(d) {
@@ -391,12 +411,14 @@ function getVacations(){ return getJSON('vacations', []); }
 function setActiveTab(key){
   document.getElementById('tab-todo').classList.toggle('active', key === 'todo');
   document.getElementById('tab-calendar').classList.toggle('active', key === 'calendar');
+  document.getElementById('tab-exp').classList.toggle('active', key === 'exp');
 }
 
 function showTodo(){
   setActiveTab('todo');
   taskBox.style.display = 'block';
   calendarBox.style.display = 'none';
+  expBox.style.display = 'none';
   renderTasks();
 }
 
@@ -404,9 +426,20 @@ function showCalendar(){
   setActiveTab('calendar');
   taskBox.style.display = 'none';
   calendarBox.style.display = 'block';
+  expBox.style.display = 'none';
   renderCalendar();
 }
 
+  function showExp(){
+  setActiveTab('exp');
+  taskBox.style.display = 'none';
+  calendarBox.style.display = 'none';
+  expBox.style.display = 'block';
+  renderStudentExp();
+  if (studentExpPanel) studentExpPanel.innerHTML = studentExpStrip.innerHTML;
+  Challenges.renderChallengesForStudent(currentStudent);
+}
+  
 function setCalLabel(){
   const label = document.getElementById('cal-label');
   if (label) label.textContent = `${viewYear}년 ${viewMonth+1}월`;
@@ -791,6 +824,8 @@ function buildInstancesOn(targetDate){
     localStorage.removeItem('currentStudent');
     location.href = "index.html";
   };
+  const logoutBtnExp = document.getElementById("logout-btn-exp");
+  if (logoutBtnExp) logoutBtnExp.onclick = logoutBtn.onclick;
   
 </script>
 
