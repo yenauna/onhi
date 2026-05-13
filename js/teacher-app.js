@@ -1,34 +1,58 @@
 window.teacherAppReady = true;
 
 import { initAssignments, showStatus, showAssignments, hideActionUI } from './modules/assignments.js';
+import { initObservations, showObservations } from './modules/observation.js';
+import { initStudents, showStudents } from './modules/students.js';
 import { initObservations, showObservations } from './modules/observation.js';import { initStudents, showStudents } from './modules/students.js';
 import { initChallenges, showChallenges } from './modules/challenges.js';
 import { initToolsLink } from './modules/tools-link.js';
 import { initCounseling } from './modules/counseling.js';
 
+const TAB_BUTTON_IDS = {
+  status: 'tab-status',
+  task: 'tab-task',
+  assignment: 'tab-assignment-shortcut',
+  challenges: 'tab-challenges',
+  observation: 'tab-observation',
+  student: 'tab-student',
+};
+
+const TAB_PAGE_NAMES = {
+  status: '학생 현황',
+  task: '일정 / 과제',
+  challenges: '도전',
+  observation: '관찰기록',
+  student: '학생 관리',
+};
+
+const SECTION_IDS = ['student-status-page', 'task-management', 'student-management', 'observation-management'];
+
+const TAB_RENDERERS = {
+  status: showStatus,
+  task: showAssignments,
+  challenges: showChallenges,
+  observation: showObservations,
+  student: showStudents,
+};
+
+const TAB_SECTION_VISIBILITY = {
+  status: { 'student-status-page': true },
+  task: { 'task-management': true },
+  observation: { 'observation-management': true },
+  student: { 'student-management': true },
+};
+
 const setActiveTab = (key) => {
-  const map = {
-    status: document.getElementById('tab-status'),
-    task: document.getElementById('tab-task'),
-    assignment: document.getElementById('tab-assignment-shortcut'),
-    challenges: document.getElementById('tab-challenges'),
-    observation: document.getElementById('tab-observation'),
-    student: document.getElementById('tab-student'),
-  };
-  Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
-  if (map[key]) map[key].classList.add('active');
+  Object.values(TAB_BUTTON_IDS).forEach((id) => {
+    document.getElementById(id)?.classList.remove('active');
+  });
+  document.getElementById(TAB_BUTTON_IDS[key])?.classList.add('active');
 };
 
 const renderPageTabs = (key) => {
   const container = document.getElementById('page-tabs');
   if (!container) return;
-  const pageName = {
-    status: '학생 현황',
-    task: '일정 / 과제',
-    challenges: '도전',
-    observation: '관찰기록',
-    student: '학생 관리',
-  }[key] || '페이지';
+  const pageName = TAB_PAGE_NAMES[key] || '페이지';
   container.innerHTML = `
     <span class="tab-chip is-main">${pageName}</span>
     <span class="tab-chip">페이지별 상단탭(추후 반영)</span>
@@ -40,94 +64,36 @@ const showSection = (id, show) => {
   if (el) el.style.display = show ? 'block' : 'none';
 };
 
+const showOnlySections = (visibleMap = {}) => {
+  SECTION_IDS.forEach((id) => {
+    showSection(id, Boolean(visibleMap[id]));
+  });
+};
+
 const showTab = (key) => {
   const mainBox = document.getElementById('main-box');
   const challengesBox = document.getElementById('challenges-box');
+  const isChallengesTab = key === 'challenges';
 
-  if (key === 'challenges') {
-    setActiveTab('challenges');
-    renderPageTabs('challenges');
-    if (mainBox) mainBox.style.display = 'none';
-    if (challengesBox) challengesBox.style.display = 'block';
-    showSection('student-status-page', false);
-    showSection('task-management', false);
-    showSection('student-management', false);
-    showSection('observation-management', false);
-    showChallenges();
-    return;
-  }
+  setActiveTab(key);
+  renderPageTabs(key);
 
-  if (mainBox) mainBox.style.display = 'block';
-  if (challengesBox) challengesBox.style.display = 'none';
-
-  if (key === 'status') {
-    setActiveTab('status');
-    renderPageTabs('status');
-    showSection('student-status-page', true);
-    showSection('task-management', false);
-    showSection('student-management', false);
-    showSection('observation-management', false);
+  if (mainBox) mainBox.style.display = isChallengesTab ? 'none' : 'block';
+  if (challengesBox) challengesBox.style.display = isChallengesTab ? 'block' : 'none';
+  
+  showOnlySections(TAB_SECTION_VISIBILITY[key]);
+  
+  if (key !== 'task' && key !== 'challenges') {
     hideActionUI();
-    showStatus();
-    return;
   }
 
-  if (key === 'task') {
-    setActiveTab('task');
-    renderPageTabs('task');
-    showSection('student-status-page', false);
-    showSection('task-management', true);
-    showSection('student-management', false);
-    showSection('observation-management', false);
-    showAssignments();
-    return;
-  }
-
-  if (key === 'observation') {
-    setActiveTab('observation');
-    renderPageTabs('observation');
-    showSection('student-status-page', false);
-    showSection('task-management', false);
-    showSection('student-management', false);
-    showSection('observation-management', true);
-    hideActionUI();
-    showObservations();
-    return;
-  }
-
-  if (key === 'student') {
-    setActiveTab('student');
-    renderPageTabs('student');
-    showSection('student-status-page', false);
-    showSection('task-management', false);
-    showSection('student-management', true);
-    showSection('observation-management', false);
-    hideActionUI();
-    showStudents();
-    return;
-  }
+  TAB_RENDERERS[key]?.();
 };
 
 const openTabFromHash = () => {
   const hash = (location.hash || '').replace('#', '').toLowerCase();
-  switch (hash) {
-    case 'task':
-      showTab('task');
-      break;
-    case 'challenges':
-      showTab('challenges');
-      break;
-    case 'observation':
-      showTab('observation');
-      break;
-    case 'student':
-      showTab('student');
-      break;
-    case 'status':
-    default:
-      showTab('status');
-      break;
-  }
+  const validTabs = new Set(['status', 'task', 'challenges', 'observation', 'student']);
+  showTab(validTabs.has(hash) ? hash : 'status');
 };
 
 const navigateToTab = (key) => {
