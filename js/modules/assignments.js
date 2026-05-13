@@ -359,17 +359,18 @@ const fetchHolidaysWithTimeout = async (year, country, timeoutMs = 1500) => {
 
   if (typeof ensureHolidays === 'function') {
     try {
-      const fallback = await Promise.race([fetchPublicHolidays(year, country), timeout]);
-      if (fallback && typeof fallback === 'object') return fallback;
+      const result = await Promise.race([ensureHolidays(year, country), timeout]);
+      if (result && typeof result === 'object') return result;
     } catch (e) {
-      console.warn('[calendar] holiday fallback fetch failed:', e);
+      console.warn('[calendar] ensureHolidays failed:', e);
     }
   }
+
   try {
-    const result = await Promise.race([ensureHolidays(year, country), timeout]);
-    if (result && typeof result === 'object') return result;
+    const fallback = await Promise.race([fetchPublicHolidays(year, country), timeout]);
+    if (fallback && typeof fallback === 'object') return fallback;
   } catch (e) {
-    console.warn('[calendar] holiday fetch failed:', e);
+    console.warn('[calendar] holiday fallback fetch failed:', e);
   }
   
   return {};
