@@ -174,7 +174,7 @@ body{
 }
 
 .status-card .exp-score span{
-  white-space:normal;
+  white-space:nowrap;
 }
 
 .status-card__list{
@@ -268,12 +268,20 @@ body.compact-view .status-chip__date{
 }
 
 .exp-score{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0, 1fr));
+  gap:4px;
   margin-top:4px;
-  font-size:inherit;
+  font-size:clamp(12px, 1.35vw, 16px);
   line-height:1.35;
+  align-items:center;
+  width:100%;
+}
+
+.exp-score span{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 .exp-score span{ white-space:nowrap; }
