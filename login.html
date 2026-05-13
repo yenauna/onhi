@@ -253,19 +253,22 @@
     async function login() {
       const name = document.getElementById("student-select-login").value;
       const pass = pw.value.trim();
+      const isTeacherAuthed = sessionStorage.getItem("teacher_auth") === "ok";
 
       if (!name) {
         showError("이름을 선택하세요.");
         return;
       }
-      if (pass.length !== 4) {
+      if (!isTeacherAuthed && pass.length !== 4) {
         showError("비밀번호 4자리를 입력하세요.");
         return;
       }
 
       const students = await loadStudents();
 
-      const ok = students.find(s => s.name === name && s.password === pass);
+      const ok = isTeacherAuthed
+        ? students.find(s => s.name === name)
+        : students.find(s => s.name === name && s.password === pass);
 
       if (ok) {
         showError("");
@@ -284,7 +287,13 @@
     });
 
     // 초기화
-    window.addEventListener("load", populateStudents);
+    window.addEventListener("load", () => {
+      populateStudents();
+      const isTeacherAuthed = sessionStorage.getItem("teacher_auth") === "ok";
+      if (isTeacherAuthed) {
+        pw.placeholder = "교사 로그인 상태: 비밀번호 없이 입장";
+      }
+    });
   </script>
 </body>
 </html>
