@@ -282,6 +282,8 @@ body.compact-view .status-chip__date{
   white-space:nowrap;
   overflow:visible;
   text-overflow:clip;
+  flex:0 0 auto;
+  min-width:max-content;
 }
 
 .exp-score__total--boxed{
