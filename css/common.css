@@ -265,7 +265,7 @@ body.compact-view .status-chip__date{
 
 .exp-score{
   display:flex;
-  flex-wrap:nowrap;
+  flex-wrap:wrap;
   gap:8px;
   margin-top:4px;
   font-size:inherit;
