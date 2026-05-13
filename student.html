@@ -280,6 +280,23 @@
     .topbar .menu button,.topbar .menu-area button{border-radius:10px !important; box-shadow:none !important;}
     .task-box{width:100% !important; margin-bottom:10px; border:1px solid #e5e7eb !important; border-radius:12px !important; box-shadow:none !important;}
     #date-nav button, #logout-btn, #logout-btn-exp{box-shadow:none !important; border-radius:10px !important;}
+    .exp-dashboard{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+    .exp-cards{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .exp-card{ border:1px solid #e5e7eb; border-radius:12px; padding:14px; background:#fff; display:flex; gap:10px; align-items:center; }
+    .exp-card__icon{ font-size:28px; line-height:1; }
+    .exp-card__label{ font-weight:700; font-size:17px; }
+    .exp-card__score{ font-size:40px; font-weight:800; line-height:1; margin-top:4px; }
+    .exp-card__unit{ font-size:16px; font-weight:600; color:#6b7280; margin-left:4px; }
+    .exp-recent-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .exp-recent-head h4{ margin:0; font-size:18px; }
+    .exp-recent-list{ border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; }
+    .exp-recent-item{ display:flex; gap:12px; align-items:center; padding:10px 12px; border-top:1px solid #f0f2f5; }
+    .exp-recent-item:first-child{ border-top:none; }
+    .exp-recent-date{ min-width:72px; color:#6b7280; font-weight:600; font-size:14px; }
+    .exp-recent-text{ flex:1; font-size:15px; }
+    .exp-recent-delta{ font-weight:700; }
+    .exp-delta-plus{ color:#2563eb; }
+    .exp-delta-minus{ color:#dc2626; }
     
   </style>
 </head>
@@ -430,13 +447,12 @@ function showCalendar(){
   renderCalendar();
 }
 
-  function showExp(){
+function showExp(){
   setActiveTab('exp');
   taskBox.style.display = 'none';
   calendarBox.style.display = 'none';
   expBox.style.display = 'block';
   renderStudentExp();
-  if (studentExpPanel) studentExpPanel.innerHTML = studentExpStrip.innerHTML;
   Challenges.renderChallengesForStudent(currentStudent);
 }
   
@@ -682,6 +698,54 @@ function buildInstancesOn(targetDate){
     studentExpStrip.innerHTML = (typeof renderExpScoreHTML === "function")
       ? renderExpScoreHTML(scores, { boxed: true })
       : '';
+
+    if (!studentExpPanel) return;
+    const records = getJSON('observationRecords:v1', [])
+      .filter((item) => item && item.studentName === currentStudent)
+      .filter((item) => item.type === '칭찬' || item.type === '조언')
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+      .slice(0, 8);
+
+    const cards = [
+      { key: 'responsibility', label: '책임', icon: '🛡️', color: '#2563eb' },
+      { key: 'effort', label: '노력', icon: '🌱', color: '#16a34a' },
+      { key: 'achievement', label: '성취', icon: '⭐', color: '#f59e0b' },
+      { key: 'relationship', label: '관계', icon: '💜', color: '#9333ea' },
+    ];
+
+    const cardHtml = cards.map((card) => {
+      const value = Number(scores[card.key] || 0);
+      return `
+      <article class="exp-card">
+        <div class="exp-card__icon">${card.icon}</div>
+        <div>
+          <div class="exp-card__label" style="color:${card.color}">${card.label}</div>
+          <div><span class="exp-card__score">${value}</span><span class="exp-card__unit">점</span></div>
+        </div>
+      </article>`;
+    }).join('');
+
+    const recentHtml = records.length
+      ? records.map((item) => {
+          const delta = item.type === '칭찬' ? '+1' : '-1';
+          const deltaClass = item.type === '칭찬' ? 'exp-delta-plus' : 'exp-delta-minus';
+          const dateText = String(item.date || '').replace(/^\d{4}-/, '').replace('-', '월 ') + '일';
+          const note = escapeHTML((item.note || item.memo || '').trim() || '(내용 없음)');
+          const abilityText = escapeHTML(Array.isArray(item.abilities) ? item.abilities.join(', ') : (item.ability || ''));
+          return `<div class="exp-recent-item">
+            <div class="exp-recent-date">${escapeHTML(dateText)}</div>
+            <div class="exp-recent-text">${note}</div>
+            <div class="exp-recent-delta ${deltaClass}">${abilityText} ${delta}</div>
+          </div>`;
+        }).join('')
+      : '<div class="exp-recent-item"><div class="exp-recent-text">최근 기록이 없습니다.</div></div>';
+
+    studentExpPanel.innerHTML = `
+      <section class="exp-dashboard">
+        <div class="exp-cards">${cardHtml}</div>
+        <div class="exp-recent-head"><h4>최근 기록</h4></div>
+        <div class="exp-recent-list">${recentHtml}</div>
+      </section>`;
   }
   
   // 공통 헬퍼 사용  
