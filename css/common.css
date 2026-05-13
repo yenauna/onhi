@@ -268,22 +268,24 @@ body.compact-view .status-chip__date{
 }
 
 .exp-score{
-  display:flex;
-  flex-wrap:wrap;
-  gap:4px 8px;
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0, 1fr));
+  gap:4px;
   margin-top:4px;
-  font-size:clamp(12px, 1.35vw, 16px);
-  line-height:1.35;
-  align-items:center;
   width:100%;
+  max-width:100%;
+  font-size:clamp(10px, 1vw, 14px);
+  line-height:1.3;
+  align-items:center;
+  box-sizing:border-box;
 }
 
 .exp-score span{
   white-space:nowrap;
-  overflow:visible;
+  overflow:hidden;
   text-overflow:clip;
-  flex:0 0 auto;
-  min-width:max-content;
+  min-width:0;
+  text-align:center;
 }
 
 .exp-score__total--boxed{
