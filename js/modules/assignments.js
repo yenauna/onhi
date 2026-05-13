@@ -76,6 +76,11 @@ const getTaskConfiguredAbilities = (task) => {
 
 const getStatusValue = (raw) => normalizeAssignmentStatus?.(raw) || ASSIGNMENT_STATUS?.IN_PROGRESS || '진행중';
 
+const getAssignedStudents = (task) => {
+  if (Array.isArray(task?.students) && task.students.length) return task.students;
+  return ['전체'];
+};
+
 const getDisplayDateInfo = (dateStr) => {
   const today = normalizeDate(new Date());
   const target = normalizeDate(dateStr);
@@ -536,14 +541,14 @@ const editTask = () => {
 
   const tgt = document.getElementById('target');
   const grid = document.getElementById('student-selector');
-  if (task.students?.includes('전체')) {
+  if (getAssignedStudents(task).includes('전체')) {
     tgt.value = 'all';
     if (grid) grid.style.display = 'none';
   } else {
     tgt.value = 'selected';
     if (grid) {
       grid.style.display = 'flex';
-      const set = new Set(task.students || []);
+      const set = new Set(getAssignedStudents(task));
       grid.querySelectorAll('.student-card').forEach(card => {
         card.classList.toggle('is-selected', set.has(card.dataset.name));
       });
@@ -729,8 +734,8 @@ const renderTaskCompletion = async (uid) => {
   container.appendChild(h);
 
   let students = await getStudentsSorted();
-  if (!task.students.includes('전체')) {
-    const set = new Set(task.students || []);
+  if (!getAssignedStudents(task).includes('전체')) {
+    const set = new Set(getAssignedStudents(task));
     students = students.filter(s => set.has(s.name));
   }
 
@@ -902,8 +907,8 @@ const renderCalendar = async () => {
       }
 
       let assignedNames = studentsSorted.map(s => s.name);
-      if (task && !task.students.includes('전체')) {
-        const set = new Set(task.students);
+      if (task && !getAssignedStudents(task).includes('전체')) {
+        const set = new Set(getAssignedStudents(task));
         assignedNames = assignedNames.filter(n => set.has(n));
       }
       assignedNames = assignedNames.filter(n => (joinMap[n] || '0000-00-00') <= dateStr);
@@ -965,7 +970,7 @@ const renderStudentStatus = async () => {
         text: task.text,
         date: ds,
         dateObj: new Date(d),
-        students: task.students,
+        students: getAssignedStudents(task),
       });
     };
 
