@@ -344,16 +344,34 @@ const addTaskInput = () => {
   document.getElementById('task-list')?.appendChild(div);
 };
 
+const fetchPublicHolidays = async (year, country) => {
+  const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`);
+  if (!res.ok) return {};
+  const list = await res.json();
+  if (!Array.isArray(list)) return {};
+  return Object.fromEntries(list.map((h) => [h.date, h.localName || h.name]).filter(([date]) => !!date));
+};
+
 const fetchHolidaysWithTimeout = async (year, country, timeoutMs = 1500) => {
-  const timeout = new Promise(resolve => {
+  const timeout = new Promise((resolve) => {
     setTimeout(() => resolve(null), timeoutMs);
   });
+
+  if (typeof ensureHolidays === 'function') {
+    try {
+      const fallback = await Promise.race([fetchPublicHolidays(year, country), timeout]);
+      if (fallback && typeof fallback === 'object') return fallback;
+    } catch (e) {
+      console.warn('[calendar] holiday fallback fetch failed:', e);
+    }
+  }
   try {
     const result = await Promise.race([ensureHolidays(year, country), timeout]);
     if (result && typeof result === 'object') return result;
   } catch (e) {
     console.warn('[calendar] holiday fetch failed:', e);
   }
+  
   return {};
 };
 
