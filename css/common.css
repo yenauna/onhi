@@ -269,7 +269,7 @@ body.compact-view .status-chip__date{
 
 .exp-score{
   display:grid;
-  grid-template-columns:minmax(max-content, 1.4fr) repeat(4, minmax(0, 1fr));
+  grid-template-columns:minmax(max-content, 2fr) repeat(4, minmax(max-content, 1fr));
   gap:4px;
   margin-top:4px;
   width:100%;
@@ -282,8 +282,8 @@ body.compact-view .status-chip__date{
 
 .exp-score span{
   white-space:nowrap;
-  overflow:hidden;
-  text-overflow:clip;
+  overflow:visible;
+  text-overflow:unset;
   min-width:0;
   text-align:center;
 }
