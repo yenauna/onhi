@@ -173,6 +173,10 @@ body{
   font-size:inherit;
 }
 
+.status-card .exp-score span{
+  white-space:normal;
+}
+
 .status-card__list{
   margin-top:10px;
 }
