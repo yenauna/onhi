@@ -269,7 +269,7 @@ body.compact-view .status-chip__date{
 
 .exp-score{
   display:grid;
-  grid-template-columns:repeat(5, minmax(0, 1fr));
+  grid-template-columns:minmax(max-content, 1.4fr) repeat(4, minmax(0, 1fr));
   gap:4px;
   margin-top:4px;
   width:100%;
@@ -294,7 +294,7 @@ body.compact-view .status-chip__date{
   padding:2px 8px;
 }
 
-.exp-score__total{ color:var(--exp-total); font-weight:600; }
+.exp-score__total{ color:var(--exp-total); font-weight:600; overflow:visible; }
 .exp-score__responsibility{ color:var(--exp-responsibility); }
 .exp-score__effort{ color:var(--exp-effort); }
 .exp-score__achievement{ color:var(--exp-achievement); }
