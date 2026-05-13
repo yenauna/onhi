@@ -534,6 +534,14 @@ function isSessionValid(){
 let _loginSelected = null;
 function openLoginPanel(studentName){
   _loginSelected = studentName;
+
+  const isTeacherAuthed = sessionStorage.getItem('teacher_auth') === 'ok';
+  if (isTeacherAuthed){
+    setSession(studentName);
+    location.href = 'student.html';
+    return;
+  }
+  
   const modal  = document.getElementById('studentLoginModal');
   const input  = document.getElementById('studentPwInput');
   if (!modal || !input) return;
@@ -550,10 +558,11 @@ async function confirmStudentLogin(){
   if (!_loginSelected) return;
   const input = document.getElementById('studentPwInput');
   const pw = input ? input.value.trim() : '';
+  const isTeacherAuthed = sessionStorage.getItem('teacher_auth') === 'ok';
   const students = await loadStudents(); // 기존 공통 함수 사용
   const stu = students.find(s => s.name === _loginSelected);
   if (!stu) { alert('학생 정보를 찾지 못했습니다.'); return; }
-  if (stu.password === pw){
+  if (isTeacherAuthed || stu.password === pw){
     setSession(stu.name);   // 위쪽에 이미 있는 8시간 만료 세션 유틸 사용
     closeLoginPanel();
     // 필요 시 학생 페이지로 이동(or 그대로 유지)
