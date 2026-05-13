@@ -10,12 +10,29 @@ const setActiveTab = (key) => {
   const map = {
     status: document.getElementById('tab-status'),
     task: document.getElementById('tab-task'),
+    assignment: document.getElementById('tab-assignment-shortcut'),
     challenges: document.getElementById('tab-challenges'),
     observation: document.getElementById('tab-observation'),
     student: document.getElementById('tab-student'),
   };
   Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
   if (map[key]) map[key].classList.add('active');
+};
+
+const renderPageTabs = (key) => {
+  const container = document.getElementById('page-tabs');
+  if (!container) return;
+  const pageName = {
+    status: '학생 현황',
+    task: '일정 / 과제',
+    challenges: '도전',
+    observation: '관찰기록',
+    student: '학생 관리',
+  }[key] || '페이지';
+  container.innerHTML = `
+    <span class="tab-chip is-main">${pageName}</span>
+    <span class="tab-chip">페이지별 상단탭(추후 반영)</span>
+  `;
 };
 
 const showSection = (id, show) => {
@@ -29,6 +46,7 @@ const showTab = (key) => {
 
   if (key === 'challenges') {
     setActiveTab('challenges');
+    renderPageTabs('challenges');
     if (mainBox) mainBox.style.display = 'none';
     if (challengesBox) challengesBox.style.display = 'block';
     showSection('student-status-page', false);
@@ -44,6 +62,7 @@ const showTab = (key) => {
 
   if (key === 'status') {
     setActiveTab('status');
+    renderPageTabs('status');
     showSection('student-status-page', true);
     showSection('task-management', false);
     showSection('student-management', false);
@@ -55,6 +74,7 @@ const showTab = (key) => {
 
   if (key === 'task') {
     setActiveTab('task');
+    renderPageTabs('task');
     showSection('student-status-page', false);
     showSection('task-management', true);
     showSection('student-management', false);
@@ -65,6 +85,7 @@ const showTab = (key) => {
 
   if (key === 'observation') {
     setActiveTab('observation');
+    renderPageTabs('observation');
     showSection('student-status-page', false);
     showSection('task-management', false);
     showSection('student-management', false);
@@ -76,6 +97,7 @@ const showTab = (key) => {
 
   if (key === 'student') {
     setActiveTab('student');
+    renderPageTabs('student');
     showSection('student-status-page', false);
     showSection('task-management', false);
     showSection('student-management', true);
@@ -120,9 +142,19 @@ const navigateToTab = (key) => {
 const initTabs = () => {
   document.getElementById('tab-status')?.addEventListener('click', () => navigateToTab('status'));
   document.getElementById('tab-task')?.addEventListener('click', () => navigateToTab('task'));
+  document.getElementById('tab-assignment-shortcut')?.addEventListener('click', () => navigateToTab('task'));
   document.getElementById('tab-challenges')?.addEventListener('click', () => navigateToTab('challenges'));
   document.getElementById('tab-observation')?.addEventListener('click', () => navigateToTab('observation'));
   document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
+  document.getElementById('tab-settings')?.addEventListener('click', () => alert('설정 탭은 추후 반영 예정입니다.'));
+
+  const sidebar = document.getElementById('left-sidebar');
+  const toggleBtn = document.getElementById('sidebar-toggle');
+  toggleBtn?.addEventListener('click', () => {
+    sidebar?.classList.toggle('is-collapsed');
+    const isCollapsed = sidebar?.classList.contains('is-collapsed');
+    toggleBtn.textContent = isCollapsed ? '☰ 메뉴 펼치기' : '☰ 메뉴 접기';
+  });
 };
 
 const initTeacherApp = () => {
