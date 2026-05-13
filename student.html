@@ -439,12 +439,12 @@ function showTodo(){
   renderTasks();
 }
 
-function showCalendar(){
+async function showCalendar(){
   setActiveTab('calendar');
   taskBox.style.display = 'none';
   calendarBox.style.display = 'block';
   expBox.style.display = 'none';
-  renderCalendar();
+  await renderCalendar();
 }
 
 function showExp(){
@@ -455,6 +455,13 @@ function showExp(){
   renderStudentExp();
   Challenges.renderChallengesForStudent(currentStudent);
 }
+
+  const safeEscape = (value) => {
+  if (typeof escapeHTML === 'function') return escapeHTML(value);
+  return String(value ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+};
   
 function setCalLabel(){
   const label = document.getElementById('cal-label');
@@ -481,6 +488,8 @@ async function renderCalendar(){
   tbody.innerHTML = '';
   const year = viewYear;
   const month = viewMonth;
+
+  try {
 
   let holidaysMap = {};
   try {
@@ -573,8 +582,8 @@ async function renderCalendar(){
     const holName = holidaysMap[dateStr] || null;
     const vacName = isVacation(dateStr);
     const badge = holName
-      ? `<span class="badge-holiday">${escapeHTML(holName)}</span>`
-      : (vacName ? `<span class="badge-vacation">${escapeHTML(vacName)}</span>` : '');
+      ? `<span class="badge-holiday">${safeEscape(holName)}</span>`
+      : (vacName ? `<span class="badge-vacation">${safeEscape(vacName)}</span>` : '');
     
     const cellCls = [];
     if (isSun) cellCls.push('sun');
@@ -589,8 +598,8 @@ async function renderCalendar(){
       if (added.has(inst.id)) return '';
       added.add(inst.id);
       if (inst.type === 'event') {
-        const title = escapeHTML(inst.text || '(제목 없음)');
-        const desc  = escapeHTML((inst.desc || '').trim() || '설명 없음');
+        const title = safeEscape(inst.text || '(제목 없음)');
+        const desc  = safeEscape((inst.desc || '').trim() || '설명 없음');
         const descAttr = desc.replace(/\r?\n/g, '&#10;');
         return `<div class="event-pill" data-title="${title}" data-desc="${descAttr}">${title}</div>`;
       } else {
@@ -608,7 +617,7 @@ async function renderCalendar(){
         const done = statusCode === '완료' || statusCode === '늦게완료';
         const pillCls = isExempt ? 'task-pill exempt' : (done ? 'task-pill done' : 'task-pill pending');
         const icon    = isExempt ? ' 🚫' : '';
-        return `<div class="${pillCls}">${escapeHTML(inst.text)}${icon}</div>`;
+        return `<div class="${pillCls}">${safeEscape(inst.text)}${icon}</div>`;
       }
     }).join('');
 
@@ -631,7 +640,13 @@ async function renderCalendar(){
       alert(`📣 ${title}\n\n${desc.replace(/\r?\n/g, '\n')}`);
     });
   });
+    
   setCalLabel();
+    } catch (error) {
+    console.error('[student] renderCalendar failed', error);
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#b42318;">달력을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</td></tr>';
+    setCalLabel();
+  }
 }
 
   // targetDate 하루치만 계산.
@@ -747,8 +762,8 @@ function buildInstancesOn(targetDate){
           const delta = item.type === '칭찬' ? '+1' : '-1';
           const deltaClass = item.type === '칭찬' ? 'exp-delta-plus' : 'exp-delta-minus';
           const dateText = String(item.date || '').replace(/^\d{4}-/, '').replace('-', '월 ') + '일';
-          const note = escapeHTML((item.note || item.memo || '').trim() || '(내용 없음)');
-          const abilityText = escapeHTML(Array.isArray(item.abilities) ? item.abilities.join(', ') : (item.ability || ''));
+          const note = safeEscape((item.note || item.memo || '').trim() || '(내용 없음)');
+          const abilityText = safeEscape(Array.isArray(item.abilities) ? item.abilities.join(', ') : (item.ability || ''));
          const typeClass = item.type === '칭찬' ? 'is-praise' : 'is-advice';
           return `<div class="exp-recent-item ${typeClass}">
             <div class="exp-recent-date">${escapeHTML(dateText)}</div>
@@ -820,7 +835,7 @@ function buildInstancesOn(targetDate){
           : `${inst.dateObj.getMonth()+1}월 ${inst.dateObj.getDate()}일 (${dayNames[inst.dateObj.getDay()]})`;
      
       box.innerHTML = `
-      <span class="task-name">${escapeHTML(inst.text)}</span>
+      <span class="task-name">${safeEscape(inst.text)}</span>
         <span class="task-date${isToday ? ' is-today' : ''}">${labelText}</span>
       `;
       
