@@ -482,6 +482,28 @@ function goToday(){
   renderCalendar();
 }
 
+  async function fetchHolidaysSafe(year, country = 'KR'){
+  if (typeof ensureHolidays === 'function') {
+    try {
+      const cached = await ensureHolidays(year, country);
+      if (cached && typeof cached === 'object') return cached;
+    } catch (e) {
+      console.warn('[student] ensureHolidays failed:', e);
+    }
+  }
+  try {
+    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/${country}`);
+    if (!res.ok) return {};
+    const list = await res.json();
+    return Array.isArray(list)
+      ? Object.fromEntries(list.map(h => [h.date, h.localName || h.name]).filter(([d]) => !!d))
+      : {};
+  } catch (e) {
+    console.warn('[student] holiday fetch fallback failed:', e);
+    return {};
+  }
+}
+  
 async function renderCalendar(){
   const tbody = document.getElementById('calendar-body');
   if (!tbody) return;
@@ -493,7 +515,7 @@ async function renderCalendar(){
 
   let holidaysMap = {};
   try {
-    const hm = await ensureHolidays(year, 'KR');
+    const hm = await fetchHolidaysSafe(year, 'KR');
     holidaysMap = (hm && typeof hm === 'object') ? hm : {};
   } catch(e){
     holidaysMap = {};
