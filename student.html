@@ -500,7 +500,7 @@ async function renderCalendar(){
   const adjustedStart = (startDay + 6) % 7;
   const lastDate = new Date(year, month + 1, 0).getDate();
 
-  const tasks = getTasks();
+  const tasks = Array.isArray(getTasks()) ? getTasks() : [];
   const instancesMap = {};
   const pushInst = (dateStr, t) => {
     const bucket = instancesMap[dateStr] ?? (instancesMap[dateStr] = []);
@@ -636,7 +636,7 @@ async function renderCalendar(){
 
   // targetDate 하루치만 계산.
 function buildInstancesOn(targetDate){
-  const tasks = getTasks();
+  const tasks = Array.isArray(getTasks()) ? getTasks() : [];
   const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
   const d0 = normalizeDate(targetDate);
   const y = d0.getFullYear(), m = d0.getMonth()+1, dd = d0.getDate();
