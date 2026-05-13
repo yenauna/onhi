@@ -268,9 +268,9 @@ body.compact-view .status-chip__date{
 }
 
 .exp-score{
-  display:grid;
-  grid-template-columns:repeat(5, minmax(0, 1fr));
-  gap:4px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 8px;
   margin-top:4px;
   font-size:clamp(12px, 1.35vw, 16px);
   line-height:1.35;
@@ -280,11 +280,9 @@ body.compact-view .status-chip__date{
 
 .exp-score span{
   white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  overflow:visible;
+  text-overflow:clip;
 }
-
-.exp-score span{ white-space:nowrap; }
 
 .exp-score__total--boxed{
   border:1px solid #d9dee6;
