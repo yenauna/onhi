@@ -292,6 +292,8 @@
     .exp-recent-list{ border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; }
     .exp-recent-item{ display:flex; gap:12px; align-items:center; padding:10px 12px; border-top:1px solid #f0f2f5; }
     .exp-recent-item:first-child{ border-top:none; }
+    .exp-recent-item.is-praise{ background:#eff6ff; }
+    .exp-recent-item.is-advice{ background:#fef2f2; }
     .exp-recent-date{ min-width:72px; color:#6b7280; font-weight:600; font-size:14px; }
     .exp-recent-text{ flex:1; font-size:15px; }
     .exp-recent-delta{ font-weight:700; }
@@ -698,9 +700,26 @@ function buildInstancesOn(targetDate){
       : '';
 
     if (!studentExpPanel) return;
+    const now = normalizeDate(new Date());
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 6);
+    const toDateKey = (value) => {
+      if (!value) return '';
+      const d = normalizeDate(new Date(value));
+      if (Number.isNaN(d.getTime())) return '';
+      return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    };
+    const startKey = toDateKey(weekStart);
+    const endKey = toDateKey(now);
+    
     const records = getJSON('observationRecords:v1', [])
       .filter((item) => item && item.studentName === currentStudent)
       .filter((item) => item.type === '칭찬' || item.type === '조언')
+      .filter((item) => {
+        const dateKey = toDateKey(item.date || item.startDate || '');
+        if (!dateKey) return false;
+        return dateKey >= startKey && dateKey <= endKey;
+      })
       .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
       .slice(0, 8);
 
@@ -730,7 +749,8 @@ function buildInstancesOn(targetDate){
           const dateText = String(item.date || '').replace(/^\d{4}-/, '').replace('-', '월 ') + '일';
           const note = escapeHTML((item.note || item.memo || '').trim() || '(내용 없음)');
           const abilityText = escapeHTML(Array.isArray(item.abilities) ? item.abilities.join(', ') : (item.ability || ''));
-          return `<div class="exp-recent-item">
+         const typeClass = item.type === '칭찬' ? 'is-praise' : 'is-advice';
+          return `<div class="exp-recent-item ${typeClass}">
             <div class="exp-recent-date">${escapeHTML(dateText)}</div>
             <div class="exp-recent-text">${note}</div>
             <div class="exp-recent-delta ${deltaClass}">${abilityText} ${delta}</div>
