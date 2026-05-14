@@ -45,14 +45,15 @@ const setActiveTab = (key) => {
   Object.values(TAB_BUTTON_IDS).forEach((id) => {
     document.getElementById(id)?.classList.remove('active');
   });
-  document.getElementById(TAB_BUTTON_IDS[key])?.classList.add('active');
-};
 
-if (key === 'task') {
+  if (key === 'task') {
     document.getElementById(TAB_BUTTON_IDS.task)?.classList.add('active');
     document.getElementById(TAB_BUTTON_IDS.assignment)?.classList.add('active');
     return;
   }
+
+  document.getElementById(TAB_BUTTON_IDS[key])?.classList.add('active');
+};
 
 const renderPageTabs = (key) => {
   const container = document.getElementById('page-tabs');
