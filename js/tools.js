@@ -135,6 +135,8 @@
         restore(entry, def);
         entry.onResize();
       }
+      .tool-button-list button:hover span{ color:var(--text); }
+      .tool-button-list button:hover small{ color:#6f7d8c; }
       if (el.dataset.prevWidth) {
         el.style.width = el.dataset.prevWidth;
       } else if (def.width) {
