@@ -1292,14 +1292,14 @@
 
       const setActiveTab = (key) => {
         const map = {
-          status: document.getElementById('tab-status'),
-          task: document.getElementById('tab-task'),
-          challenges: document.getElementById('tab-challenges'),
-          observation: document.getElementById('tab-observation'),
-          student: document.getElementById('tab-student'),
+          status: [document.getElementById('tab-status')],
+          task: [document.getElementById('tab-task'), document.getElementById('tab-assignment-shortcut')],
+          challenges: [document.getElementById('tab-challenges')],
+          observation: [document.getElementById('tab-observation')],
+          student: [document.getElementById('tab-student')],
         };
-        Object.values(map).forEach(btn => btn && btn.classList.remove('active'));
-        if (map[key]) map[key].classList.add('active');
+        Object.values(map).flat().forEach(btn => btn && btn.classList.remove('active'));
+        (map[key] || []).forEach(btn => btn && btn.classList.add('active'));
       };
 
       const showSection = (id, show) => {
@@ -1392,6 +1392,7 @@
 
       document.getElementById('tab-status')?.addEventListener('click', () => navigateToTab('status'));
       document.getElementById('tab-task')?.addEventListener('click', () => navigateToTab('task'));
+      document.getElementById('tab-assignment-shortcut')?.addEventListener('click', () => navigateToTab('task'));
       document.getElementById('tab-challenges')?.addEventListener('click', () => navigateToTab('challenges'));
       document.getElementById('tab-observation')?.addEventListener('click', () => navigateToTab('observation'));
       document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
