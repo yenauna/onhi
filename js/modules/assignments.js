@@ -41,6 +41,9 @@ let studentStatusRenderSeq = 0;
 
 const getStudentsSorted = async () => sortStudents(await loadStudents());
 const labelOf = (stu) => `${stu.id} ${stu.name}`;
+const getSafeTasks = () => (
+  (Array.isArray(getTasks()) ? getTasks() : []).filter((task) => task && typeof task === 'object')
+);
 
 const dispatchTasksUpdated = () => {
   window.dispatchEvent(new Event('tasks:updated'));
@@ -99,7 +102,7 @@ const shouldShowOnStatusBoard = ({ dateStr, status, isTeacherView = false }) => 
 
 const syncAssignmentObservationRecord = async ({ studentName, uid, nextStatus }) => {
   if (!studentName || !uid) return;
-  const task = getTasks().find((item) => item.id === uid);
+  const task = getSafeTasks().find((item) => item.id === uid);
   if (!task || task.type !== 'assignment') return;
 
   const observations = ObservationStorage.loadObservations();
@@ -166,7 +169,7 @@ const syncAssignmentObservationRecord = async ({ studentName, uid, nextStatus })
 
 const logAssignmentStatusChange = async ({ studentName, uid, previousStatus, nextStatus }) => {
   if (!studentName || !uid || previousStatus === nextStatus) return;
-  const task = getTasks().find((item) => item.id === uid);
+  const task = getSafeTasks().find((item) => item.id === uid);
   if (!task || task.type !== 'assignment') return;
   await syncAssignmentObservationRecord({ studentName, uid, nextStatus });
 };
@@ -175,7 +178,7 @@ const updateAssignmentStatus = ({ studentName, uid, nextStatus, note = '', viaMa
   const prev = getStatusFor?.(studentName, uid);
   const previousStatus = getStatusValue(prev?.s);
 
-  const task = getTasks().find((item) => item.id === uid);
+  const task = getSafeTasks().find((item) => item.id === uid);
   const dueDate = task?.date || '';
   const { isPast } = getDisplayDateInfo(dueDate);
   let resolved = getStatusValue(nextStatus);
@@ -255,7 +258,7 @@ const handleCalendarDrop = (ev) => {
     return;
   }
 
-  const tasks = getTasks();
+  const tasks = getSafeTasks();
   const idx = tasks.findIndex(t => t.id === uid);
   if (idx < 0) {
     clearCalendarDragState();
@@ -459,7 +462,7 @@ const saveAssignment = () => {
     saveDate = baseDate;
   }
 
-  const all = getTasks();
+  const tasks = getSafeTasks();
   const wasEditing = Boolean(editingTaskId);
   if (editingTaskId) {
     const index = all.findIndex(task => task.id === editingTaskId);
@@ -518,7 +521,7 @@ const editTask = () => {
     alert('과제를 먼저 선택하세요.');
     return;
   }
-  const all = getTasks();
+  const all = getSafeTasks();
   const task = all.find(x => x.id === selectedUid);
   if (!task) {
     alert('원본 과제를 찾을 수 없습니다.');
@@ -584,7 +587,7 @@ const deleteTaskClicked = () => {
     alert('과제를 먼저 선택하세요.');
     return;
   }
-  const all = getTasks();
+  const all = getSafeTasks();
   const idx = all.findIndex(t => t.id === selectedUid);
   if (idx < 0) {
     alert('원본 과제를 찾을 수 없습니다.');
@@ -626,7 +629,7 @@ const selectTask = (dateStr, uid) => {
     return;
   }
 
-  const all = getTasks();
+  const all = getSafeTasks();
   const task = all.find(t => t.id === uid);
   if (!task) {
     if (actionButtons) actionButtons.style.display = 'none';
@@ -741,7 +744,7 @@ const renderTaskCompletion = async (uid) => {
   const container = document.getElementById('completion-list');
   container.innerHTML = '';
 
-  const all = getTasks();
+  const all = getSafeTasks();
   const task = all.find(x => x.id === uid);
   if (!task) {
     container.textContent = '과제를 찾을 수 없습니다.';
@@ -819,7 +822,21 @@ const renderCalendar = async () => {
 
   const year = viewYear;
   const month = viewMonth;
+  const renderEmptyCalendar = () => {
+    const firstDay = new Date(year, month, 1);
+    const adjustedStartDay = (firstDay.getDay() + 6) % 7;
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    let html = '<tr>';
+    for (let i = 0; i < adjustedStartDay; i++) html += '<td></td>';
+    for (let day = 1; day <= lastDate; day++) {
+      html += `<td><strong class="day-num">${day}</strong></td>`;
+      if ((adjustedStartDay + day) % 7 === 0) html += '</tr><tr>';
+    }
+    html += '</tr>';
+    tbody.innerHTML = html;
+  };
 
+  try {
   const holidaysMap = await fetchHolidaysWithTimeout(year, 'KR');
   const vacations = getVacations() || [];
   const isVacation = (dateStr) => {
@@ -831,7 +848,7 @@ const renderCalendar = async () => {
   const adjustedStartDay = (startDay + 6) % 7;
   const lastDate = new Date(year, month + 1, 0).getDate();
 
-  const tasks = getTasks();
+  const tasks = getSafeTasks();
   const studentsSorted = await getStudentsSorted();
   const joinMap = {};
   studentsSorted.forEach(s => {
@@ -878,6 +895,7 @@ const renderCalendar = async () => {
       }
     } else if (task.date) {
       const d = new Date(task.date);
+      if (Number.isNaN(d.getTime())) return;
       if (d.getFullYear() === year && d.getMonth() === month) {
         const dateStr = `${year}-${pad2(month + 1)}-${pad2(d.getDate())}`;
         pushInst(dateStr, task);
@@ -953,6 +971,11 @@ const renderCalendar = async () => {
   tbody.innerHTML = html;
   setupCalendarDnD(tbody);
   setCalLabel();
+    } catch (error) {
+    console.error('[teacher] renderCalendar failed', error);
+    renderEmptyCalendar();
+    setCalLabel();
+  }
 };
 
 const renderStudentStatus = async () => {
@@ -960,7 +983,7 @@ const renderStudentStatus = async () => {
   if (!container) return;
   const renderSeq = ++studentStatusRenderSeq;
 
-  const all = getTasks();
+  const all = getSafeTasks();
   const today = normalizeDate(new Date());
   const students = await getStudentsSorted();
   if (renderSeq !== studentStatusRenderSeq) return;
