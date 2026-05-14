@@ -565,7 +565,8 @@ async function renderCalendar(){
   const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
 
   tasks.forEach(t => {
-    const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
+    const targets = (Array.isArray(t.students) && t.students.length) ? t.students : ['전체'];
+    const assigned = targets.includes('전체') || targets.includes(currentStudent);
     if (!assigned) return;
 
     const inRange = (dateStr) => {
@@ -723,7 +724,8 @@ function buildInstancesOn(targetDate){
     if (t.type === 'event' || t.type === 'challenge') return;
 
     // 대상 학생만
-    const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
+    const targets = (Array.isArray(t.students) && t.students.length) ? t.students : ['전체'];
+    const assigned = targets.includes('전체') || targets.includes(currentStudent);
     if (!assigned) return;
 
     if (inRangeOn(t)) {
@@ -839,7 +841,8 @@ function buildInstancesOn(targetDate){
     let earliest = null;
     tasks.forEach(t => {
       if (t.type === 'event' || t.type === 'challenge') return;
-      const assigned = (t.students||['전체']).includes('전체') || (t.students||[]).includes(currentStudent);
+      const targets = (Array.isArray(t.students) && t.students.length) ? t.students : ['전체'];
+      const assigned = targets.includes('전체') || targets.includes(currentStudent);
       if (!assigned) return;
       const ds = t.date || t.repeatStart || null;
       if (!ds) return;
