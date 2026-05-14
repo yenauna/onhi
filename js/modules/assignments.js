@@ -989,6 +989,14 @@ const renderStudentStatus = async () => {
   if (renderSeq !== studentStatusRenderSeq) return;
 
   container.innerHTML = '';
+
+  if (students.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'status-card';
+    empty.innerHTML = '<div class="status-card__title">학생 데이터를 불러오지 못했습니다. 학생 관리 탭에서 동기화 상태를 확인해 주세요.</div>';
+    container.appendChild(empty);
+    return;
+  }
   
   const instances = [];
   all.forEach(task => {
