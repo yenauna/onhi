@@ -503,6 +503,11 @@ function goToday(){
     return {};
   }
 }
+
+  function normalizeTaskArray(raw){
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(t => t && typeof t === 'object');
+}
   
 async function renderCalendar(){
   const tbody = document.getElementById('calendar-body');
@@ -510,6 +515,20 @@ async function renderCalendar(){
   tbody.innerHTML = '';
   const year = viewYear;
   const month = viewMonth;
+
+  const renderEmptyCalendar = () => {
+    const firstDay = new Date(year, month, 1);
+    const adjustedStart = (firstDay.getDay() + 6) % 7;
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    let html = '<tr>';
+    for (let i=0; i<adjustedStart; i++) html += '<td></td>';
+    for (let day=1; day<=lastDate; day++){
+      html += `<td><strong class="day-num">${day}</strong></td>`;
+      if ((adjustedStart + day) % 7 === 0) html += '</tr><tr>';
+    }
+    html += '</tr>';
+    tbody.innerHTML = html;
+  };
 
   try {
 
@@ -531,7 +550,7 @@ async function renderCalendar(){
   const adjustedStart = (startDay + 6) % 7;
   const lastDate = new Date(year, month + 1, 0).getDate();
 
-  const tasks = (typeof getTasks === 'function' && Array.isArray(getTasks())) ? getTasks() : [];
+  const tasks = normalizeTaskArray((typeof getTasks === 'function') ? getTasks() : []);
   const instancesMap = {};
   const pushInst = (dateStr, t) => {
     const bucket = instancesMap[dateStr] ?? (instancesMap[dateStr] = []);
@@ -576,7 +595,9 @@ async function renderCalendar(){
         }
       }
     } else {
+      if (!t.date) return;
       const d = new Date(t.date);
+      if (Number.isNaN(d.getTime())) return;
       if (d.getFullYear() === year && d.getMonth() === month){
         const ds = `${year}-${pad2(month+1)}-${pad2(d.getDate())}`;
         if (!(joinDate && ds < joinDate)) pushInst(ds, t);
@@ -666,14 +687,14 @@ async function renderCalendar(){
   setCalLabel();
     } catch (error) {
     console.error('[student] renderCalendar failed', error);
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#b42318;">달력을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</td></tr>';
+    renderEmptyCalendar();
     setCalLabel();
   }
 }
 
   // targetDate 하루치만 계산.
 function buildInstancesOn(targetDate){
-  const tasks = (typeof getTasks === 'function' && Array.isArray(getTasks())) ? getTasks() : [];
+  const tasks = normalizeTaskArray((typeof getTasks === 'function') ? getTasks() : []);
   const dayMap = { mon:1, tue:2, wed:3, thu:4, fri:5 };
   const d0 = normalizeDate(targetDate);
   const y = d0.getFullYear(), m = d0.getMonth()+1, dd = d0.getDate();
@@ -814,7 +835,7 @@ function buildInstancesOn(targetDate){
     const currDate0 = normalizeDate(currentDate);
 
     const instances = [];
-    const tasks = (typeof getTasks === 'function' && Array.isArray(getTasks())) ? getTasks() : [];
+    const tasks = normalizeTaskArray((typeof getTasks === 'function') ? getTasks() : []);
     let earliest = null;
     tasks.forEach(t => {
       if (t.type === 'event' || t.type === 'challenge') return;
