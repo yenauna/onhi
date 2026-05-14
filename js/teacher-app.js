@@ -48,6 +48,12 @@ const setActiveTab = (key) => {
   document.getElementById(TAB_BUTTON_IDS[key])?.classList.add('active');
 };
 
+if (key === 'task') {
+    document.getElementById(TAB_BUTTON_IDS.task)?.classList.add('active');
+    document.getElementById(TAB_BUTTON_IDS.assignment)?.classList.add('active');
+    return;
+  }
+
 const renderPageTabs = (key) => {
   const container = document.getElementById('page-tabs');
   if (!container) return;
