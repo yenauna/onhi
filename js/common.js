@@ -370,8 +370,8 @@ function setLateDone(name, uid, note=''){
 
   const loadStudentsCached = async () => {
     console.log('[Students] loadStudents() start');
-
-  if (_studentsCache) {
+    
+    if (_studentsCache) {
       console.log('[Students] loadStudents() cache hit', { rows: _studentsCache.length });
       return _studentsCache;
     }
@@ -388,8 +388,8 @@ function setLateDone(name, uid, note=''){
       _studentsCache = [];
       return _studentsCache;
     }
-
-  const { data, error } = await client.from(source.table).select('*');
+    
+    const { data, error } = await client.from(source.table).select('*');
     console.log('[Students] loadStudents() raw result:', { table: source.table, data, error });
 
     if (error) {
