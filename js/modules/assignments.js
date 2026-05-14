@@ -465,14 +465,14 @@ const saveAssignment = () => {
   const tasks = getSafeTasks();
   const wasEditing = Boolean(editingTaskId);
   if (editingTaskId) {
-    const index = all.findIndex(task => task.id === editingTaskId);
+    const index = tasks.findIndex(task => task.id === editingTaskId);
     if (index < 0) {
       alert('원본 과제를 찾을 수 없습니다.');
       editingTaskId = null;
       return;
     }
-    all[index] = {
-      ...all[index],
+    tasks[index] = {
+      ...tasks[index],
       type,
       text: newTasks[0],
       date: saveDate,
@@ -486,7 +486,7 @@ const saveAssignment = () => {
     };
   } else {
     newTasks.forEach(text => {
-      all.push({
+      tasks.push({
         id: genUID(),
         type,
         date: saveDate,
@@ -501,7 +501,7 @@ const saveAssignment = () => {
       });
     });
   }
-  setTasks(all);
+  setTasks(tasks);
   dispatchTasksUpdated();
 
   resetTaskForm(repeat);
