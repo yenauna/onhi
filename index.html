@@ -441,7 +441,7 @@ function buildInstancesFromTasks(){
           chip.dataset.student = stu.name;
           chip.dataset.uid = inst.uid;                 // UID 보관
           chip.innerHTML = `
-          <span>${escapeHTML(inst.text)} · ${status}</span>
+          <span>${escapeHTML(inst.text)}</span>
           <span class="date">${formatKoreanDate(inst.dateObj)}</span>
           `;
           
