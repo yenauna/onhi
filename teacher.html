@@ -821,8 +821,7 @@
       <button type="button" id="sidebar-toggle" class="sidebar-toggle">☰ 메뉴 접기</button>
       <nav class="sidebar-nav" aria-label="좌측 메뉴">
         <button id="tab-status"><span class="menu-label">학생 현황</span></button>
-        <button id="tab-task"><span class="menu-label">일정</span></button>
-        <button id="tab-assignment-shortcut"><span class="menu-label">과제</span></button>
+        <button id="tab-task"><span class="menu-label">달력</span></button>
         <button id="tab-challenges"><span class="menu-label">도전</span></button>
         <button id="tab-observation"><span class="menu-label">관찰기록</span></button>
         <button type="button" id="tab-tools"><span class="menu-label">도구</span></button>
@@ -856,7 +855,7 @@
       ></div>
     </div>
 
-    <!-- ===== 과제 관리 + 달력 ===== -->
+    <!-- ===== 달력(일정 + 과제 관리) ===== -->
     <div id="task-management" style="display:none; margin-top: 8px;">
       
       <!-- 과제 입력 영역 -->
@@ -1293,7 +1292,7 @@
       const setActiveTab = (key) => {
         const map = {
           status: [document.getElementById('tab-status')],
-          task: [document.getElementById('tab-task'), document.getElementById('tab-assignment-shortcut')],
+          task: [document.getElementById('tab-task')],
           challenges: [document.getElementById('tab-challenges')],
           observation: [document.getElementById('tab-observation')],
           student: [document.getElementById('tab-student')],
@@ -1392,7 +1391,6 @@
 
       document.getElementById('tab-status')?.addEventListener('click', () => navigateToTab('status'));
       document.getElementById('tab-task')?.addEventListener('click', () => navigateToTab('task'));
-      document.getElementById('tab-assignment-shortcut')?.addEventListener('click', () => navigateToTab('task'));
       document.getElementById('tab-challenges')?.addEventListener('click', () => navigateToTab('challenges'));
       document.getElementById('tab-observation')?.addEventListener('click', () => navigateToTab('observation'));
       document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
