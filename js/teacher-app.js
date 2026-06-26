@@ -10,7 +10,6 @@ import { initCounseling } from './modules/counseling.js';
 const TAB_BUTTON_IDS = {
   status: 'tab-status',
   task: 'tab-task',
-  assignment: 'tab-assignment-shortcut',
   challenges: 'tab-challenges',
   observation: 'tab-observation',
   student: 'tab-student',
@@ -18,7 +17,7 @@ const TAB_BUTTON_IDS = {
 
 const TAB_PAGE_NAMES = {
   status: '학생 현황',
-  task: '일정 / 과제',
+  task: '달력',
   challenges: '도전',
   observation: '관찰기록',
   student: '학생 관리',
@@ -45,12 +44,6 @@ const setActiveTab = (key) => {
   Object.values(TAB_BUTTON_IDS).forEach((id) => {
     document.getElementById(id)?.classList.remove('active');
   });
-
-  if (key === 'task') {
-    document.getElementById(TAB_BUTTON_IDS.task)?.classList.add('active');
-    document.getElementById(TAB_BUTTON_IDS.assignment)?.classList.add('active');
-    return;
-  }
 
   document.getElementById(TAB_BUTTON_IDS[key])?.classList.add('active');
 };
@@ -114,7 +107,6 @@ const navigateToTab = (key) => {
 const initTabs = () => {
   document.getElementById('tab-status')?.addEventListener('click', () => navigateToTab('status'));
   document.getElementById('tab-task')?.addEventListener('click', () => navigateToTab('task'));
-  document.getElementById('tab-assignment-shortcut')?.addEventListener('click', () => navigateToTab('task'));
   document.getElementById('tab-challenges')?.addEventListener('click', () => navigateToTab('challenges'));
   document.getElementById('tab-observation')?.addEventListener('click', () => navigateToTab('observation'));
   document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
