@@ -41,6 +41,8 @@ const TAB_SECTION_VISIBILITY = {
 };
 
 const setActiveTab = (key) => {
+  const sidebar = document.getElementById('left-sidebar');
+  if (sidebar) sidebar.dataset.active = key;
   Object.values(TAB_BUTTON_IDS).forEach((id) => {
     document.getElementById(id)?.classList.remove('active');
   });
@@ -112,13 +114,6 @@ const initTabs = () => {
   document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
   document.getElementById('tab-settings')?.addEventListener('click', () => alert('설정 탭은 추후 반영 예정입니다.'));
 
-  const sidebar = document.getElementById('left-sidebar');
-  const toggleBtn = document.getElementById('sidebar-toggle');
-  toggleBtn?.addEventListener('click', () => {
-    sidebar?.classList.toggle('is-collapsed');
-    const isCollapsed = sidebar?.classList.contains('is-collapsed');
-    toggleBtn.textContent = isCollapsed ? '☰ 메뉴 펼치기' : '☰ 메뉴 접기';
-  });
 };
 
 const initTeacherApp = () => {
@@ -136,6 +131,7 @@ const initTeacherApp = () => {
   initToolsLink();
   initCounseling();
 
+  window.renderTeacherSidebar?.(document.getElementById('left-sidebar'));
   initTabs();
   openTabFromHash();
   window.addEventListener('hashchange', openTabFromHash);
