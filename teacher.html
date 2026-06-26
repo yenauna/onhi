@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/common.css">
   <script src="js/common.js"></script>
   <script src="js/challenges.js"></script>
+  <script src="js/teacher-sidebar.js"></script>
 
   <style>
     *{ box-sizing:border-box }
@@ -761,45 +762,6 @@
     body{background:#f7f8fa !important;}
     body::before{display:none !important;}
     .container{background:#fff !important; border:1px solid #e5e7eb !important; box-shadow:none !important; border-radius:16px !important;}
-    .app-shell{
-      display:flex;
-      width:100%;
-      max-width:1400px;
-      gap:12px;
-      align-items:flex-start;
-    }
-    .sidebar{
-      width:220px;
-      background:#fff;
-      border:1px solid #e5e7eb;
-      border-radius:16px;
-      padding:12px;
-      position:sticky;
-      top:12px;
-      transition:width .2s ease;
-    }
-    .sidebar.is-collapsed{ width:72px; }
-    .sidebar-toggle{ width:100%; margin-bottom:8px; }
-    .sidebar-nav{ display:flex; flex-direction:column; gap:6px; }
-    .sidebar-nav button{
-      width:100%;
-      text-align:left;
-      border-radius:10px;
-      padding:10px;
-    }
-    .sidebar.is-collapsed .menu-label{ display:none; }
-    .main-panel{ flex:1; min-width:0; }
-    .topbar{box-shadow:none !important; border:1px solid #e5e7eb; border-radius:16px; padding:10px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:12px;}
-    .topbar .menu button,.topbar .menu-area button{border-radius:10px !important; box-shadow:none !important;}
-    .page-tabs{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .page-tabs .tab-chip{ padding:8px 10px; border:1px dashed #d0d5dd; border-radius:10px; color:#667085; background:#f8fafc; font-size:13px; }
-    .page-tabs .tab-chip.is-main{ border-style:solid; color:#101828; font-weight:600; }
-    @media (max-width: 960px){
-      .sidebar{ position:relative; top:0; width:100%; }
-      .sidebar.is-collapsed{ width:100%; }
-      .sidebar-nav{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
-      .app-shell{ flex-direction:column; }
-    }
     button{box-shadow:none !important;}
    
   </style>
@@ -817,18 +779,7 @@
   </div>
   
   <div class="app-shell">
-    <aside id="left-sidebar" class="sidebar">
-      <button type="button" id="sidebar-toggle" class="sidebar-toggle">☰ 메뉴 접기</button>
-      <nav class="sidebar-nav" aria-label="좌측 메뉴">
-        <button id="tab-status"><span class="menu-label">학생 현황</span></button>
-        <button id="tab-task"><span class="menu-label">달력</span></button>
-        <button id="tab-challenges"><span class="menu-label">도전</span></button>
-        <button id="tab-observation"><span class="menu-label">관찰기록</span></button>
-        <button type="button" id="tab-tools"><span class="menu-label">도구</span></button>
-        <button id="tab-settings"><span class="menu-label">설정</span></button>
-        <button id="tab-student"><span class="menu-label">학생 관리</span></button>
-      </nav>
-    </aside>
+    <aside id="left-sidebar" class="sidebar" data-teacher-sidebar></aside>
     <div class="main-panel">
   <header class="topbar">
     <div class="logo-area">
