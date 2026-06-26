@@ -299,3 +299,49 @@ body.compact-view .status-chip__date{
 .exp-score__effort{ color:var(--exp-effort); }
 .exp-score__achievement{ color:var(--exp-achievement); }
 .exp-score__relationship{ color:var(--exp-relationship); }
+
+/* ===== 교사용 공통 좌측 메뉴 ===== */
+.app-shell{
+  display:flex;
+  width:100%;
+  max-width:1400px;
+  gap:12px;
+  align-items:flex-start;
+}
+.sidebar{
+  width:220px;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  padding:12px;
+  position:sticky;
+  top:12px;
+  transition:width .2s ease;
+}
+.sidebar.is-collapsed{ width:72px; }
+.sidebar-toggle{ width:100%; margin-bottom:8px; }
+.sidebar-nav{ display:flex; flex-direction:column; gap:6px; }
+.sidebar-nav button{
+  width:100%;
+  text-align:left;
+  border-radius:10px;
+  padding:10px;
+}
+.sidebar-nav button.active{
+  background:var(--brand);
+  border-color:var(--brand);
+  color:#fff;
+}
+.sidebar.is-collapsed .menu-label{ display:none; }
+.main-panel{ flex:1; min-width:0; }
+@media (max-width: 960px){
+  .sidebar{ position:relative; top:0; width:100%; }
+  .sidebar.is-collapsed{ width:100%; }
+  .sidebar-nav{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .app-shell{ flex-direction:column; }
+}
+.topbar{box-shadow:none !important; border:1px solid #e5e7eb; border-radius:16px; padding:10px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:12px;}
+.topbar .menu button,.topbar .menu-area button{border-radius:10px !important; box-shadow:none !important;}
+.page-tabs{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.page-tabs .tab-chip{ padding:8px 10px; border:1px dashed #d0d5dd; border-radius:10px; color:#667085; background:#f8fafc; font-size:13px; }
+.page-tabs .tab-chip.is-main{ border-style:solid; color:#101828; font-weight:600; }
