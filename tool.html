@@ -9,6 +9,7 @@
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="stylesheet" href="css/common.css">
   <script src="js/common.js" defer></script>
+  <script src="js/teacher-sidebar.js" defer></script>
   <!-- Supabase CDN -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
@@ -642,17 +643,14 @@
   </style>
 </head>
 <body class="tools-page">
+  <div class="app-shell">
+    <aside id="left-sidebar" class="sidebar" data-teacher-sidebar data-active="tools"></aside>
+    <div class="main-panel">
   <header class="topbar">
     <div class="logo-area">
       <a href="./"><img src="logo.png" alt="오늘 할 일 로고"></a>
     </div>
-    <nav class="menu-area" aria-label="주요 메뉴">
-      <button type="button" onclick="location.href='teacher.html#status'">오늘 할 일</button>
-      <button type="button" onclick="location.href='teacher.html#task'">달력</button>
-      <button type="button" onclick="location.href='teacher.html#challenges'">도전</button>
-      <button type="button" class="active">도구</button>
-      <button type="button" onclick="location.href='teacher.html#student'">학생</button>
-    </nav>
+    <nav class="menu-area" aria-label="현재 메뉴"><button type="button" class="active">도구</button></nav>
     <div class="right-tools"></div>
   </header>
 
@@ -677,5 +675,7 @@
       </div>
     </aside>
   </main>
+      </div>
+  </div>
 </body>
 </html>
