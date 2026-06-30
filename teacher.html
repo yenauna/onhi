@@ -15,6 +15,7 @@
 
   
   <link rel="stylesheet" href="css/common.css">
+  <script src="js/common-layout.js"></script>
   <script src="js/common.js"></script>
   <script src="js/challenges.js"></script>
   <script src="js/teacher-sidebar.js"></script>
@@ -781,18 +782,7 @@
   <div class="app-shell">
     <aside id="left-sidebar" class="sidebar" data-teacher-sidebar></aside>
     <div class="main-panel">
-  <header class="topbar">
-    <div class="logo-area">
-      <a href="./"><img src="logo.png" alt="오늘 할 일 로고"></a>
-    </div>
-    <div id="page-tabs" class="page-tabs" aria-label="페이지별 상단 탭"></div>
-    <div class="right-tools">
-      <button type="button" id="teacher-logout-btn" class="mode-btn">로그아웃</button>
-      <button type="button" id="eventsBtn" class="mode-btn" aria-pressed="false">일정숨김</button>
-      <button type="button" id="compactBtn" class="mode-btn" aria-pressed="false"></button>
-      <button type="button" id="modeBtn" class="mode-btn" aria-pressed="false"></button>
-    </div>
-  </header>
+  <header class="topbar" data-common-topbar data-topbar="teacher"></header>
 
   <!-- =====================================
        가운데 카드 컨테이너
