@@ -11,6 +11,7 @@
   <!-- 공통 -->
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="stylesheet" href="css/common.css">
+  <script src="js/supabaseClient.js"></script>
   <script src="js/common-layout.js"></script>
   <script src="js/common.js"></script>
   <script src="js/challenges.js"></script>
@@ -961,15 +962,6 @@ function buildInstancesOn(targetDate){
   const logoutBtnExp = document.getElementById("logout-btn-exp");
   if (logoutBtnExp) logoutBtnExp.onclick = logoutBtn.onclick;
   
-</script>
-
-  <!-- Supabase CDN -->
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script>
-  const { createClient } = supabase;
-  const SUPABASE_URL = "https://ytouzrchngqyuqafziad.supabase.co";
-  const SUPABASE_ANON_KEY = "sb_publishable_WUrSn1U6sszhHrpEPOXwCA_ZQoJo6nW";
-  window.sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 
 </body>
