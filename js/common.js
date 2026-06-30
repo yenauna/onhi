@@ -165,7 +165,7 @@ function setLateDone(name, uid, note=''){
   };
 
   const readCloudSyncSnapshot = async () => {
-    const client = await window.ensureSupabaseClient?.();
+    const client = window.sb || await window.ensureSupabaseClient?.();
     if (!client) return null;
     const source = await detectCloudSyncSource(client);
     if (!source) return null;
@@ -195,7 +195,7 @@ function setLateDone(name, uid, note=''){
   };
 
   const saveCloudSyncSnapshot = async (payload) => {
-    const client = await window.ensureSupabaseClient?.();
+    const client = window.sb || await window.ensureSupabaseClient?.();
     if (!client) return false;
     const source = await detectCloudSyncSource(client);
     if (!source) return false;
@@ -390,7 +390,7 @@ function setLateDone(name, uid, note=''){
       return _studentsCache;
     }
 
-    const client = await window.ensureSupabaseClient?.();
+    const client = window.sb || await window.ensureSupabaseClient?.();
     if (!client) {
       console.error('[Students] Supabase client unavailable. URL/KEY 값을 확인하세요.');
       _studentsCache = [];
@@ -445,7 +445,7 @@ function setLateDone(name, uid, note=''){
   };
   
   const addStudentToSupabase = async (student) => {
-    const client = await window.ensureSupabaseClient?.();
+    const client = window.sb || await window.ensureSupabaseClient?.();
     if (!client) {
       console.error('[Students] addStudent() failed: Supabase client unavailable');
       return { data: null, error: new Error('Supabase client unavailable') };
