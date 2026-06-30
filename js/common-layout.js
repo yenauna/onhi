@@ -35,9 +35,16 @@
       ],
     },
     tools: {
-      navClass: 'menu-area',
-      navLabel: '현재 메뉴',
-      items: [{ label: '도구', active: true }],
+      navClass: 'page-tabs',
+      navLabel: '페이지별 상단 탭',
+      navId: 'page-tabs',
+      pageName: '도구',
+      right: [
+        { id: 'teacher-logout-btn', label: '로그아웃' },
+        { id: 'eventsBtn', label: '일정숨김', ariaPressed: 'false' },
+        { id: 'compactBtn', label: '', ariaPressed: 'false' },
+        { id: 'modeBtn', label: '', ariaPressed: 'false' },
+      ],
     },
   };
 
@@ -56,13 +63,16 @@
     const config = TOPBAR_CONFIGS[topbar.dataset.topbar] || TOPBAR_CONFIGS.home;
     const navItems = config.items || [];
     const rightItems = config.right || [];
+    const navContent = config.pageName
+      ? `<span class="tab-chip is-main">${config.pageName}</span>`
+      : navItems.map(renderButton).join('');
 
     topbar.classList.add('topbar');
     topbar.innerHTML = `
       <div class="logo-area">
         <a href="./"><img src="logo.png" alt="오늘 할 일 로고"></a>
       </div>
-      <nav${attr('id', config.navId)} class="${config.navClass || 'menu-area'}" aria-label="${config.navLabel || '주요 메뉴'}">${navItems.map(renderButton).join('')}</nav>
+      <nav${attr('id', config.navId)} class="${config.navClass || 'menu-area'}" aria-label="${config.navLabel || '주요 메뉴'}">${navContent}</nav>
       <div class="right-tools">${rightItems.map((item) => renderButton({ ...item, active: false }).replace('<button type="button"', '<button type="button" class="mode-btn"')).join('')}</div>
     `;
 
