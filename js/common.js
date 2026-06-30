@@ -345,22 +345,36 @@ function setLateDone(name, uid, note=''){
   const detectStudentSource = async (client) => {
     if (_studentSource) return _studentSource;
 
+    let emptySource = null;
+    
     for (const table of STUDENT_TABLE_CANDIDATES) {
       const { data, error } = await client.from(table).select('*').limit(1);
       console.log('[Students][probe] table check:', { table, data, error });
     
-    if (error) {
+      if (error) {
         if (isRlsError(error)) {
           console.error('[Students][probe] RLS 정책 필요 (select)', { table, error });
         }
         continue;
       }
 
-       _studentSource = {
+      const source = {
         table,
         columns: Object.keys(data?.[0] || {}),
       };
-      console.log('[Students][probe] detected source:', _studentSource);
+
+      if (Array.isArray(data) && data.length > 0) {
+        _studentSource = source;
+        console.log('[Students][probe] detected source:', _studentSource);
+        return _studentSource;
+      }
+
+      emptySource ||= source;
+    }
+
+    if (emptySource) {
+      _studentSource = emptySource;
+      console.warn('[Students][probe] detected empty source:', _studentSource);
       return _studentSource;
     }
 
@@ -401,7 +415,7 @@ function setLateDone(name, uid, note=''){
     }
 
     const { list } = normalizeStudentsList(data || []);
-    _studentsCache = list;
+    _studentsCache = list.filter(stu => stu.name);
     console.log('[Students] loadStudents() end', { rows: _studentsCache.length });
     return _studentsCache;
   };
