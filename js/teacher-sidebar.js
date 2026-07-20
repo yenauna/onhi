@@ -16,11 +16,21 @@
     return (location.hash || '#status').replace('#', '').toLowerCase();
   };
 
+  const isLockedTeacherPage = () => {
+    const path = location.pathname.split('/').pop() || 'teacher.html';
+    return path === 'teacher.html' && sessionStorage.getItem('teacher_auth') !== 'ok';
+  };
+
   const renderTeacherSidebar = (selectorOrElement = '[data-teacher-sidebar]') => {
     const sidebar = typeof selectorOrElement === 'string'
       ? document.querySelector(selectorOrElement)
       : selectorOrElement;
     if (!sidebar) return;
+
+    if (isLockedTeacherPage()) {
+      sidebar.innerHTML = '';
+      return;
+    }
 
     const activeKey = getActiveKey(sidebar);
     sidebar.id ||= 'left-sidebar';
