@@ -1,140 +1,152 @@
-window.teacherAppReady = true;
+window.teacherAppReady = false;
 
 import { initAssignments, showStatus, showAssignments, hideActionUI } from './modules/assignments.js';
 import { initObservations, showObservations } from './modules/observation.js';
 import { initStudents, showStudents } from './modules/students.js';
 import { initChallenges, showChallenges } from './modules/challenges.js';
-import { initToolsLink } from './modules/tools-link.js';
 import { initCounseling } from './modules/counseling.js';
 
-const TAB_BUTTON_IDS = {
-  status: 'tab-status',
-  task: 'tab-task',
-  challenges: 'tab-challenges',
-  observation: 'tab-observation',
-  student: 'tab-student',
+const TEACHER_ROUTES = {
+  status: {
+    key: 'status',
+    label: '학생 현황',
+    sectionId: 'student-status-page',
+    boxId: 'main-box',
+    render: showStatus,
+  },
+  task: {
+    key: 'task',
+    label: '달력',
+    sectionId: 'task-management',
+    boxId: 'main-box',
+    render: showAssignments,
+    keepActionUI: true,
+  },
+  challenges: {
+    key: 'challenges',
+    label: '도전',
+    sectionId: 'challenges-box',
+    boxId: 'challenges-box',
+    render: showChallenges,
+    keepActionUI: true,
+  },
+  observation: {
+    key: 'observation',
+    label: '관찰기록',
+    sectionId: 'observation-management',
+    boxId: 'main-box',
+    render: showObservations,
+  },
+  student: {
+    key: 'student',
+    label: '학생 관리',
+    sectionId: 'student-management',
+    boxId: 'main-box',
+    render: showStudents,
+  },
 };
 
-const TAB_PAGE_NAMES = {
-  status: '학생 현황',
-  task: '달력',
-  challenges: '도전',
-  observation: '관찰기록',
-  student: '학생 관리',
+const ROUTE_KEYS = Object.keys(TEACHER_ROUTES);
+const SECTION_IDS = ROUTE_KEYS.map((key) => TEACHER_ROUTES[key].sectionId);
+
+const getRoute = (key) => TEACHER_ROUTES[key] || TEACHER_ROUTES.status;
+
+const getRouteFromHash = () => {
+  const key = (location.hash || '').replace('#', '').toLowerCase();
+  return getRoute(key);
 };
 
-const SECTION_IDS = ['student-status-page', 'task-management', 'student-management', 'observation-management'];
-
-const TAB_RENDERERS = {
-  status: showStatus,
-  task: showAssignments,
-  challenges: showChallenges,
-  observation: showObservations,
-  student: showStudents,
-};
-
-const TAB_SECTION_VISIBILITY = {
-  status: { 'student-status-page': true },
-  task: { 'task-management': true },
-  observation: { 'observation-management': true },
-  student: { 'student-management': true },
-};
-
-const setActiveTab = (key) => {
+const setActiveRoute = (key) => {
   const sidebar = document.getElementById('left-sidebar');
   if (sidebar) sidebar.dataset.active = key;
-  Object.values(TAB_BUTTON_IDS).forEach((id) => {
-    document.getElementById(id)?.classList.remove('active');
-  });
 
-  document.getElementById(TAB_BUTTON_IDS[key])?.classList.add('active');
+  document.querySelectorAll('#left-sidebar [data-tab-key]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.tabKey === key);
+  });  
 };
 
-const renderPageTabs = (key) => {
+const renderPageTabs = (route) => {
   const container = document.getElementById('page-tabs');
   if (!container) return;
-  const pageName = TAB_PAGE_NAMES[key] || '페이지';
-  container.innerHTML = `
-    <span class="tab-chip is-main">${pageName}</span>
+    container.innerHTML = `
+    <span class="tab-chip is-main">${route.label}</span>
     <span class="tab-chip">페이지별 상단탭(추후 반영)</span>
   `;
 };
 
-const showSection = (id, show) => {
+const showElement = (id, show) => {
   const el = document.getElementById(id);
   if (el) el.style.display = show ? 'block' : 'none';
 };
 
-const showOnlySections = (visibleMap = {}) => {
+const showRouteSection = (route) => {
+  const isChallengeRoute = route.boxId === 'challenges-box';
+  showElement('main-box', !isChallengeRoute);
+  showElement('challenges-box', isChallengeRoute);
+  
   SECTION_IDS.forEach((id) => {
-    showSection(id, Boolean(visibleMap[id]));
+    if (id === 'challenges-box') return;
+    showElement(id, id === route.sectionId);
   });
 };
 
-const showTab = (key) => {
-  const mainBox = document.getElementById('main-box');
-  const challengesBox = document.getElementById('challenges-box');
-  const isChallengesTab = key === 'challenges';
+const showRoute = (key) => {
+  const route = getRoute(key);
+  setActiveRoute(route.key);
+  renderPageTabs(route);
+  showRouteSection(route);
 
-  setActiveTab(key);
-  renderPageTabs(key);
-
-  if (mainBox) mainBox.style.display = isChallengesTab ? 'none' : 'block';
-  if (challengesBox) challengesBox.style.display = isChallengesTab ? 'block' : 'none';
-  
-  showOnlySections(TAB_SECTION_VISIBILITY[key]);
-  
-  if (key !== 'task' && key !== 'challenges') {
-    hideActionUI();
+  if (!route.keepActionUI) {
   }
 
-  TAB_RENDERERS[key]?.();
+  route.render?.();
 };
 
-const openTabFromHash = () => {
-  const hash = (location.hash || '').replace('#', '').toLowerCase();
-  const validTabs = new Set(['status', 'task', 'challenges', 'observation', 'student']);
-  showTab(validTabs.has(hash) ? hash : 'status');
+const openRouteFromHash = () => {
+  showRoute(getRouteFromHash().key);
 };
 
-const navigateToTab = (key) => {
-  const targetHash = `#${key}`;
+const navigateToRoute = (key) => {
+  const route = getRoute(key);
+  const targetHash = `#${route.key}`;
   if (location.hash === targetHash) {
-    openTabFromHash();
+    openRouteFromHash();
   } else {
-    location.hash = key;
+    location.hash = route.key;
   }
 };
 
-const initTabs = () => {
-  document.getElementById('tab-status')?.addEventListener('click', () => navigateToTab('status'));
-  document.getElementById('tab-task')?.addEventListener('click', () => navigateToTab('task'));
-  document.getElementById('tab-challenges')?.addEventListener('click', () => navigateToTab('challenges'));
-  document.getElementById('tab-observation')?.addEventListener('click', () => navigateToTab('observation'));
-  document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
-  document.getElementById('tab-settings')?.addEventListener('click', () => alert('설정 탭은 추후 반영 예정입니다.'));
+const initTeacherRouter = () => {
+  window.onhiTeacherNavigate = navigateToRoute;
+  openRouteFromHash();
+  if (window.teacherRouterHashBound === 'true') return;
+  window.teacherRouterHashBound = 'true';
+  window.addEventListener('hashchange', openRouteFromHash);
 
 };
+
+window.TEACHER_ROUTES = TEACHER_ROUTES;
+let teacherAppInitialized = false;
 
 const initTeacherApp = () => {
   // [잠금 기능 추가] teacher_auth 인증 완료 전에는 교사용 앱 초기화 지연
   if (sessionStorage.getItem('teacher_auth') !== 'ok') return;
-  
-  window.teacherAppReady = true;
 
-  if (typeof window.migrateToUIDOnce === 'function') window.migrateToUIDOnce();
+  if (!teacherAppInitialized) {
+    teacherAppInitialized = true;
+    window.teacherAppReady = true;
 
-  initAssignments();
-  initObservations();
-  initStudents();
-  initChallenges();
-  initToolsLink();
-  initCounseling();
+    if (typeof window.migrateToUIDOnce === 'function') window.migrateToUIDOnce();
+
+    initAssignments();
+    initObservations();
+    initStudents();
+    initChallenges();
+    initCounseling();
+  }
 
   window.renderTeacherSidebar?.(document.getElementById('left-sidebar'));
-  initTabs();
-  openTabFromHash();
-  window.addEventListener('hashchange', openTabFromHash);
+  initTeacherRouter();
 };
 
 document.addEventListener('DOMContentLoaded', initTeacherApp);
