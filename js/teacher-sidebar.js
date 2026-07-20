@@ -55,14 +55,24 @@
 
     const currentPage = location.pathname.split('/').pop() || 'teacher.html';
     sidebar.querySelectorAll('[data-href]').forEach((button) => {
-      const key = button.dataset.tabKey;
-      if (currentPage === 'teacher.html' && key && !['tools', 'settings'].includes(key)) return;
       button.addEventListener('click', () => {
         if (button.dataset.disabled === 'true') {
           alert('설정 탭은 추후 반영 예정입니다.');
           return;
         }
+
+        const key = button.dataset.tabKey;
         const href = button.dataset.href;
+        const isTeacherRoute = currentPage === 'teacher.html' && href?.startsWith('teacher.html#');
+        if (isTeacherRoute && key) {
+          if (typeof window.onhiTeacherNavigate === 'function') {
+            window.onhiTeacherNavigate(key);
+            return;
+          }
+          location.hash = key;
+          return;
+        }
+        
         if (href) location.href = href;
       });
     });
