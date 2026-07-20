@@ -39,6 +39,7 @@
       navLabel: '페이지별 상단 탭',
       navId: 'page-tabs',
       pageName: '도구',
+      pageHint: '페이지별 상단탭(추후 반영)',
       right: [
         { id: 'teacher-logout-btn', label: '로그아웃' },
         { id: 'eventsBtn', label: '일정숨김', ariaPressed: 'false' },
@@ -64,7 +65,10 @@
     const navItems = config.items || [];
     const rightItems = config.right || [];
     const navContent = config.pageName
-      ? `<span class="tab-chip is-main">${config.pageName}</span>`
+      ? `
+        <span class="tab-chip is-main">${config.pageName}</span>
+        ${config.pageHint ? `<span class="tab-chip">${config.pageHint}</span>` : ''}
+      `
       : navItems.map(renderButton).join('');
 
     topbar.classList.add('topbar');
