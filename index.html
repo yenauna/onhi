@@ -521,16 +521,17 @@ function isSessionValid(){
 
 
 // 모달 열기/닫기/확인
-let _loginSelected = null;
-function openLoginPanel(studentName){
-  _loginSelected = studentName;
-
-  const isTeacherAuthed = sessionStorage.getItem('teacher_auth') === 'ok';
-  if (isTeacherAuthed){
-    setSession(studentName);
-    location.href = 'student.html';
-    return;
-  }
+    let loginPickMode = false;
+    let _loginSelected = null;
+    function openLoginPanel(studentName){
+      _loginSelected = studentName;
+      
+      const isTeacherAuthed = sessionStorage.getItem('teacher_auth') === 'ok';
+      if (isTeacherAuthed){
+        setSession(studentName);
+        location.href = 'student.html';
+        return;
+      }
   
   const modal  = document.getElementById('studentLoginModal');
   const input  = document.getElementById('studentPwInput');
