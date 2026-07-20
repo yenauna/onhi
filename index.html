@@ -487,11 +487,14 @@ function buildInstancesFromTasks(){
       window.renderCalendar?.();      // teacher의 달력
       window.renderTasks?.();         // student의 목록
       document.getElementById('eventsBtn')?.addEventListener('click', toggleShowEvents);
-     document.getElementById('studentLoginForm')?.addEventListener('submit', (e) => {
+      bindStudentLoginButton();
+      document.getElementById('studentLoginForm')?.addEventListener('submit', (e) => {
         e.preventDefault();
         confirmStudentLogin();
       });
     });
+
+    window.addEventListener('load', bindStudentLoginButton);
 
     window.addEventListener('storage', (e) => {
       if (e.key === 'tasksV2' || e.key === 'showEvents' || e.key === 'boardMode' || e.key === 'observationRecords:v1') renderBoard();
@@ -562,21 +565,25 @@ async function confirmStudentLogin(){
 
     // ===== 학생 버튼 토글: 로그인 선택 모드 =====
     
-    const btnStudent = document.getElementById('btn-student-login');
-    btnStudent?.addEventListener('click', () => {
-      loginPickMode = !loginPickMode;
-      
-      // 버튼 / 바디 상태 토글
-      btnStudent.classList.toggle('active', loginPickMode);
-      document.body.classList.toggle('login-pick-mode', loginPickMode);
-      
-      // 끌 때는 선택/모달 정리
-      if (!loginPickMode) {
-        document.querySelectorAll('.grid .card.selected')
-          .forEach(el => el.classList.remove('selected'));
-        closeLoginPanel?.();
-      }
-    });
+    function bindStudentLoginButton(){
+      const btnStudent = document.getElementById('btn-student-login');
+      if (!btnStudent || btnStudent.dataset.loginModeBound === 'true') return;
+      btnStudent.dataset.loginModeBound = 'true';
+      btnStudent.addEventListener('click', () => {
+        loginPickMode = !loginPickMode;
+
+        // 버튼 / 바디 상태 토글
+        btnStudent.classList.toggle('active', loginPickMode);
+        document.body.classList.toggle('login-pick-mode', loginPickMode);
+
+        // 끌 때는 선택/모달 정리
+        if (!loginPickMode) {
+          document.querySelectorAll('.grid .card.selected')
+            .forEach(el => el.classList.remove('selected'));
+          closeLoginPanel?.();
+        }
+      });
+    }
 
   </script>
   
