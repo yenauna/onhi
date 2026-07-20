@@ -863,7 +863,7 @@
           <label id="task-exp-box" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             🎯 경험치
             <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <<label><input type="checkbox" id="task-exp-responsibility" value="책임" checked> 책임</label>
+              <label><input type="checkbox" id="task-exp-responsibility" value="책임" checked> 책임</label>
               <label><input type="checkbox" id="task-exp-effort" value="노력"> 노력</label>
               <label><input type="checkbox" id="task-exp-achievement" value="성취"> 성취</label>
               <label><input type="checkbox" id="task-exp-relationship" value="관계"> 관계</label>
@@ -1227,128 +1227,46 @@
 </script>
 <script type="module" src="js/teacher-app.js"></script>
   <script>
+    // 교사 라우터 모듈이 로드되지 못했을 때만 최소 비상 표시를 수행한다.
   (function () {
-    const initFallbackTabs = () => {
-      if (window.teacherAppReady) return;
+    const initEmergencyTeacherRoute = () => {
+      if (window.teacherAppReady || sessionStorage.getItem('teacher_auth') !== 'ok') return;
 
-      const setActiveTab = (key) => {
-        const map = {
-          status: [document.getElementById('tab-status')],
-          task: [document.getElementById('tab-task')],
-          challenges: [document.getElementById('tab-challenges')],
-          observation: [document.getElementById('tab-observation')],
-          student: [document.getElementById('tab-student')],
-        };
-        Object.values(map).flat().forEach(btn => btn && btn.classList.remove('active'));
-        (map[key] || []).forEach(btn => btn && btn.classList.add('active'));
+      const sections = {
+        status: 'student-status-page',
+        task: 'task-management',
+        observation: 'observation-management',
+        student: 'student-management',
       };
+      const key = ['status', 'task', 'challenges', 'observation', 'student']
+        .includes((location.hash || '').replace('#', '').toLowerCase())
+        ? (location.hash || '').replace('#', '').toLowerCase()
+        : 'status';
 
-      const showSection = (id, show) => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = show ? 'block' : 'none';
-      };
-
-      const showTab = (key) => {
-        const mainBox = document.getElementById('main-box');
-        const challengesBox = document.getElementById('challenges-box');
-
-        if (key === 'challenges') {
-          setActiveTab('challenges');
-          if (mainBox) mainBox.style.display = 'none';
-          if (challengesBox) challengesBox.style.display = 'block';
-          showSection('student-status-page', false);
-          showSection('task-management', false);
-          showSection('student-management', false);
-          showSection('observation-management', false);
-          return;
-        }
-
-        if (mainBox) mainBox.style.display = 'block';
-        if (challengesBox) challengesBox.style.display = 'none';
-
-        if (key === 'task') {
-          setActiveTab('task');
-          showSection('student-status-page', false);
-          showSection('task-management', true);
-          showSection('student-management', false);
-          showSection('observation-management', false);
-          return;
-        }
-
-        if (key === 'observation') {
-          setActiveTab('observation');
-          showSection('student-status-page', false);
-          showSection('task-management', false);
-          showSection('student-management', false);
-          showSection('observation-management', true);
-          return;
-        }
-
-        if (key === 'student') {
-          setActiveTab('student');
-          showSection('student-status-page', false);
-          showSection('task-management', false);
-          showSection('student-management', true);
-          showSection('observation-management', false);
-          return;
-        }
-
-        setActiveTab('status');
-        showSection('student-status-page', true);
-        showSection('task-management', false);
-        showSection('student-management', false);
-        showSection('observation-management', false);
-      };
-
-      const openTabFromHash = () => {
-        const hash = (location.hash || '').replace('#', '').toLowerCase();
-        switch (hash) {
-          case 'task':
-            showTab('task');
-            break;
-          case 'challenges':
-            showTab('challenges');
-            break;
-          case 'observation':
-            showTab('observation');
-            break;
-          case 'student':
-            showTab('student');
-            break;
-          case 'status':
-          default:
-            showTab('status');
-            break;
-        }
-      };
-
-      const navigateToTab = (key) => {
-        const targetHash = `#${key}`;
-        if (location.hash === targetHash) {
-          openTabFromHash();
-        } else {
-          location.hash = key;
-        }
-      };
-
-      document.getElementById('tab-status')?.addEventListener('click', () => navigateToTab('status'));
-      document.getElementById('tab-task')?.addEventListener('click', () => navigateToTab('task'));
-      document.getElementById('tab-challenges')?.addEventListener('click', () => navigateToTab('challenges'));
-      document.getElementById('tab-observation')?.addEventListener('click', () => navigateToTab('observation'));
-      document.getElementById('tab-student')?.addEventListener('click', () => navigateToTab('student'));
-      document.getElementById('tab-tools')?.addEventListener('click', () => {
-        window.location.href = 'tool.html';
+      document.querySelectorAll('#left-sidebar [data-tab-key]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.tabKey === key);
       });
 
-      openTabFromHash();
-      window.addEventListener('hashchange', openTabFromHash);
+      const pageTabs = document.getElementById('page-tabs');
+      const menuItem = (window.TEACHER_MENU_ITEMS || []).find((item) => item.key === key);
+      if (pageTabs && menuItem) {
+        pageTabs.innerHTML = `<span class="tab-chip is-main">${menuItem.label}</span><span class="tab-chip">페이지별 상단탭(추후 반영)</span>`;
+      }
+
+     const mainBox = document.getElementById('main-box');
+      const challengesBox = document.getElementById('challenges-box');
+      if (mainBox) mainBox.style.display = key === 'challenges' ? 'none' : 'block';
+      if (challengesBox) challengesBox.style.display = key === 'challenges' ? 'block' : 'none';
+      Object.entries(sections).forEach(([routeKey, id]) => {
+        const section = document.getElementById(id);
+        if (section) section.style.display = routeKey === key ? 'block' : 'none';
+      });
+
     };
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initFallbackTabs);
-    } else {
-      initFallbackTabs();
-    }
+    window.addEventListener('hashchange', initEmergencyTeacherRoute);
+    document.addEventListener('DOMContentLoaded', initEmergencyTeacherRoute);
+    window.addEventListener('onhi:teacher-unlocked', initEmergencyTeacherRoute);
   })();
 </script>
 
