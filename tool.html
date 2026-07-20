@@ -19,10 +19,14 @@
     *{ box-sizing:border-box; }
     body{
       margin:0;
+      min-height:100%;
       font-family:'SUIT',system-ui,-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
       color:var(--text);
       background:#f7f8fa;
-      padding:0 16px 32px;
+      padding:96px 16px 40px;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
     }
 
     main.tools-desktop{
@@ -629,7 +633,7 @@
     }
 
     @media (max-width:720px){
-      body{ padding:0 12px 24px; }
+      body{ padding:96px 12px 24px; }
       main.tools-desktop{ padding-top:36px; }
       .tool-window{ min-width:260px; }
       .clock-time{ font-size:42px; }
