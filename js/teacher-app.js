@@ -62,13 +62,13 @@ const setActiveRoute = (key) => {
 
   document.querySelectorAll('#left-sidebar [data-tab-key]').forEach((button) => {
     button.classList.toggle('active', button.dataset.tabKey === key);
-  });  
+  });
 };
 
 const renderPageTabs = (route) => {
   const container = document.getElementById('page-tabs');
   if (!container) return;
-    container.innerHTML = `
+  container.innerHTML = `
     <span class="tab-chip is-main">${route.label}</span>
     <span class="tab-chip">페이지별 상단탭(추후 반영)</span>
   `;
@@ -83,7 +83,7 @@ const showRouteSection = (route) => {
   const isChallengeRoute = route.boxId === 'challenges-box';
   showElement('main-box', !isChallengeRoute);
   showElement('challenges-box', isChallengeRoute);
-  
+
   SECTION_IDS.forEach((id) => {
     if (id === 'challenges-box') return;
     showElement(id, id === route.sectionId);
@@ -97,6 +97,7 @@ const showRoute = (key) => {
   showRouteSection(route);
 
   if (!route.keepActionUI) {
+    hideActionUI();
   }
 
   route.render?.();
@@ -122,7 +123,6 @@ const initTeacherRouter = () => {
   if (window.teacherRouterHashBound === 'true') return;
   window.teacherRouterHashBound = 'true';
   window.addEventListener('hashchange', openRouteFromHash);
-
 };
 
 window.TEACHER_ROUTES = TEACHER_ROUTES;

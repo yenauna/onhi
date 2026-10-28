@@ -72,7 +72,7 @@
           location.hash = key;
           return;
         }
-        
+
         if (href) location.href = href;
       });
     });

@@ -1227,7 +1227,7 @@
 </script>
 <script type="module" src="js/teacher-app.js"></script>
   <script>
-    // 교사 라우터 모듈이 로드되지 못했을 때만 최소 비상 표시를 수행한다.
+  // 교사 라우터 모듈이 로드되지 못했을 때만 최소 비상 표시를 수행한다.
   (function () {
     const initEmergencyTeacherRoute = () => {
       if (window.teacherAppReady || sessionStorage.getItem('teacher_auth') !== 'ok') return;
@@ -1253,7 +1253,7 @@
         pageTabs.innerHTML = `<span class="tab-chip is-main">${menuItem.label}</span><span class="tab-chip">페이지별 상단탭(추후 반영)</span>`;
       }
 
-     const mainBox = document.getElementById('main-box');
+      const mainBox = document.getElementById('main-box');
       const challengesBox = document.getElementById('challenges-box');
       if (mainBox) mainBox.style.display = key === 'challenges' ? 'none' : 'block';
       if (challengesBox) challengesBox.style.display = key === 'challenges' ? 'block' : 'none';
@@ -1261,7 +1261,6 @@
         const section = document.getElementById(id);
         if (section) section.style.display = routeKey === key ? 'block' : 'none';
       });
-
     };
 
     window.addEventListener('hashchange', initEmergencyTeacherRoute);
